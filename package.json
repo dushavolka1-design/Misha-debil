@@ -1,0 +1,32 @@
+{
+  "name": "document-analyzer-rf",
+  "private": true,
+  "packageManager": "pnpm@9.15.9",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "turbo run dev --parallel",
+    "build": "turbo run build",
+    "lint": "turbo run lint",
+    "format": "prettier --write .",
+    "format:check": "prettier --check .",
+    "typecheck": "turbo run typecheck",
+    "test": "turbo run test",
+    "test:unit": "turbo run test --filter=@dar/contracts --filter=@dar/ui --filter=@dar/web",
+    "test:smoke": "pnpm --filter @dar/api exec pytest ../../tests/smoke -q",
+    "contracts:export": "pnpm --filter @dar/api run openapi:export",
+    "contracts:generate": "pnpm --filter @dar/contracts run generate",
+    "contracts:check": "pnpm --filter @dar/contracts run check",
+    "storybook": "pnpm --filter @dar/ui run storybook",
+    "test:e2e": "pnpm --filter @dar/web run test:e2e",
+    "ci:local": "pnpm format:check && pnpm lint && pnpm typecheck && pnpm contracts:check && pnpm test:unit",
+    "quality:eval": "pnpm --filter @dar/api exec python -m app.scripts.run_ai_eval",
+    "quality:drills": "pnpm --filter @dar/api exec python -m app.scripts.run_privacy_drill && pnpm --filter @dar/api exec python -m app.scripts.run_restore_drill"
+  },
+  "devDependencies": {
+    "prettier": "^3.5.3",
+    "turbo": "^2.5.4",
+    "typescript": "^5.8.3"
+  }
+}

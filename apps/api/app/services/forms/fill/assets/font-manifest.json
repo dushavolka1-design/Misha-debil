@@ -1,0 +1,10 @@
+{
+  "family": "Noto Sans",
+  "filename": "NotoSans-Regular.ttf",
+  "license": "OFL-1.1",
+  "license_file": "LICENSE",
+  "license_url": "https://openfontlicense.org",
+  "source_url": "https://github.com/googlefonts/noto-fonts/raw/main/hinted/ttf/NotoSans/NotoSans-Regular.ttf",
+  "expected_sha256": "b85c38ecea8a7cfb39c24e395a4007474fa5a4fc864f6ee33309eb4948d232d5",
+  "note": "Bundled OFL font. Pixel-perfect fill uses only this file — no system fallback."
+}

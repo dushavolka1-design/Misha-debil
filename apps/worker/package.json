@@ -1,0 +1,11 @@
+{
+  "name": "@dar/worker",
+  "private": true,
+  "version": "0.1.0",
+  "scripts": {
+    "dev": "python -m worker.main",
+    "lint": "python -m ruff check worker",
+    "typecheck": "python -m mypy worker",
+    "test": "python -m pytest -q --collect-only"
+  }
+}

@@ -1,0 +1,223 @@
+/* Design tokens — Docly premium legal-tech. Light theme. Not a government portal. */
+@import '../fonts/onest/onest.css';
+
+:root {
+  --dar-color-bg: #f4f7fb;
+  --dar-color-bg-elevated: #ffffff;
+  --dar-color-bg-muted: #eef2f7;
+  --dar-color-bg-subtle: #e8eef6;
+  --dar-color-bg-hero: linear-gradient(180deg, #eef2ff 0%, #ffffff 72%);
+  --dar-color-border: #cbd5e1;
+  --dar-color-border-strong: #94a3b8;
+
+  --dar-color-text: #111827;
+  --dar-color-text-secondary: #334155;
+  --dar-color-text-muted: #475569;
+  --dar-color-text-inverse: #f8fafc;
+
+  --dar-color-accent: #4f3cc9;
+  --dar-color-accent-hover: #3f2fb0;
+  --dar-color-accent-pressed: #32248f;
+  --dar-color-accent-subtle: #ece9ff;
+  --dar-color-accent-fg: #ffffff;
+
+  --dar-color-success: #0f766e;
+  --dar-color-success-bg: #ccfbf1;
+  --dar-color-warning: #92400e;
+  --dar-color-warning-bg: #ffedd5;
+  --dar-color-danger: #b42318;
+  --dar-color-danger-bg: #fee4e2;
+  --dar-color-info: #1d4ed8;
+  --dar-color-info-bg: #dbeafe;
+
+  --dar-color-cat-entry: #eef2ff;
+  --dar-color-cat-entry-fg: #3730a3;
+  --dar-color-cat-work: #ecfdf5;
+  --dar-color-cat-work-fg: #047857;
+  --dar-color-cat-rvp: #fff7ed;
+  --dar-color-cat-rvp-fg: #c2410c;
+  --dar-color-cat-medical: #fdf2f8;
+  --dar-color-cat-medical-fg: #9d174d;
+
+  --dar-focus-ring: 0 0 0 3px color-mix(in srgb, var(--dar-color-accent) 38%, transparent);
+
+  --dar-radius-sm: 10px;
+  --dar-radius-md: 14px;
+  --dar-radius-lg: 20px;
+
+  --dar-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05), 0 1px 3px rgba(17, 24, 39, 0.04);
+  --dar-shadow-md: 0 4px 10px rgba(17, 24, 39, 0.05), 0 12px 28px rgba(17, 24, 39, 0.08);
+  --dar-shadow-lg: 0 8px 16px rgba(17, 24, 39, 0.04), 0 24px 48px rgba(17, 24, 39, 0.1);
+  --dar-shadow-header: 0 1px 0 rgba(203, 213, 225, 0.9), 0 8px 18px rgba(17, 24, 39, 0.06);
+
+  --dar-space-0: 0;
+  --dar-space-1: 4px;
+  --dar-space-2: 8px;
+  --dar-space-3: 12px;
+  --dar-space-4: 16px;
+  --dar-space-6: 24px;
+  --dar-space-8: 32px;
+  --dar-space-12: 48px;
+  --dar-space-16: 64px;
+
+  --dar-font-sans: 'Onest', 'Segoe UI', sans-serif;
+  --dar-font-display: 'Onest', 'Segoe UI', sans-serif;
+  --dar-font-mono: ui-monospace, 'Cascadia Mono', 'Segoe UI Mono', monospace;
+
+  --dar-text-xs: 0.875rem;
+  --dar-text-sm: 0.875rem;
+  --dar-text-md: 1rem;
+  --dar-text-lg: 1.125rem;
+  --dar-text-xl: 1.25rem;
+  --dar-text-2xl: 1.75rem;
+  --dar-text-3xl: 2.5rem;
+  --dar-text-4xl: 2.5rem;
+
+  --dar-leading-tight: 1.2;
+  --dar-leading-snug: 1.35;
+  --dar-leading-normal: 1.55;
+
+  --dar-duration: 180ms;
+  --dar-ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+
+  --dar-content-max: 1280px;
+  --dar-shell-max: 1360px;
+  --dar-sidebar-width: 248px;
+  --dar-topbar-height: 72px;
+  --dar-target: 44px;
+
+  color-scheme: light;
+}
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100%;
+  background: var(--dar-color-bg);
+  color: var(--dar-color-text);
+  font-family: var(--dar-font-sans);
+  font-size: 16px;
+  font-weight: 500;
+  line-height: 1.55;
+  -webkit-font-smoothing: antialiased;
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  overflow-x: hidden;
+}
+
+img,
+svg,
+video,
+canvas {
+  max-width: 100%;
+  height: auto;
+}
+
+a {
+  color: var(--dar-color-accent);
+  font-weight: 600;
+}
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  font-weight: inherit;
+}
+
+:focus-visible {
+  outline: none;
+  box-shadow: var(--dar-focus-ring);
+}
+
+.dar-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.dar-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dar-space-4);
+}
+
+.dar-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--dar-space-3);
+}
+
+.dar-row--between {
+  justify-content: space-between;
+}
+
+.dar-content {
+  width: min(100% - 2 * var(--dar-space-4), var(--dar-content-max));
+  margin-inline: auto;
+}
+
+.dar-mono {
+  font-family: var(--dar-font-mono);
+  font-size: var(--dar-text-sm);
+  font-weight: 500;
+}
+
+h1,
+.dar-h1 {
+  margin: 0;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h2,
+.dar-h2 {
+  margin: 0;
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+h3,
+.dar-h3 {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+  font-weight: 650;
+}
+
+@media (min-width: 768px) {
+  .dar-content {
+    width: min(100% - 2 * var(--dar-space-8), var(--dar-content-max));
+  }
+
+  h1,
+  .dar-h1 {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+}

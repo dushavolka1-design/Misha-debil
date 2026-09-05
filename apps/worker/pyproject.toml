@@ -1,0 +1,27 @@
+[project]
+name = "dar-worker"
+version = "0.1.0"
+description = "Document Analyzer RF background worker"
+requires-python = ">=3.12"
+dependencies = [
+  "redis>=5.2",
+  "boto3>=1.36",
+  "httpx>=0.28",
+  "pydantic-settings>=2.7",
+]
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["worker"]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.mypy]
+python_version = "3.12"
+strict = true
+packages = ["worker"]

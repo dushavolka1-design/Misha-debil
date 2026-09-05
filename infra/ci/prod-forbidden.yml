@@ -1,0 +1,9 @@
+# syntax check helper — production must not use these values
+# Used by CI config scan
+forbidden_prod_markers:
+  - ALLOW_FAKE_PROVIDERS=true
+  - sqlite
+  - change_me
+  - fake_ocr
+  - fake_llm
+  - local_session_secret
