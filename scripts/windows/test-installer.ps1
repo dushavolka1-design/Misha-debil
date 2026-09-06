@@ -8,12 +8,12 @@ $install = Join-Path $work 'Application'
 New-Item -ItemType Directory -Path $work | Out-Null
 $env:LOCALAPPDATA = Join-Path $work 'Profile Local'
 $env:DOCLY_DATA_DIR = Join-Path $env:LOCALAPPDATA 'Docly\data'
-$env:DOCLY_RUNTIME_DIR = Join-Path $env:LOCALAPPDATA 'Docly\runtime'
+$env:DOCLY_RUNTIME_DIR = Join-Path $env:LOCALAPPDATA 'Docly\Docly\runtime'
 $env:DOCLY_NO_BROWSER = '1'
 $env:DOCLY_HEADLESS = '1'
 $env:PYTHONDONTWRITEBYTECODE = '1'
 # Neither system Python nor system Node is available to the installed launcher.
-$env:PATH = "$env:WINDIR\System32;$env:WINDIR"
+$env:PATH = "$env:WINDIR\System32;$env:WINDIR'
 $py = Join-Path $install 'apps\api\.venv\Scripts\python.exe'
 $launcher = Join-Path $install 'scripts\windows\docly_launcher.py'
 $desktopShortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Docly.lnk'
@@ -50,7 +50,10 @@ function Check-Shortcut([string]$Path, [string]$Label) {
 }
 function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string]$ExpectedSource, [string]$Tasks = '') {
   $log = Join-Path $work "$Label.log"
-  $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"", "/TASKS=`"$Tasks`"") -PassThru
+  $arguments = @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"")
+  # Omit /TASKS for default-choice cases; an explicit empty string tests opt-out.
+  if ($PSBoundParameters.ContainsKey('Tasks')) { $arguments += "/TASKS=`"$Tasks`"" }
+  $process = Start-Process -FilePath $Exe -ArgumentList $arguments -PassThru
   Check ($process.WaitForExit(600000)) "$Label completed within ten minutes"
   Check ($process.ExitCode -eq 0) "$Label exit code"
   Check (Test-Path $py) "$Label bundled Python environment"
@@ -65,9 +68,7 @@ function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string
       Check ((Read-Autostart) -eq $expectedRun) "$Label selected per-user autostart"
     } else {
       Check ($null -eq (Read-Autostart)) "$Label autostart disabled"
-    }
-    if ($Label -eq 'clean-new-install') {
-      Check (-not (Test-Path -LiteralPath $startMenuShortcut)) 'fresh install has no unselected Start menu shortcut'
+      Check (-not (Test-Path -LiteralPath $startMenuShortcut)) "$Label no unselected Start menu shortcut"
     }
     Check (-not (Test-Path (Join-Path $env:DOCLY_RUNTIME_DIR 'instance.json'))) "$Label did not launch during silent setup"
   }
@@ -110,6 +111,8 @@ try {
   Launch
   Stop-Docly
   Install $NewInstaller 'optional-shortcuts-install' '0.2.2' $NewSourceCommit 'startmenu,autostart'
+  Install $NewInstaller 'optional-shortcuts-disable' '0.2.2' $NewSourceCommit ''
+  Install $NewInstaller 'optional-shortcuts-reenable' '0.2.2' $NewSourceCommit 'startmenu,autostart'
   & $py -c "import os,sqlite3; from pathlib import Path; c=sqlite3.connect(Path(os.environ['DOCLY_DATA_DIR'])/'docly.db'); assert c.execute('SELECT value FROM installer_acceptance').fetchall()==[('retained user state',)]; assert c.execute('PRAGMA integrity_check').fetchone()==('ok',); c.close()"
   Check ($LASTEXITCODE -eq 0) 'database rows and integrity preserved through upgrade'
   Check ((Get-FileHash $settings).Hash -eq $settingsHash) 'settings preserved through upgrade'

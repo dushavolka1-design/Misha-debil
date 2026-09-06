@@ -39,6 +39,10 @@ english.StartMenuTask=Create a Start menu shortcut
 russian.StartMenuTask=Создать ярлык в меню «Пуск»
 english.AutostartTask=Start Docly when you sign in
 russian.AutostartTask=Запускать Docly при входе в систему
+english.RuntimeStartFailed=Could not start offline runtime setup.
+russian.RuntimeStartFailed=Не удалось запустить автономную установку среды выполнения.
+english.RuntimeSetupFailed=Offline runtime setup failed. Installation is not ready; see the setup log.
+russian.RuntimeSetupFailed=Не удалось установить среду выполнения. Установка не готова к работе; подробности в журнале установки.
 
 [Tasks]
 Name: "startmenu"; Description: "{cm:StartMenuTask}"; Flags: unchecked
@@ -47,12 +51,17 @@ Name: "autostart"; Description: "{cm:AutostartTask}"; Flags: unchecked
 [Files]
 Source: "{#PayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
+[InstallDelete]
+; Remove only this application's optional shortcut when explicitly deselected.
+Type: files; Name: "{group}\Docly.lnk"; Tasks: not startmenu
+
 [Icons]
 Name: "{group}\Docly"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\scripts\windows\assets\docly-icon.ico"; Tasks: startmenu
 Name: "{userdesktop}\Docly"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\scripts\windows\assets\docly-icon.ico"
 
 [Registry]
 Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Docly"; ValueData: """{sys}\wscript.exe"" ""{app}\scripts\windows\launch-installed.vbs"""; Flags: uninsdeletevalue; Tasks: autostart
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: none; ValueName: "Docly"; Flags: deletevalue dontcreatekey; Tasks: not autostart
 
 [Run]
 Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Docly}"; Flags: nowait postinstall skipifsilent unchecked
@@ -73,8 +82,8 @@ begin
     if not Exec(ExpandConstant('{sys}\WindowsPowerShell\v1.0\powershell.exe'),
       '-NoProfile -ExecutionPolicy Bypass -File "' + ExpandConstant('{app}\scripts\windows\install-runtime.ps1') + '"',
       ExpandConstant('{app}'), SW_HIDE, ewWaitUntilTerminated, ExitCode) then
-      RaiseException('Could not start offline runtime setup.');
+      RaiseException(ExpandConstant('{cm:RuntimeStartFailed}'));
     if ExitCode <> 0 then
-      RaiseException('Offline runtime setup failed. Installation is not ready; run setup again.');
+      RaiseException(ExpandConstant('{cm:RuntimeSetupFailed}'));
   end;
 end;
