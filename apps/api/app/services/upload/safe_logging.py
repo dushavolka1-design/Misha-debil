@@ -4,8 +4,8 @@ from __future__ import annotations
 
 import logging
 import re
-from contextlib import contextmanager
 from collections.abc import Iterator
+from contextlib import contextmanager
 
 _FILENAME_RE = re.compile(r"(?i)(filename|original_name|display_name)\s*[:=]\s*\S+")
 _QUOTE_RE = re.compile(r"[«»\"'].{20,}[«»\"']")

@@ -3,9 +3,9 @@ from __future__ import annotations
 import json
 import os
 import socket
+from collections.abc import Callable
 from pathlib import Path
 from typing import Any
-from collections.abc import Callable
 from uuid import uuid4
 
 from sqlalchemy import create_engine

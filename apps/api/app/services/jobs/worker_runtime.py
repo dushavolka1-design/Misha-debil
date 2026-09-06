@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from contextlib import asynccontextmanager
 from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
 
 from app.deps import ProviderBundle, build_providers
 from app.persistence.bootstrap import attach_persistence, flush_persistence, load_persistence, mark_auth_dirty

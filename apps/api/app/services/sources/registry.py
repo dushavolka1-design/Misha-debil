@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone, UTC
+from datetime import UTC, date, datetime, timedelta, timezone
 from enum import StrEnum
 from typing import Any
-from collections.abc import Callable
 from uuid import UUID, uuid4
 
 from app.services.sources.url_policy import (

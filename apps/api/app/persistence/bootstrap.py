@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import json
 import logging
-from dataclasses import asdict, fields
-from datetime import datetime, timezone, UTC
-from typing import Any
 from collections.abc import Callable
+from dataclasses import asdict, fields
+from datetime import UTC, datetime, timezone
+from typing import Any
 from uuid import UUID
 
 from sqlalchemy import delete, select, text

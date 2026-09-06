@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone, UTC
+from datetime import UTC, date, datetime, timezone
 from typing import Any
 from uuid import UUID, uuid4
 

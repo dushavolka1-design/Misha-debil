@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone, UTC
+from datetime import UTC, date, datetime, timedelta, timezone
 from typing import Any
 from uuid import UUID, uuid4
 
