@@ -2,11 +2,17 @@ name: Docly reviewed dependency repair
 on:
   push:
     branches: [fix/docly-desktop-upgrade-safety]
-    paths: ['.github/workflows/docly-dependency-repair.yml']
+    paths:
+      - '.github/workflows/docly-dependency-repair.yml'
+      - 'scripts/run-node-tests.mjs'
+      - 'packages/contracts/package.json'
+      - 'packages/ui/package.json'
+      - 'apps/web/package.json'
   workflow_dispatch:
 permissions:
   contents: write
   pull-requests: write
+  actions: read
 concurrency:
   group: docly-reviewed-dependency-repair
   cancel-in-progress: false
@@ -63,6 +69,29 @@ jobs:
           git commit -m 'fix(deps): pin patched PostCSS 8.5.18 and Sharp 0.35.0'
           git push origin HEAD:fix/docly-desktop-upgrade-safety
           git rev-parse HEAD > artifacts/dependency-repair/commit.txt
+      - name: Preserve failures from latest completed general CI
+        if: always()
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const fs = require('fs'), dir = 'artifacts/dependency-repair/';
+            fs.mkdirSync(dir, {recursive: true});
+            const runs = await github.rest.actions.listWorkflowRuns({...context.repo, workflow_id: 'ci.yml', branch: 'fix/docly-desktop-upgrade-safety', status: 'completed', per_page: 1});
+            const excerpts = [];
+            for (const run of runs.data.workflow_runs) {
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id: run.id});
+              fs.writeFileSync(dir + 'general-ci.json', JSON.stringify({run, jobs}, null, 2));
+              for (const job of jobs.filter(j => j.conclusion === 'failure')) {
+                const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+                const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                fs.writeFileSync(dir + `ci-${job.id}.log`, text);
+                const lines = text.split('\n');
+                const index = lines.findIndex(line => line.includes('##[error]'));
+                const excerpt = index < 0 ? text.slice(-10000) : lines.slice(Math.max(0, index - 100), index + 4).join('\n').slice(-14000);
+                excerpts.push(`### ${job.name}: ${run.head_sha}\n${job.html_url}\n\`\`\`text\n${excerpt}\n\`\`\``);
+              }
+            }
+            fs.writeFileSync(dir + 'general-ci.md', excerpts.join('\n'));
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         id: evidence
@@ -79,5 +108,6 @@ jobs:
           script: |
             const fs = require('fs'), dir = 'artifacts/dependency-repair/';
             const read = name => fs.existsSync(dir + name) ? fs.readFileSync(dir + name, 'utf8') : 'not produced';
-            const logs = ['resolve.log', 'audit.log', 'format.log', 'unit.log', 'build.log'].map(name => `### ${name}\n\`\`\`text\n${read(name).slice(-6000)}\n\`\`\``).join('\n');
-            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Reviewed dependency repair: ${process.env.JOB_STATUS}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nInput: ${context.sha}\nResult commit: ${read('commit.txt')}\nEvidence: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs}\n\nNo vulnerability suppressions or lowered severity gates. Full CI and Windows installer retest still required on the resulting source commit.`});
+            const logs = ['resolve.log', 'audit.log', 'format.log', 'unit.log', 'build.log'].map(name => `### ${name}\n\`\`\`text\n${read(name).slice(-5000)}\n\`\`\``).join('\n');
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Reviewed dependency repair: ${process.env.JOB_STATUS}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nInput: ${context.sha}\nResult commit: ${read('commit.txt')}\nEvidence: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs}\n\nNo lowered severity gates. Full CI and Windows installer retest still required on the resulting source commit.`});
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: ('## Latest completed general CI failures\n' + read('general-ci.md')).slice(0, 59000)});
