@@ -1,4 +1,5 @@
 """Verified SQLite snapshots before desktop schema changes (standard library only)."""
+
 from __future__ import annotations
 
 import os
@@ -36,10 +37,7 @@ def backup_before_schema_change(
             rows = source.execute("PRAGMA integrity_check").fetchall()
             if rows != [("ok",)]:
                 raise RuntimeError("SQLite integrity check failed; original database preserved")
-            tables = {
-                row[0]
-                for row in source.execute("SELECT name FROM sqlite_master WHERE type='table'")
-            }
+            tables = {row[0] for row in source.execute("SELECT name FROM sqlite_master WHERE type='table'")}
             needs_change = not required_tables <= tables
             for table, expected in required_columns.items():
                 quoted = '"' + table.replace('"', '""') + '"'

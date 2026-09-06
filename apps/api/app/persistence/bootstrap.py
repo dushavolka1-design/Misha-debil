@@ -19,7 +19,12 @@ from app.models import (
     Session,
     User,
 )
-from app.persistence.form_catalog_codec import CatalogPersistenceError, catalog_fatal, form_record_from_mapping, form_record_to_payload
+from app.persistence.form_catalog_codec import (
+    CatalogPersistenceError,
+    catalog_fatal,
+    form_record_from_mapping,
+    form_record_to_payload,
+)
 from app.persistence.serde import persistence_dumps, persistence_loads
 from app.persistence.sync_db import get_sync_engine, sync_session
 from app.services.analysis.pipeline import AnalysisRunRecord, AnalysisStatus, AnalysisStore, ProgressEvent
@@ -112,7 +117,16 @@ def _record_from_dict(cls: type, data: dict[str, Any]) -> Any:
         if name not in data:
             continue
         val = data[name]
-        if name.endswith("_id") or name in {"id", "user_id", "tenant_id", "document_id", "rotated_from", "supersedes_id", "legal_document_id", "subject_user_id"}:
+        if name.endswith("_id") or name in {
+            "id",
+            "user_id",
+            "tenant_id",
+            "document_id",
+            "rotated_from",
+            "supersedes_id",
+            "legal_document_id",
+            "subject_user_id",
+        }:
             if val is not None and not isinstance(val, UUID):
                 val = UUID(str(val))
         if name in {
@@ -593,9 +607,7 @@ def _save_blob(namespace: str, blob_key: str, value: Any) -> None:
 def _load_blob(namespace: str, blob_key: str) -> Any | None:
     with sync_session() as session:
         row = session.execute(
-            text(
-                "SELECT value_json FROM app_state_blobs WHERE namespace = :ns AND blob_key = :key"
-            ),
+            text("SELECT value_json FROM app_state_blobs WHERE namespace = :ns AND blob_key = :key"),
             {"ns": namespace, "key": blob_key},
         ).first()
         if not row:
@@ -660,9 +672,7 @@ def _deserialize_store(namespace: str, store: Any, attr: str, cls: type | None =
             store.rebuild_slug_index()
         return
     if namespace == "forms" and attr == "by_slug" and isinstance(payload, dict):
-        store.by_slug = {
-            str(k): UUID(str(v)) for k, v in payload.items()
-        }
+        store.by_slug = {str(k): UUID(str(v)) for k, v in payload.items()}
         return
     if cls is FormRecord and isinstance(payload, dict):
         store.forms = {form_record_from_mapping(k, v).id: form_record_from_mapping(k, v) for k, v in payload.items()}
@@ -961,9 +971,7 @@ def _load_form_fill_store(service: Any) -> None:
 
 
 def _persist_form_fill_store(service: Any) -> None:
-    versions_payload = {
-        str(k): asdict(v) for k, v in service.versions.items()
-    }
+    versions_payload = {str(k): asdict(v) for k, v in service.versions.items()}
     _save_blob("form_fill", "versions", versions_payload)
     _save_blob("form_fill", "by_catalog", {str(k): str(v) for k, v in service.by_catalog.items()})
     _save_blob("form_fill", "generated", {str(k): asdict(v) for k, v in service.generated.items()})

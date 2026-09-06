@@ -102,9 +102,7 @@ class SqliteJobBroker:
                     .limit(1)
                 )
                 if row is not None:
-                    session.execute(
-                        update(JobQueueItem).where(JobQueueItem.id == row.id).values(status="processing")
-                    )
+                    session.execute(update(JobQueueItem).where(JobQueueItem.id == row.id).values(status="processing"))
                     session.commit()
                     return json.loads(row.payload_json)
             if time.monotonic() >= deadline:

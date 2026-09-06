@@ -1,4 +1,5 @@
 """Real SQLite/filesystem regression tests; no application services or mocks."""
+
 from __future__ import annotations
 
 import sqlite3
@@ -52,12 +53,10 @@ class DesktopBackupTests(unittest.TestCase):
             conn.execute("ALTER TABLE users ADD COLUMN display_name VARCHAR(80)")
             conn.execute("ALTER TABLE users ADD COLUMN avatar_jpeg BLOB")
             conn.commit()
-            self.assertEqual(conn.execute("SELECT email FROM users").fetchone()[0],
-                             "person@example.invalid")
+            self.assertEqual(conn.execute("SELECT email FROM users").fetchone()[0], "person@example.invalid")
         with closing(sqlite3.connect(backup)) as conn:
             self.assertEqual(conn.execute("PRAGMA integrity_check").fetchone(), ("ok",))
-            self.assertEqual(conn.execute("SELECT * FROM users").fetchall(),
-                             [(1, "person@example.invalid")])
+            self.assertEqual(conn.execute("SELECT * FROM users").fetchall(), [(1, "person@example.invalid")])
         self.assertEqual(settings.read_text(encoding="utf-8"), '{"theme":"dark"}')
         self.assertEqual((objects / "document.bin").read_bytes(), b"user document bytes")
         self.assertIsNone(self.snapshot())
@@ -74,8 +73,7 @@ class DesktopBackupTests(unittest.TestCase):
             self.assertGreater(Path(str(self.db) + "-wal").stat().st_size, 0)
             backup = self.snapshot()
             with closing(sqlite3.connect(backup)) as reader:
-                self.assertEqual(reader.execute("SELECT * FROM users").fetchall(),
-                                 [(7, "wal@example.invalid")])
+                self.assertEqual(reader.execute("SELECT * FROM users").fetchall(), [(7, "wal@example.invalid")])
 
     def test_corrupt_database_is_not_changed(self) -> None:
         damaged = b"not a sqlite database"
@@ -114,9 +112,7 @@ class DesktopBackupTests(unittest.TestCase):
             conn.execute("CREATE TABLE users (display_name TEXT, avatar_jpeg BLOB)")
             conn.commit()
         self.assertIsNone(self.snapshot())
-        backup = backup_before_schema_change(
-            self.db, required_tables={"users", "documents"}, required_columns={}
-        )
+        backup = backup_before_schema_change(self.db, required_tables={"users", "documents"}, required_columns={})
         self.assertTrue(backup.is_file())
 
 

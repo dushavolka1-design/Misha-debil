@@ -38,7 +38,9 @@ class RuPaymentSandboxProvider(PaymentProvider):
         self.shop_id = shop_id or os.environ.get("RU_PAYMENT_SHOP_ID", "")
         self.secret = secret or os.environ.get("RU_PAYMENT_SECRET", "")
         self.live_mode = live_mode or os.environ.get("RU_PAYMENT_LIVE", "").lower() in {"1", "true", "yes"}
-        self.webhook_secret = webhook_secret or os.environ.get("RU_PAYMENT_WEBHOOK_SECRET") or self.secret or "sandbox_webhook_secret"
+        self.webhook_secret = (
+            webhook_secret or os.environ.get("RU_PAYMENT_WEBHOOK_SECRET") or self.secret or "sandbox_webhook_secret"
+        )
         self._intents: dict[str, dict[str, Any]] = {}
         if self.live_mode and (not self.shop_id or not self.secret):
             raise RuntimeError("ru_payment live mode requires RU_PAYMENT_SHOP_ID and RU_PAYMENT_SECRET")
@@ -131,11 +133,7 @@ class RuPaymentSandboxProvider(PaymentProvider):
             payload = json.loads(raw_body.decode("utf-8"))
         except Exception:  # noqa: BLE001
             return WebhookVerification(ok=False, reason="bad_json")
-        sanitized = {
-            k: v
-            for k, v in payload.items()
-            if k not in {"card_number", "cvc", "pan", "payer_email", "phone"}
-        }
+        sanitized = {k: v for k, v in payload.items() if k not in {"card_number", "cvc", "pan", "payer_email", "phone"}}
         return WebhookVerification(
             ok=True,
             event_id=str(sanitized.get("event_id") or ""),

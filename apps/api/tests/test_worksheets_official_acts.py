@@ -58,7 +58,13 @@ def _login(client: TestClient) -> None:
         return
     registered = client.post(
         "/auth/register",
-        json={"email": email, "password": password, "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": email,
+            "password": password,
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     assert registered.status_code == 200, registered.text
     token = registered.json().get("verification_token_dev")

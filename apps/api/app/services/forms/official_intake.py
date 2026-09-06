@@ -52,10 +52,10 @@ def record_arrival_editorial_intake(catalog: Any) -> dict[str, Any]:
             catalog.update_fields(
                 rec.id,
                 act_number=rec.act_number or ARRIVAL_OFFICIAL_CANDIDATE["act_number"],
-                act_title=rec.act_title or f"{ARRIVAL_OFFICIAL_CANDIDATE['act_title']} ({ARRIVAL_OFFICIAL_CANDIDATE['appendix']})",
+                act_title=rec.act_title
+                or f"{ARRIVAL_OFFICIAL_CANDIDATE['act_title']} ({ARRIVAL_OFFICIAL_CANDIDATE['appendix']})",
                 warning=(
-                    "Официальный бланк ещё не подтверждён по источнику. "
-                    "Доступен чеклист шагов, бланк не подставляется."
+                    "Официальный бланк ещё не подтверждён по источнику. Доступен чеклист шагов, бланк не подставляется."
                 ),
             )
     return note

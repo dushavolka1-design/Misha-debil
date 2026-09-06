@@ -85,7 +85,13 @@ WORKSHEET_FIELDS: dict[str, list[dict[str, Any]]] = {
         _f("host_name", "Фамилия, имя, отчество принимающей стороны", "host", "Принимающая сторона"),
     ],
     "mvd.patent.application": [
-        {"field_id": "photo", "label": "Фотография", "layout": "photo_box", "section": "head", "section_label": "Заявление"},
+        {
+            "field_id": "photo",
+            "label": "Фотография",
+            "layout": "photo_box",
+            "section": "head",
+            "section_label": "Заявление",
+        },
         _f("territorial_organ", "Территориальный орган МВД", "head", "Заявление"),
         _f("petition", "Прошу оформить патент", "head", "Заявление", layout="multiline", max_chars=220),
         _f("last_name", "Фамилия", "applicant", "Заявитель"),
@@ -104,7 +110,9 @@ WORKSHEET_FIELDS: dict[str, list[dict[str, Any]]] = {
         _f("territorial_organ", "Территориальный орган МВД", "head", "Куда направляется"),
         _f("employer_status", "Статус работодателя / заказчика работ (услуг)", "employer", "Работодатель / заказчик"),
         _f("okved", "Код ОКВЭД", "employer", "Работодатель / заказчик", max_chars=16),
-        _f("employer_full_name", "Полное наименование / ФИО", "employer", "Работодатель / заказчик", layout="multiline"),
+        _f(
+            "employer_full_name", "Полное наименование / ФИО", "employer", "Работодатель / заказчик", layout="multiline"
+        ),
         _f("employer_reg_number", "ОГРН / ОГРНИП", "employer", "Работодатель / заказчик"),
         _f("employer_inn", "ИНН", "employer", "Работодатель / заказчик", max_chars=12),
         _f("employer_address", "Адрес", "employer", "Работодатель / заказчик", layout="multiline"),
@@ -119,11 +127,21 @@ WORKSHEET_FIELDS: dict[str, list[dict[str, Any]]] = {
         _f("identity_doc_number", "Номер", "worker", "Иностранный работник", max_chars=20),
         _f("identity_doc_issued_date", "Дата выдачи", "worker", "Иностранный работник", max_chars=10),
         _f("identity_doc_issuer", "Кем выдан", "worker", "Иностранный работник"),
-        _f("permit_kind", "Документ на право работы (патент / разрешение)", "permit", "Разрешительный документ и договор"),
+        _f(
+            "permit_kind",
+            "Документ на право работы (патент / разрешение)",
+            "permit",
+            "Разрешительный документ и договор",
+        ),
         _f("permit_series", "Серия документа", "permit", "Разрешительный документ и договор", max_chars=12),
         _f("permit_number", "Номер документа", "permit", "Разрешительный документ и договор"),
         _f("profession", "Профессия (специальность, должность)", "permit", "Разрешительный документ и договор"),
-        _f("contract_kind", "Вид договора (трудовой / гражданско-правовой)", "permit", "Разрешительный документ и договор"),
+        _f(
+            "contract_kind",
+            "Вид договора (трудовой / гражданско-правовой)",
+            "permit",
+            "Разрешительный документ и договор",
+        ),
         _f("contract_date", "Дата заключения договора", "permit", "Разрешительный документ и договор", max_chars=10),
         _f("work_address", "Адрес места работы", "permit", "Разрешительный документ и договор", layout="multiline"),
         _f("signatory_title_name", "Должность и ФИО подписанта", "sign", "Подпись"),
@@ -183,7 +201,9 @@ def _schema_from_fields(fields: list[dict[str, Any]]) -> dict[str, Any]:
     return schema
 
 
-def _coord_map(under: UnderlayBuild, fields: list[dict[str, Any]], pages: list[list[dict[str, float | str]]]) -> CoordinateMap:
+def _coord_map(
+    under: UnderlayBuild, fields: list[dict[str, Any]], pages: list[list[dict[str, float | str]]]
+) -> CoordinateMap:
     by_id = {spec["field_id"]: spec for spec in fields if spec.get("layout") != "photo_box"}
     cmap_fields: list[CoordField] = []
     for page_i, page_items in enumerate(pages):
@@ -227,7 +247,9 @@ def build_worksheet_pack(slug: str, title: str) -> tuple[UnderlayBuild, Coordina
         raise KeyError(slug)
     heading = list(WORKSHEET_HEADINGS.get(slug) or [title])
     act = act_for_slug(slug) or {}
-    source_line = " · ".join(part for part in (str(act.get("act_title") or ""), str(act.get("official_url") or "")) if part)
+    source_line = " · ".join(
+        part for part in (str(act.get("act_title") or ""), str(act.get("official_url") or "")) if part
+    )
     under = build_worksheet_underlay(title=title, source_line=source_line, fields=fields, heading=heading)
     photo = any(spec.get("layout") == "photo_box" for spec in fields)
     heading_count = len([line for line in heading if line]) + (1 if source_line else 0)

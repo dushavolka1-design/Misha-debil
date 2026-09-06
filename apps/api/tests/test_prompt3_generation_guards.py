@@ -12,7 +12,13 @@ import pytest
 from app.services.forms.catalog import FormCatalogService
 from app.services.forms.catalog_seed import PROMPT6_CARDS, link_fill_version, seed_prompt6_catalog
 from app.services.forms.fill.engine import FillError, extract_static_text, fill_pdf, page_geometry
-from app.services.forms.fill.fonts import ASSETS, MANIFEST, assert_bundled_font, bundled_font_status, resolve_allowed_font
+from app.services.forms.fill.fonts import (
+    ASSETS,
+    MANIFEST,
+    assert_bundled_font,
+    bundled_font_status,
+    resolve_allowed_font,
+)
 from app.services.forms.fill.service import FormFillService, FormVersionRecord
 from app.services.forms.fill.underlay import SYNTHETIC_MARKER, build_demo_a4_underlay
 from app.services.sources.registry import SourceRegistry

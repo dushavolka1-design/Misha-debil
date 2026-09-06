@@ -168,9 +168,7 @@ def compare_underlay_vs_output(
                 f"outside mask max delta {outside_max} > tolerance {tolerance} "
                 f"(technical antialias allowance documented)",
             )
-        if inside_changed == 0 and any(
-            f.page == i and f.reserved_for == ReservedFor.NONE for f in coord_map.fields
-        ):
+        if inside_changed == 0 and any(f.page == i and f.reserved_for == ReservedFor.NONE for f in coord_map.fields):
             # may be empty fill — ok
             notes.append("no inside-mask pixel changes (empty or invisible fill)")
 

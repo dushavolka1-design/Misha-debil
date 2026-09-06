@@ -339,7 +339,7 @@ def eval_multifile_version(rule: RuleDef, facts: list[dict[str, Any]]) -> list[R
     hits = []
     for key, group in by_key.items():
         texts = {g.get("raw_text") for g in group}
-        files = { (g.get("meta") or {}).get("file_id") for g in group }
+        files = {(g.get("meta") or {}).get("file_id") for g in group}
         if len(texts) > 1 and len(files) > 1:
             hits.append(
                 _hit(
@@ -388,10 +388,15 @@ def run_rules(
             continue
         rule_hits = fn(rule, facts)
         # If required facts missing and evaluator returned nothing, emit uncertain
-        if missing and not rule_hits and rule.rule_id in {
-            "date.end_before_start",
-            "conflict.dates_amounts_currency",
-        }:
+        if (
+            missing
+            and not rule_hits
+            and rule.rule_id
+            in {
+                "date.end_before_start",
+                "conflict.dates_amounts_currency",
+            }
+        ):
             continue
         hits.extend(rule_hits)
     # Final safety: strip any forbidden phrasing
@@ -410,9 +415,7 @@ def run_rule_testcases() -> list[dict[str, Any]]:
             continue
         for tc in rule.test_cases:
             hits = fn(rule, tc.facts)
-            triggered = len(hits) > 0 and not all(
-                h.uncertainty == Uncertainty.INSUFFICIENT_DATA for h in hits
-            )
+            triggered = len(hits) > 0 and not all(h.uncertainty == Uncertainty.INSUFFICIENT_DATA for h in hits)
             # For missing-context cases, expect insufficient_data hit or no hard trigger
             if tc.expect_uncertainty == Uncertainty.INSUFFICIENT_DATA:
                 ok = any(h.uncertainty == Uncertainty.INSUFFICIENT_DATA for h in hits) or (

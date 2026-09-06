@@ -249,7 +249,13 @@ def test_delete_allowed_without_new_offer_reaccept(service: AuthConsentService, 
 def test_api_register_bypass_without_checkboxes_fails(client: TestClient, store: AuthConsentStore) -> None:
     res = client.post(
         "/auth/register",
-        json={"email": "bypass@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": []},
+        json={
+            "email": "bypass@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": [],
+        },
     )
     assert res.status_code == 400
     assert res.json()["detail"]["code"] == "consents_required"
@@ -283,7 +289,13 @@ def test_medical_upload_gate_blocks(client: TestClient, store: AuthConsentStore)
     accepts = _active_accepts(store)
     client.post(
         "/auth/register",
-        json={"email": "med@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": "med@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     # verify + login
     # find user token from last register response — re-register won't work; use service path via store
@@ -397,7 +409,9 @@ def test_login_by_username_after_register(client: TestClient, store: AuthConsent
     me = client.get("/auth/me")
     assert me.status_code == 200
     assert me.json()["display_name"] == "Мария Вход"
-    assert client.post("/auth/login", json={"email": "named@example.com", "password": "longpassword1"}).status_code == 200
+    assert (
+        client.post("/auth/login", json={"email": "named@example.com", "password": "longpassword1"}).status_code == 200
+    )
 
 
 def test_profile_name_and_avatar_roundtrip(client: TestClient, store: AuthConsentStore) -> None:
@@ -420,7 +434,9 @@ def test_profile_name_and_avatar_roundtrip(client: TestClient, store: AuthConsen
     assert res.status_code == 200
     token = res.json()["verification_token_dev"]
     assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
-    assert client.post("/auth/login", json={"email": "avatar@example.com", "password": "longpassword1"}).status_code == 200
+    assert (
+        client.post("/auth/login", json={"email": "avatar@example.com", "password": "longpassword1"}).status_code == 200
+    )
     me = client.get("/auth/me")
     assert me.status_code == 200
     assert me.json()["display_name"] == "Мария Петрова"

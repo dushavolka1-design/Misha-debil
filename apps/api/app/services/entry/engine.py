@@ -388,8 +388,12 @@ class EntryWizardService:
             latest_id = latest.get("id") if isinstance(latest, dict) else getattr(latest, "id", None)
             approved_id = approved.get("id") if isinstance(approved, dict) else getattr(approved, "id", None)
             latest_state = latest.get("state") if isinstance(latest, dict) else getattr(latest, "state", None)
-            latest_hash = latest.get("content_hash") if isinstance(latest, dict) else getattr(latest, "content_hash", None)
-            approved_hash = approved.get("content_hash") if isinstance(approved, dict) else getattr(approved, "content_hash", None)
+            latest_hash = (
+                latest.get("content_hash") if isinstance(latest, dict) else getattr(latest, "content_hash", None)
+            )
+            approved_hash = (
+                approved.get("content_hash") if isinstance(approved, dict) else getattr(approved, "content_hash", None)
+            )
             if (
                 approved
                 and latest
@@ -413,7 +417,9 @@ class EntryWizardService:
             visa_regime_id=qdict.get("visa_regime_id"),
             purpose=qdict.get("purpose") or "tourism",
             planned_stay_days=qdict.get("planned_stay_days"),
-            planned_entry_date=date.fromisoformat(qdict["planned_entry_date"]) if qdict.get("planned_entry_date") else None,
+            planned_entry_date=date.fromisoformat(qdict["planned_entry_date"])
+            if qdict.get("planned_entry_date")
+            else None,
             eaeu_member=bool(qdict.get("eaeu_member")),
             invitation=bool(qdict.get("invitation")),
             host_type=qdict.get("host_type"),

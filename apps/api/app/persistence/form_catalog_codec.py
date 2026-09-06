@@ -9,12 +9,8 @@ from uuid import UUID, uuid4
 from app.persistence.serde import persistence_dumps, persistence_loads
 from app.services.forms.catalog import FormRecord, utcnow
 
-CATALOG_USER_MESSAGE = (
-    "Не удалось обработать карточку шаблона. Запись изолирована; остальные шаблоны доступны."
-)
-CATALOG_FATAL_MESSAGE = (
-    "Не удалось загрузить каталог шаблонов. Передайте в поддержку код обращения."
-)
+CATALOG_USER_MESSAGE = "Не удалось обработать карточку шаблона. Запись изолирована; остальные шаблоны доступны."
+CATALOG_FATAL_MESSAGE = "Не удалось загрузить каталог шаблонов. Передайте в поддержку код обращения."
 CATALOG_STATUS_VALUES = frozenset({"draft", "needs_review", "published", "superseded"})
 
 

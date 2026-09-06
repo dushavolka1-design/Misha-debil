@@ -134,7 +134,9 @@ def ensure_prompt6_catalog(catalog: FormCatalogService) -> None:
                 updates["fill_ready"] = False
             if spec["status"] == "published" and rec.status == "needs_review" and spec["form_kind"] == "medical_memo":
                 updates["status"] = "published"
-                updates["edition_note"] = rec.edition_note if rec.edition_note and rec.edition_note != "Fill v1.0.0" else "Собственный шаблон"
+                updates["edition_note"] = (
+                    rec.edition_note if rec.edition_note and rec.edition_note != "Fill v1.0.0" else "Собственный шаблон"
+                )
             if rec.edition_note == "Fill v1.0.0":
                 updates["edition_note"] = "Собственный шаблон"
             catalog.update_fields(rec.id, **updates)

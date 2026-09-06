@@ -5,7 +5,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.db import get_db
 from app.deps import ProviderBundle, check_database, check_object_storage, check_queue
-from app.schemas import HealthResponse, InstanceResponse, LiveResponse, PublicConfigResponse, ReadinessChecks, ReadinessResponse
+from app.schemas import (
+    HealthResponse,
+    InstanceResponse,
+    LiveResponse,
+    PublicConfigResponse,
+    ReadinessChecks,
+    ReadinessResponse,
+)
 from app.settings import Settings, get_settings
 
 router = APIRouter(tags=["health"])

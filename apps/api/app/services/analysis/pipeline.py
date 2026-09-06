@@ -189,9 +189,7 @@ class AnalysisPipelineService:
                 )
                 # Low native text — optional OCR provider for scans
                 avg_conf = (
-                    sum(p.confidence for p in ocr_result.pages) / len(ocr_result.pages)
-                    if ocr_result.pages
-                    else 0.0
+                    sum(p.confidence for p in ocr_result.pages) / len(ocr_result.pages) if ocr_result.pages else 0.0
                 )
                 if avg_conf < 0.5 and getattr(self.ocr, "name", "") not in {"fake_ocr", "unavailable"}:
                     try:
@@ -415,11 +413,7 @@ class AnalysisPipelineService:
             run = self.store.runs.get(run_id)
             if run and run.user_id == user_id:
                 self.store.runs.pop(run_id, None)
-        remaining = [
-            run_id
-            for run_id in self.store.by_document.get(document_id, [])
-            if run_id in self.store.runs
-        ]
+        remaining = [run_id for run_id in self.store.by_document.get(document_id, []) if run_id in self.store.runs]
         if remaining:
             self.store.by_document[document_id] = remaining
         else:

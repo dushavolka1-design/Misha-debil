@@ -104,7 +104,9 @@ def validate_inputs(
 
         if not f.user_editable and f.value_source == ValueSource.ORGAN:
             issues.append(
-                FieldIssue(f.field_id, "organ_only", "Поле заполняется органом — не редактируется пользователем", "warning"),
+                FieldIssue(
+                    f.field_id, "organ_only", "Поле заполняется органом — не редактируется пользователем", "warning"
+                ),
             )
 
         formatted = format_value(raw, f.formatter)

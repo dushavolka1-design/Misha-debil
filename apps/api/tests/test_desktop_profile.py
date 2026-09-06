@@ -46,7 +46,9 @@ def test_desktop_uses_sqlite_file_queue_not_postgres(desktop_dir: Path) -> None:
     assert "postgresql" not in settings.database_url.lower()
     assert settings.queue_backend == "sqlite"
     assert settings.object_storage_provider == "file_object_storage"
-    assert str(desktop_dir) in settings.database_url.replace("\\", "/") or desktop_dir.as_posix() in settings.database_url.replace("\\", "/")
+    assert str(desktop_dir) in settings.database_url.replace(
+        "\\", "/"
+    ) or desktop_dir.as_posix() in settings.database_url.replace("\\", "/")
 
 
 def test_production_still_forbids_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:

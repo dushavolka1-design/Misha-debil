@@ -54,11 +54,7 @@ def inferred_form_kind(slug: str) -> str:
 
 
 def act_metadata_complete(rec: Any) -> bool:
-    return bool(
-        getattr(rec, "act_number", None)
-        and getattr(rec, "act_title", None)
-        and getattr(rec, "act_date", None)
-    )
+    return bool(getattr(rec, "act_number", None) and getattr(rec, "act_title", None) and getattr(rec, "act_date", None))
 
 
 def government_catalog_fill_ready(rec: Any) -> bool:
@@ -74,7 +70,8 @@ def government_catalog_fill_ready(rec: Any) -> bool:
         and getattr(rec, "raw_size", 0) > 0
         and getattr(rec, "reviewer", None)
         and getattr(rec, "reviewed_at", None)
-        and start and start <= on
+        and start
+        and start <= on
         and (end is None or on <= end)
     )
 
@@ -184,7 +181,9 @@ def catalog_checklist(card: dict[str, Any], *, version: Any | None = None) -> li
     published = card.get("status") == "published"
     official_version = bool(version and inferred_form_kind(version.slug) == "government_form")
     two_eyes = bool(
-        official_version and version.author_id and version.second_reviewer_id
+        official_version
+        and version.author_id
+        and version.second_reviewer_id
         and version.second_reviewer_id != version.author_id
     )
     snapshot_ok = bool(official_version and version.source_snapshot_id and has_source)
@@ -192,7 +191,15 @@ def catalog_checklist(card: dict[str, Any], *, version: Any | None = None) -> li
         {"id": "official_file", "done": has_file, "label": "Официальный файл формы сохранён без изменений"},
         {"id": "source", "done": has_source, "label": "Официальный источник подтверждён на текущую дату"},
         {"id": "act", "done": has_act, "label": "Указаны номер, дата и название нормативного акта"},
-        {"id": "visual", "done": published and snapshot_ok and has_file, "label": "Редакторы подтвердили соответствие бланка"},
+        {
+            "id": "visual",
+            "done": published and snapshot_ok and has_file,
+            "label": "Редакторы подтвердили соответствие бланка",
+        },
         {"id": "map", "done": two_eyes, "label": "Карта официального бланка подтверждена двумя редакторами"},
-        {"id": "publish", "done": bool(published and has_file and two_eyes and snapshot_ok and card.get("fill_ready")), "label": "Форма открыта для заполнения"},
+        {
+            "id": "publish",
+            "done": bool(published and has_file and two_eyes and snapshot_ok and card.get("fill_ready")),
+            "label": "Форма открыта для заполнения",
+        },
     ]

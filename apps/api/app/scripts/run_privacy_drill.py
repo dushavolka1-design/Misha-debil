@@ -33,7 +33,7 @@ def main() -> None:
     logger.addHandler(h)
     canary = "CANARY_PASSPORT_4500_123456"
     logger.info("filename=secret.pdf extracted_text=%s", canary)
-    logger.info('quote dump: «%s»', "x" * 40)
+    logger.info("quote dump: «%s»", "x" * 40)
 
     leaked = any(canary in r for r in records) or any("extracted_text=" in r and canary in r for r in records)
     # Filter rewrites msg on extracted_text

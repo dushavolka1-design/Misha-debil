@@ -79,7 +79,12 @@ class MedicalSectionService:
         src = self.sources.sources[snap.source_id]
         host = (src.host or "").lower()
         organ = (src.organ or "").lower()
-        ok_host = any(m in host for m in ("minzdrav", "rospotrebnadzor")) or "регион" in organ or "minzdrav" in organ or "роспотреб" in organ
+        ok_host = (
+            any(m in host for m in ("minzdrav", "rospotrebnadzor"))
+            or "регион" in organ
+            or "minzdrav" in organ
+            or "роспотреб" in organ
+        )
         if not ok_host and "минздрав" not in organ and "роспотребнадзор" not in organ:
             # Allow explicit regional official organs tagged in organ field
             if "official_regional" not in (src.criticality or "") and "regional" not in organ:

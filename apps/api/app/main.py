@@ -21,7 +21,20 @@ from app.persistence.bootstrap import (
 from app.persistence.demo_seed import ensure_demo_account
 from app.persistence.middleware import PersistenceFlushMiddleware
 from app.deps import ProviderBundle, build_providers
-from app.routers import analysis, auth, billing, documents, entry, form_fill, forms, health, legal, privacy, reports, sources
+from app.routers import (
+    analysis,
+    auth,
+    billing,
+    documents,
+    entry,
+    form_fill,
+    forms,
+    health,
+    legal,
+    privacy,
+    reports,
+    sources,
+)
 from app.services.analysis.pipeline import AnalysisPipelineService, AnalysisStore
 from app.services.auth_consent import AuthConsentStore, seed_demo_legal
 from app.services.billing.service import BillingService

@@ -14,7 +14,13 @@ from dar.providers.ports import KMSProvider, MalwareScanner, ObjectStorage
 from app.services.upload.encryption import Envelope, decrypt_envelope, encrypt_envelope
 from app.services.upload.filename import opaque_object_key, sanitize_display_filename
 from app.services.upload.fsm import DocumentState, InvalidTransition, can_user_download, transition
-from app.services.upload.retention import DEFAULT_RETENTION, MEDICAL_RETENTION, RetentionPolicy, expires_at, retention_for_kind
+from app.services.upload.retention import (
+    DEFAULT_RETENTION,
+    MEDICAL_RETENTION,
+    RetentionPolicy,
+    expires_at,
+    retention_for_kind,
+)
 from app.services.upload.validation import (
     DEFAULT_MAX_BYTES,
     DetectedType,

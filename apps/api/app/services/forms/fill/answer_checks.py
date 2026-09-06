@@ -18,9 +18,7 @@ _MIGRATION_SERIES = re.compile(r"^\d{4}$")
 _MIGRATION_NUMBER = re.compile(r"^\d{7}$")
 _PASSPORT_TYPO_SUB = re.compile(r"пасспорт", re.IGNORECASE)
 
-PETITION_PATENT = (
-    "Прошу оформить патент на осуществление трудовой деятельности в Российской Федерации"
-)
+PETITION_PATENT = "Прошу оформить патент на осуществление трудовой деятельности в Российской Федерации"
 
 _FOREIGN_WORKER_SLUGS = {
     "mvd.patent.application",

@@ -50,5 +50,11 @@ def test_local_facts_all_pages_parties_and_ogrn() -> None:
     excerpt = next(f for f in findings if f.entity_type == "doc.excerpt")
     assert "Иванов" in excerpt.normalized_value
     assert any(f.entity_type == "party.name" for f in findings)
-    ogrn = [f for f in findings if f.entity_type == "party.identifier" and isinstance(f.normalized_value, dict) and f.normalized_value.get("type") == "ogrn"]
+    ogrn = [
+        f
+        for f in findings
+        if f.entity_type == "party.identifier"
+        and isinstance(f.normalized_value, dict)
+        and f.normalized_value.get("type") == "ogrn"
+    ]
     assert ogrn

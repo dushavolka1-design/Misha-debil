@@ -33,7 +33,13 @@ TERMINAL = frozenset(
 TRANSITIONS: dict[DocumentState, frozenset[DocumentState]] = {
     DocumentState.CREATED: frozenset({DocumentState.UPLOADING, DocumentState.EXPIRED, DocumentState.DELETING}),
     DocumentState.UPLOADING: frozenset(
-        {DocumentState.QUARANTINED, DocumentState.REJECTED, DocumentState.EXPIRED, DocumentState.DELETING, DocumentState.FAILED},
+        {
+            DocumentState.QUARANTINED,
+            DocumentState.REJECTED,
+            DocumentState.EXPIRED,
+            DocumentState.DELETING,
+            DocumentState.FAILED,
+        },
     ),
     DocumentState.QUARANTINED: frozenset(
         {DocumentState.SCANNING, DocumentState.REJECTED, DocumentState.DELETING, DocumentState.EXPIRED},

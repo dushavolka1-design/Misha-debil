@@ -62,10 +62,7 @@ def filter_displayable_findings(findings: list[dict[str, Any]]) -> tuple[list[di
     ok: list[dict[str, Any]] = []
     dropped: list[str] = []
     for i, f in enumerate(findings):
-        blob = " ".join(
-            str(f.get(k) or "")
-            for k in ("raw_text", "normalized_value", "message", "entity_type")
-        )
+        blob = " ".join(str(f.get(k) or "") for k in ("raw_text", "normalized_value", "message", "entity_type"))
         if text_has_forbidden_claim(blob):
             dropped.append(f"finding[{i}]:unsupported_legal_or_medical_claim")
             continue

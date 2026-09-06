@@ -111,9 +111,7 @@ class LegalDocument(Base, TimestampMixin):
     review_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default="draft")
     publication_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default="draft")
 
-    __table_args__ = (
-        UniqueConstraint("consent_id", "consent_version", name="uq_legal_consent_version"),
-    )
+    __table_args__ = (UniqueConstraint("consent_id", "consent_version", name="uq_legal_consent_version"),)
 
 
 class ConsentEvent(Base, TimestampMixin):
@@ -201,9 +199,7 @@ class Document(Base, TimestampMixin, SoftDeleteMixin):
 
     files: Mapped[list[DocumentFile]] = relationship(back_populates="document")
 
-    __table_args__ = (
-        Index("ix_documents_user_idempotency", "user_id", "idempotency_key"),
-    )
+    __table_args__ = (Index("ix_documents_user_idempotency", "user_id", "idempotency_key"),)
 
 
 class DocumentFile(Base, TimestampMixin):
@@ -309,9 +305,7 @@ class ExtractedPage(Base, TimestampMixin):
         server_default="{}",
     )
 
-    __table_args__ = (
-        UniqueConstraint("analysis_run_id", "page_number", name="uq_extracted_page"),
-    )
+    __table_args__ = (UniqueConstraint("analysis_run_id", "page_number", name="uq_extracted_page"),)
 
 
 class Finding(Base, TimestampMixin):
@@ -365,9 +359,7 @@ class SourceSnapshot(Base, TimestampMixin):
     storage_bucket: Mapped[str] = mapped_column(String(128), nullable=False)
     storage_key: Mapped[str] = mapped_column(String(512), nullable=False)
 
-    __table_args__ = (
-        UniqueConstraint("source_record_id", "version", name="uq_source_snapshot_version"),
-    )
+    __table_args__ = (UniqueConstraint("source_record_id", "version", name="uq_source_snapshot_version"),)
 
 
 class FormTemplate(Base, TimestampMixin, SoftDeleteMixin):
@@ -394,9 +386,7 @@ class FormVersion(Base, TimestampMixin):
     review_status: Mapped[str] = mapped_column(String(32), nullable=False, server_default="draft")
     published_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
 
-    __table_args__ = (
-        UniqueConstraint("form_template_id", "form_version", name="uq_form_version"),
-    )
+    __table_args__ = (UniqueConstraint("form_template_id", "form_version", name="uq_form_version"),)
 
 
 class GeneratedForm(Base, TimestampMixin, SoftDeleteMixin):
@@ -506,9 +496,7 @@ class PaymentEvent(Base, TimestampMixin):
         server_default="{}",
     )
 
-    __table_args__ = (
-        UniqueConstraint("provider", "provider_event_id", name="uq_payment_provider_event"),
-    )
+    __table_args__ = (UniqueConstraint("provider", "provider_event_id", name="uq_payment_provider_event"),)
 
 
 class AuditEvent(Base, TimestampMixin):

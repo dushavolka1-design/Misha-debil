@@ -54,7 +54,11 @@ def test_no_universal_list_unknown_citizenship(wizard: EntryWizardService) -> No
     assert "entry.unknown_citizenship" in snap.activated_rule_ids
     # Must not invent visa_free short visit list for unknown citizenship
     assert "entry.visa_free.short_visit" not in snap.activated_rule_ids
-    assert all(s.outcome == "unknown_case" or s.rule_id == "entry.unknown_citizenship" for st in snap.stages.values() for s in st)
+    assert all(
+        s.outcome == "unknown_case" or s.rule_id == "entry.unknown_citizenship"
+        for st in snap.stages.values()
+        for s in st
+    )
 
 
 def test_visa_required_and_visa_free_tables(wizard: EntryWizardService) -> None:
@@ -109,7 +113,14 @@ def test_eaeu_work_study_minor_short_visit(wizard: EntryWizardService) -> None:
     assert "entry.study.enrollment" in study.activated_rule_ids
 
     minor = wizard.evaluate(
-        Questionnaire(citizenship="ZZ", age_band="minor", visa_regime_id="visa_free_short", purpose="tourism", planned_stay_days=14, draft_consent=True),
+        Questionnaire(
+            citizenship="ZZ",
+            age_band="minor",
+            visa_regime_id="visa_free_short",
+            purpose="tourism",
+            planned_stay_days=14,
+            draft_consent=True,
+        ),
     )
     assert "entry.minor.guardian" in minor.activated_rule_ids
 
@@ -199,9 +210,9 @@ def test_freshness_blocks_stale_source(wizard: EntryWizardService) -> None:
     snap = wizard.evaluate(
         Questionnaire(citizenship="ZZ", visa_regime_id="visa_required", purpose="tourism", draft_consent=True),
     )
-    assert any("entry.visa_required" in x or x == "entry.visa_required.docs" for x in snap.freshness_blocked_rules) or any(
-        s.freshness_blocked for st in snap.stages.values() for s in st if s.rule_id == "entry.visa_required.docs"
-    )
+    assert any(
+        "entry.visa_required" in x or x == "entry.visa_required.docs" for x in snap.freshness_blocked_rules
+    ) or any(s.freshness_blocked for st in snap.stages.values() for s in st if s.rule_id == "entry.visa_required.docs")
 
 
 def test_source_conflict_sets_block(wizard: EntryWizardService) -> None:
@@ -245,5 +256,13 @@ def test_explains_activated_answers(wizard: EntryWizardService) -> None:
 
 
 def test_disclaimer_no_admission_promise(wizard: EntryWizardService) -> None:
-    snap = wizard.evaluate(Questionnaire(citizenship="ZZ", visa_regime_id="visa_free_short", purpose="tourism", planned_stay_days=10, draft_consent=True))
+    snap = wizard.evaluate(
+        Questionnaire(
+            citizenship="ZZ",
+            visa_regime_id="visa_free_short",
+            purpose="tourism",
+            planned_stay_days=10,
+            draft_consent=True,
+        )
+    )
     assert "не обещает допуск" in snap.disclaimer.lower() or "не обещает" in snap.disclaimer.lower()

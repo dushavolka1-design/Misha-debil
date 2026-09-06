@@ -86,7 +86,13 @@ def _register_login(client: TestClient, email: str = USER_EMAIL, password: str =
         return
     registered = client.post(
         "/auth/register",
-        json={"email": email, "password": password, "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": _accepts(client)},
+        json={
+            "email": email,
+            "password": password,
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": _accepts(client),
+        },
     )
     assert registered.status_code == 200, registered.text
     token = registered.json().get("verification_token_dev")
@@ -547,7 +553,11 @@ def test_p6_37_csrf(tmp_path: Path) -> None:
         bad = client.post("/billing/cancel", headers={"Origin": "https://evil.example"})
         assert bad.status_code == 403
         body = bad.json()
-        assert body.get("code") == "csrf_origin_rejected" or (body.get("detail") or {}).get("code") == "csrf_origin_rejected" or "csrf" in json.dumps(body)
+        assert (
+            body.get("code") == "csrf_origin_rejected"
+            or (body.get("detail") or {}).get("code") == "csrf_origin_rejected"
+            or "csrf" in json.dumps(body)
+        )
 
 
 def test_p6_38_upload_mime_magic() -> None:

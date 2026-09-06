@@ -46,9 +46,7 @@ def serialize_run(service: AnalysisPipelineService, run) -> AnalysisRunOut:
     llm_available = bool(getattr(run, "llm_available", False))
     if not llm_available and run.llm_provider not in {"unavailable", "none", "fake_llm", ""}:
         llm_available = True
-    local_steps = [
-        LOCAL_STEP_LABELS.get(step, step) for step in (getattr(run, "local_steps", None) or [])
-    ]
+    local_steps = [LOCAL_STEP_LABELS.get(step, step) for step in (getattr(run, "local_steps", None) or [])]
     return AnalysisRunOut(
         id=run.id,
         document_id=run.document_id,
@@ -171,7 +169,10 @@ async def retry_analysis(
     if run.status not in {AnalysisStatus.FAILED, AnalysisStatus.READY}:
         raise HTTPException(
             status_code=409,
-            detail={"code": "retry_not_allowed", "detail": "Повтор доступен только для завершённых или ошибочных запусков"},
+            detail={
+                "code": "retry_not_allowed",
+                "detail": "Повтор доступен только для завершённых или ошибочных запусков",
+            },
         )
     run.status = AnalysisStatus.QUEUED
     run.error_code = None

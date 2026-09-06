@@ -246,7 +246,11 @@ class PaymentProvider(ABC):
 
     async def request_refund(self, *, provider_payment_ref: str, amount_minor: int | None = None) -> dict[str, Any]:
         _ = amount_minor
-        return {"ok": False, "reason": "refunds_require_provider_capability_and_review", "provider_ref": provider_payment_ref}
+        return {
+            "ok": False,
+            "reason": "refunds_require_provider_capability_and_review",
+            "provider_ref": provider_payment_ref,
+        }
 
 
 class EmailProvider(ABC):

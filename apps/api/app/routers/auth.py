@@ -90,9 +90,7 @@ async def register(
             password=body.password,
             display_name=body.display_name,
             avatar_jpeg=avatar,
-            accepts=[
-                AcceptSpec(c.consent_id, c.consent_version, c.content_hash) for c in body.accepts
-            ],
+            accepts=[AcceptSpec(c.consent_id, c.consent_version, c.content_hash) for c in body.accepts],
             locale=body.locale,
             ip=ip,
             user_agent=ua,
@@ -117,7 +115,9 @@ async def register(
 
     return RegisterResponse(
         message=message,
-        verification_token_dev=verify_token if settings.app_env in {"local", "test", "desktop"} and verify_token else None,
+        verification_token_dev=verify_token
+        if settings.app_env in {"local", "test", "desktop"} and verify_token
+        else None,
     )
 
 
@@ -171,7 +171,9 @@ async def logout(
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(body: VerifyEmailRequest, service: AuthConsentService = Depends(get_auth_service)) -> MessageResponse:
+async def verify_email(
+    body: VerifyEmailRequest, service: AuthConsentService = Depends(get_auth_service)
+) -> MessageResponse:
     ok = service.verify_email(body.token)
     if not ok:
         from fastapi import HTTPException

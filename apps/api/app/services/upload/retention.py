@@ -50,5 +50,10 @@ def retention_for_kind(policy: RetentionPolicy, kind: str) -> int:
     }.get(kind, policy.original_days)
 
 
-def policy_for_upload(*, potentially_medical: bool, default: RetentionPolicy = DEFAULT_RETENTION, medical: RetentionPolicy = MEDICAL_RETENTION) -> RetentionPolicy:
+def policy_for_upload(
+    *,
+    potentially_medical: bool,
+    default: RetentionPolicy = DEFAULT_RETENTION,
+    medical: RetentionPolicy = MEDICAL_RETENTION,
+) -> RetentionPolicy:
     return medical if potentially_medical else default

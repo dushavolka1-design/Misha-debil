@@ -110,7 +110,13 @@ def test_csrf_origin_rejected_with_session(client: TestClient, store: AuthConsen
         )
     r = client.post(
         "/auth/register",
-        json={"email": "csrf@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": "csrf@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     assert r.status_code == 200
     token = r.json()["verification_token_dev"]

@@ -87,7 +87,9 @@ def build_report(
         summary={
             "model_finding_count": len(model_findings),
             "rule_hit_count": len(rule_hits),
-            "needs_review_count": sum(1 for h in rule_hits if h.uncertainty.value in {"needs_review", "uncertain", "insufficient_data"}),
+            "needs_review_count": sum(
+                1 for h in rule_hits if h.uncertainty.value in {"needs_review", "uncertain", "insufficient_data"}
+            ),
         },
     )
 
@@ -154,7 +156,9 @@ def report_to_pdf_bytes(report: ReportArtifact) -> bytes:
         b"3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
         b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>endobj\n",
     )
-    objects.append(b"4 0 obj<< /Length " + str(len(stream)).encode() + b" >>stream\n" + stream + b"\nendstream endobj\n")
+    objects.append(
+        b"4 0 obj<< /Length " + str(len(stream)).encode() + b" >>stream\n" + stream + b"\nendstream endobj\n"
+    )
     objects.append(b"5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n")
 
     out = bytearray(b"%PDF-1.4\n")
