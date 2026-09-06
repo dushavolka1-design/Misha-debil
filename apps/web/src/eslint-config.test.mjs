@@ -19,7 +19,9 @@ test('Next-generated declarations retain their supported path reference', async 
 
 test('path references remain rejected in application declarations', async () => {
   const result = await messages(reference, 'src/reference-regression.d.ts');
-  assert.ok(result.some((message) => message.ruleId === '@typescript-eslint/triple-slash-reference'));
+  assert.ok(
+    result.some((message) => message.ruleId === '@typescript-eslint/triple-slash-reference'),
+  );
 });
 
 test('runtime browser global is recognized without disabling undefined-name checks', async () => {
