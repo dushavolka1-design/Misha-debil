@@ -227,7 +227,10 @@ RULES: tuple[RuleDef, ...] = (
         severity=Severity.MEDIUM,
         severity_rationale="Asymmetry is a review flag, not a legality verdict.",
         official_sources=("SRC.TERMINATION.v1",),
-        message_template="Права расторжения выглядят несимметричными между сторонами — требуется ручная проверка формулировок.",
+        message_template=(
+            "Права расторжения выглядят несимметричными между "
+            "сторонами — требуется ручная проверка формулировок."
+        ),
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.REVIEW_QUESTION,
         test_cases=(

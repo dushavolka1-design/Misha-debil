@@ -61,7 +61,7 @@ def calculate_deadline(
       status_dependent
       unspecified
     """
-    ctx = context or {}
+    _ctx = context or {}
     tz = timezone
     # Validate timezone
     try:
@@ -88,7 +88,10 @@ def calculate_deadline(
             expression=expr,
             timezone=tz,
             absolute_date=None,
-            explanation=f"Срок зависит от региона ({region_code or 'не указан'}) и локальных правил — не сводится к одному числу.",
+            explanation=(
+                f"Срок зависит от региона ({region_code or 'не указан'}) "
+                f"и локальных правил — не сводится к одному числу."
+            ),
             needs_review=True,
             certainty="unknown",
         )
@@ -175,7 +178,10 @@ def calculate_deadline(
             expression=expr,
             timezone=tz,
             absolute_date=None,
-            explanation=f"Срок привязан к событию ({expr}); абсолютная дата без подтверждённого события не фиксируется.",
+            explanation=(
+                f"Срок привязан к событию ({expr}); абсолютная "
+                f"дата без подтверждённого события не фиксируется."
+            ),
             needs_review=True,
             certainty="unknown",
         )

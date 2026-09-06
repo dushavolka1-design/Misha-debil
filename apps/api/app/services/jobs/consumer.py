@@ -25,7 +25,7 @@ async def run_queue_consumer(
     logger.info("queue_consumer_started queue=%s", queue_name)
     while not stop.is_set():
         try:
-            payload = await redis_client.pop(queue_name, timeout=1)
+            payload = await redis_client.pop(queue_name, wait_seconds=1)
         except asyncio.CancelledError:
             break
         except Exception:

@@ -17,7 +17,7 @@ class JobBroker(Protocol):
 
     async def enqueue(self, queue_name: str, payload: dict[str, Any]) -> None: ...
 
-    async def pop(self, queue_name: str, timeout: float = 1.0) -> dict[str, Any] | None: ...
+    async def pop(self, queue_name: str, wait_seconds: float = 1.0) -> dict[str, Any] | None: ...
 
     async def requeue_with_retry(
         self,
@@ -41,8 +41,8 @@ class RedisJobBroker:
         safe = {k: v for k, v in payload.items() if not str(k).startswith("_")}
         await self._redis.rpush(queue_name, json.dumps(safe, default=str))
 
-    async def pop(self, queue_name: str, timeout: float = 1.0) -> dict[str, Any] | None:
-        item = await self._redis.blpop(queue_name, timeout=max(1, int(timeout)))
+    async def pop(self, queue_name: str, wait_seconds: float = 1.0) -> dict[str, Any] | None:
+        item = await self._redis.blpop(queue_name, timeout=max(1, int(wait_seconds)))
         if item is None:
             return None
         _, raw = item
@@ -91,8 +91,8 @@ class SqliteJobBroker:
             )
             session.commit()
 
-    async def pop(self, queue_name: str, timeout: float = 1.0) -> dict[str, Any] | None:
-        deadline = time.monotonic() + timeout
+    async def pop(self, queue_name: str, wait_seconds: float = 1.0) -> dict[str, Any] | None:
+        deadline = time.monotonic() + wait_seconds
         while True:
             with Session(self._engine) as session:
                 row = session.scalar(

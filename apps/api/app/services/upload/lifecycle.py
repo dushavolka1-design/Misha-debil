@@ -391,7 +391,7 @@ class DocumentLifecycleService:
             raise UploadError("invalid_state", "Not clean; refuse processing", http_status=409)
 
         started = time.perf_counter()
-        data = await self._read_quarantine_plaintext(doc)
+        _data = await self._read_quarantine_plaintext(doc)
         # Sandbox limits: time budget; no network (enforced by not calling external clients here)
         if time.perf_counter() - started > self.sandbox_cpu_seconds:
             self._set_state(doc, DocumentState.FAILED)

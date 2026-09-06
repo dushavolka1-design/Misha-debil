@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-
 from app.services.eval.policy import (
     filter_displayable_findings,
     text_has_forbidden_claim,

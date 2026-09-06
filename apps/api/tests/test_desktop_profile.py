@@ -73,10 +73,10 @@ def test_sqlite_migrate_and_queue_roundtrip(desktop_dir: Path) -> None:
     async def _run() -> None:
         assert await broker.ping()
         await broker.enqueue("dar-jobs", {"type": "scan", "document_id": "00000000-0000-0000-0000-000000000001"})
-        payload = await broker.pop("dar-jobs", timeout=0.2)
+        payload = await broker.pop("dar-jobs", wait_seconds=0.2)
         assert payload is not None
         assert payload["type"] == "scan"
-        empty = await broker.pop("dar-jobs", timeout=0.2)
+        empty = await broker.pop("dar-jobs", wait_seconds=0.2)
         assert empty is None
         await broker.aclose()
 

@@ -16,7 +16,7 @@ from app.services.auth_consent import (
     seed_demo_legal,
 )
 from app.services.upload.filename import sanitize_display_filename
-from app.services.upload.fsm import DocumentState, transition
+from app.services.upload.fsm import DocumentState, InvalidTransition, transition
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore, UploadError
 from app.services.upload.validation import DetectedType, harden_by_type, validate_upload
 
@@ -102,7 +102,7 @@ def test_sanitize_bidi_and_controls() -> None:
 
 
 def test_fsm_blocks_process_before_clean() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidTransition, match="QUARANTINED -> PROCESSING not allowed"):
         transition(DocumentState.QUARANTINED, DocumentState.PROCESSING)
 
 

@@ -639,7 +639,7 @@ def _deserialize_store(namespace: str, store: Any, attr: str, cls: type | None =
         return
     if namespace == "sources" and attr == "sources" and isinstance(payload, dict):
         restored_sources: dict[Any, SourceRecordMem] = {}
-        for key, raw in payload.items():
+        for _key, raw in payload.items():
             if not isinstance(raw, dict):
                 continue
             try:
@@ -653,7 +653,7 @@ def _deserialize_store(namespace: str, store: Any, attr: str, cls: type | None =
         return
     if namespace == "sources" and attr == "snapshots" and isinstance(payload, dict):
         restored_snaps: dict[Any, SnapshotRecord] = {}
-        for key, raw in payload.items():
+        for _key, raw in payload.items():
             if not isinstance(raw, dict):
                 continue
             try:
