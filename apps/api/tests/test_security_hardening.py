@@ -57,13 +57,13 @@ def test_rate_limiter_blocks() -> None:
 def test_idor_document_access() -> None:
     from dar.providers.fake import FakeKMSProvider, FakeMalwareScanner, InMemoryObjectStorage
 
+    from app.services.upload.fsm import DocumentState
     from app.services.upload.lifecycle import (
         DocumentLifecycleService,
         DocumentRecord,
         DocumentStore,
         UploadError,
     )
-    from app.services.upload.fsm import DocumentState
     from app.services.upload.retention import RetentionPolicy
 
     owner = uuid4()

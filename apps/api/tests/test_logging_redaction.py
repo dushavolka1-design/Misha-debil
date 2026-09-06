@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from dar.logging_utils import RedactingFilter
+
 from app.services.upload.safe_logging import DocumentSafeFilter
 
 

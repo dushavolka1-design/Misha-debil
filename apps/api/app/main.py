@@ -1,16 +1,17 @@
 from __future__ import annotations
 
-from collections.abc import AsyncIterator
-from contextlib import asynccontextmanager
-from pathlib import Path
 import asyncio
 import logging
 import os
+from collections.abc import AsyncIterator
+from contextlib import asynccontextmanager
+from pathlib import Path
 
 from dar.logging_utils import configure_logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
+from app.deps import ProviderBundle, build_providers
 from app.persistence.bootstrap import (
     attach_persistence,
     flush_persistence,
@@ -20,7 +21,6 @@ from app.persistence.bootstrap import (
 )
 from app.persistence.demo_seed import ensure_demo_account
 from app.persistence.middleware import PersistenceFlushMiddleware
-from app.deps import ProviderBundle, build_providers
 from app.routers import (
     analysis,
     auth,
@@ -42,10 +42,10 @@ from app.services.entry.engine import EntryWizardService
 from app.services.forms.catalog import FormCatalogService
 from app.services.forms.fill.service import FormFillService
 from app.services.forms.medical import MedicalSectionService
-from app.services.rules.feedback import FeedbackStore
-from app.services.sources.registry import SourceRegistry
-from app.services.sources.fetcher import guarded_httpx_fetch
 from app.services.jobs.consumer import run_queue_consumer
+from app.services.rules.feedback import FeedbackStore
+from app.services.sources.fetcher import guarded_httpx_fetch
+from app.services.sources.registry import SourceRegistry
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore
 from app.services.upload.retention import RetentionPolicy
 from app.services.upload.safe_logging import DocumentSafeFilter

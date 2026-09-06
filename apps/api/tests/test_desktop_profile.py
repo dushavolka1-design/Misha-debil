@@ -92,8 +92,9 @@ def test_sqlite_migrate_and_queue_roundtrip(desktop_dir: Path) -> None:
 
 
 def test_file_storage_persists_bytes(desktop_dir: Path) -> None:
-    from app.adapters.file_storage import FileObjectStorage
     import asyncio
+
+    from app.adapters.file_storage import FileObjectStorage
 
     storage = FileObjectStorage(root=desktop_dir / "objects")
 

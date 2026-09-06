@@ -2,6 +2,7 @@ from __future__ import annotations
 
 """Preview validation for form fill — length, alphabet, required, reserved fields."""
 
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -13,7 +14,6 @@ from app.services.forms.fill.coord_map import (
     ValueSource,
     format_value,
 )
-import re
 
 
 @dataclass

@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.services.rules.registry import RULES, RULES_BY_ID, REGISTRY_VERSION
+from app.services.rules.registry import REGISTRY_VERSION, RULES, RULES_BY_ID
 from app.services.rules.types import (
     ResultKind,
     RuleDef,

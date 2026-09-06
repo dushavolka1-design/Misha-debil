@@ -17,7 +17,7 @@ from app.services.auth_consent import (
     AuthConsentStore,
     seed_demo_legal,
 )
-from app.services.billing.service import BillingError, BillingService, PRICE_TABLE, utcnow
+from app.services.billing.service import PRICE_TABLE, BillingError, BillingService, utcnow
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"

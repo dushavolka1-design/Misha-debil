@@ -20,7 +20,6 @@ from app.services.analysis.pipeline import AnalysisPipelineService, AnalysisStat
 from app.services.analysis.schema import PIPELINE_VERSION
 from app.services.analysis.validate import SchemaValidationError, validate_finding
 
-
 ROOT = Path(__file__).resolve().parents[3]
 EXPECTED = json.loads((ROOT / "tests" / "fixtures" / "analysis" / "expected.json").read_text(encoding="utf-8"))
 

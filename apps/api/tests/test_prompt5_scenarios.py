@@ -8,8 +8,8 @@ from uuid import uuid4
 import pytest
 from dar.providers.unavailable_llm import UnavailableLLMProvider
 
-from app.services.analysis.pipeline import AnalysisError, AnalysisPipelineService, AnalysisStore
 from app.adapters.local_extract_ocr import LocalExtractOCRProvider
+from app.services.analysis.pipeline import AnalysisError, AnalysisPipelineService, AnalysisStore
 
 
 def _pdf(text: str) -> bytes:
@@ -104,8 +104,8 @@ def test_forms_catalog_fatal_is_503_with_correlation(tmp_path) -> None:
 
     from fastapi.testclient import TestClient
 
-    from app.desktop_boot import apply_desktop_env, migrate_sqlite
     from app.db import get_engine, get_session_factory
+    from app.desktop_boot import apply_desktop_env, migrate_sqlite
     from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
     from app.settings import get_settings
 

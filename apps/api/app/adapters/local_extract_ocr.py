@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dar.providers.ports import OCRProvider, OcrDocumentResult, StoredObject
+from dar.providers.ports import OcrDocumentResult, OCRProvider, StoredObject
 
 from app.services.analysis.document_extract import extract_document_pages
 

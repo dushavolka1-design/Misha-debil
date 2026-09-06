@@ -39,7 +39,7 @@ from app.services.auth_consent import (
     UserRecord,
 )
 from app.services.forms.catalog import FormRecord
-from app.services.sources.registry import SourceRecordMem, SnapshotRecord, SourceState
+from app.services.sources.registry import SnapshotRecord, SourceRecordMem, SourceState
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentRecord, DocumentStore, StoredBlobMeta
 from app.settings import get_settings
@@ -863,7 +863,7 @@ def flush_persistence(app_state: Any) -> None:
 def _load_form_fill_store(service: Any) -> None:
     from datetime import date
 
-    from app.services.forms.fill.coord_map import CoordinateMap, CoordField
+    from app.services.forms.fill.coord_map import CoordField, CoordinateMap
     from app.services.forms.fill.service import (
         CoordMapDraft,
         FormDraftRecord,

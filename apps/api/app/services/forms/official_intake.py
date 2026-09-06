@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.forms.fill.generation_gates import is_test_synthetic_slug, pdf_is_synthetic_underlay
 from app.services.forms.catalog import utcnow
+from app.services.forms.fill.generation_gates import is_test_synthetic_slug, pdf_is_synthetic_underlay
 
 # Candidate act known from the official RU legal corpus name only.
 # The blank itself must be fetched from an allowlisted official host and approved by humans.

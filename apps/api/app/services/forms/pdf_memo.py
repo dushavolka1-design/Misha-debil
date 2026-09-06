@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from typing import Any
 
-
 MEDICAL_PDF_BANNER = "Предварительная анкета/памятка. Не является медицинским документом."
 
 # Explicit denylist — backend must reject even if UI is bypassed

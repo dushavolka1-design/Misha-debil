@@ -13,7 +13,7 @@ from app.schemas_auth import (
     UploadGateResponse,
     WithdrawRequest,
 )
-from app.services.auth_consent import AuthConsentError, AuthConsentService, SPECIAL_MEDICAL
+from app.services.auth_consent import SPECIAL_MEDICAL, AuthConsentError, AuthConsentService
 
 router = APIRouter(prefix="/privacy", tags=["privacy"])
 

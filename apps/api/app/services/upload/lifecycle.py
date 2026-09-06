@@ -23,12 +23,11 @@ from app.services.upload.retention import (
 )
 from app.services.upload.validation import (
     DEFAULT_MAX_BYTES,
-    DetectedType,
     EXT_BY_TYPE,
+    DetectedType,
     harden_by_type,
     validate_upload,
 )
-
 
 PLAN_LIMITS: dict[str, dict[str, int]] = {
     "free": {"max_uploads_per_day": 20, "max_bytes": 10 * 1024 * 1024},

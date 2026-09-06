@@ -17,7 +17,7 @@ from app.schemas_analysis import (
     StartAnalysisResponse,
 )
 from app.schemas_rules import RuleHitOut
-from app.services.analysis.pipeline import AnalysisError, AnalysisPipelineService, AnalysisStatus, LOCAL_STEP_LABELS
+from app.services.analysis.pipeline import LOCAL_STEP_LABELS, AnalysisError, AnalysisPipelineService, AnalysisStatus
 from app.services.jobs.queue import enqueue_job
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentLifecycleService, UploadError

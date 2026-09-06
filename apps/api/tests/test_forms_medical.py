@@ -18,7 +18,7 @@ from app.services.auth_consent import (
     AuthConsentStore,
     seed_demo_legal,
 )
-from app.services.forms.catalog import FormCatalogService, FormError, MVP_MVD_CANDIDATE
+from app.services.forms.catalog import MVP_MVD_CANDIDATE, FormCatalogService, FormError
 from app.services.forms.medical import MedicalSectionService
 from app.services.forms.pdf_memo import (
     FORBIDDEN_MEDICAL_ARTIFACTS,

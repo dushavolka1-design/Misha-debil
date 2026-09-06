@@ -12,7 +12,6 @@ from app.services.sources.fetcher import FakeFetchScript
 from app.services.sources.registry import FetchResult, SourceRegistry
 from app.services.sources.url_policy import load_allowlist
 
-
 ALLOWLIST = str(Path(__file__).resolve().parents[3] / "sources" / "allowlist.json")
 
 

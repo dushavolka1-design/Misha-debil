@@ -9,8 +9,8 @@ from uuid import UUID, uuid4
 
 from app.services.forms.fill.coord_map import (
     BBox,
-    CoordinateMap,
     CoordField,
+    CoordinateMap,
     OverflowStrategy,
     ReservedFor,
     ValueSource,

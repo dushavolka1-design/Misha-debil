@@ -11,7 +11,6 @@ from uuid import UUID, uuid4
 
 from dar.providers.ports import PaymentProvider
 
-
 BILLING_ENGINE_VERSION = "billing.engine.v1"
 MAX_DUNNING_ATTEMPTS = 3
 WEBHOOK_RAW_RETENTION_DAYS = 30

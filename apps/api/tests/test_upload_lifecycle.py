@@ -18,7 +18,7 @@ from app.services.auth_consent import (
 from app.services.upload.filename import sanitize_display_filename
 from app.services.upload.fsm import DocumentState, transition
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore, UploadError
-from app.services.upload.validation import harden_by_type, validate_upload, DetectedType
+from app.services.upload.validation import DetectedType, harden_by_type, validate_upload
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"

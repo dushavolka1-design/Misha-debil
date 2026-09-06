@@ -2,10 +2,10 @@
 
 from __future__ import annotations
 
-from app.services.auth_consent import AuthConsentStore, UserRecord
-from app.security.crypto import hash_password, utcnow
-
 from uuid import UUID
+
+from app.security.crypto import hash_password, utcnow
+from app.services.auth_consent import AuthConsentStore, UserRecord
 
 DEMO_EMAIL = "demo@document-analyzer-rf.local"
 DEMO_TENANT = UUID("00000000-0000-4000-8000-000000000001")

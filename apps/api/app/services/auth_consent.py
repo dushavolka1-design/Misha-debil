@@ -17,7 +17,6 @@ from app.security.crypto import (
     verify_password,
 )
 
-
 EVIDENCE_SCHEMA = "consent_evidence.v1"
 
 REQUIRED_AT_REGISTRATION = (

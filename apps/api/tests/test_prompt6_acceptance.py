@@ -24,14 +24,14 @@ from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
 from app.security.rate_limit import rate_limiter
 from app.services.auth_consent import REQUIRED_AT_REGISTRATION
 from app.services.forms.catalog import FormRecord
+from app.services.forms.fill.engine import extract_static_text, fill_pdf, page_geometry
 from app.services.forms.fill.fonts import ASSETS, MANIFEST, bundled_font_status
 from app.services.forms.fill.generation_gates import SYNTHETIC_MARKER, pdf_is_synthetic_underlay
 from app.services.forms.fill.pixel_diff import TECHNICAL_TOLERANCE, compare_underlay_vs_output
-from app.services.forms.fill.engine import extract_static_text, fill_pdf, page_geometry
 from app.services.forms.fill.service import FormVersionRecord, GeneratedFormRecord
 from app.services.forms.pdf_memo import FORBIDDEN_MEDICAL_ARTIFACTS
-from app.settings import get_settings
 from app.services.upload.validation import validate_upload
+from app.settings import get_settings
 
 ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "artifacts" / "prompt6"

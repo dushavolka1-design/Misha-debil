@@ -19,8 +19,8 @@ from app.schemas_documents import (
     UploadLimitsResponse,
 )
 from app.services.analysis.pipeline import AnalysisPipelineService
-from app.services.jobs.queue import enqueue_job
 from app.services.auth_consent import AuthConsentError, AuthConsentService
+from app.services.jobs.queue import enqueue_job
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore, UploadError
 from app.services.upload.safe_logging import safe_error_payload

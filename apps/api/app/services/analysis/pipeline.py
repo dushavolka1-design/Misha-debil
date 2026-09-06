@@ -9,8 +9,8 @@ from uuid import UUID, uuid4
 from dar.providers.ports import LLMProvider, OCRProvider, StoredObject
 
 from app.services.analysis.document_extract import extract_document_pages
-from app.services.analysis.local_facts import ai_unavailable_finding, extract_local_facts
 from app.services.analysis.layout import detect_layout
+from app.services.analysis.local_facts import ai_unavailable_finding, extract_local_facts
 from app.services.analysis.normalize_pages import normalize_pages_from_ocr
 from app.services.analysis.normalizers import (
     normalize_date,

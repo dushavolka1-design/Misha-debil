@@ -7,7 +7,6 @@ import re
 from contextlib import contextmanager
 from typing import Iterator
 
-
 _FILENAME_RE = re.compile(r"(?i)(filename|original_name|display_name)\s*[:=]\s*\S+")
 _QUOTE_RE = re.compile(r"[«»\"'].{20,}[«»\"']")
 

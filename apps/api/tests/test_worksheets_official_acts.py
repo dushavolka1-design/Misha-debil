@@ -6,8 +6,8 @@ from pathlib import Path
 
 from fastapi.testclient import TestClient
 
-from app.desktop_boot import apply_desktop_env, migrate_sqlite
 from app.db import get_engine, get_session_factory
+from app.desktop_boot import apply_desktop_env, migrate_sqlite
 from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
 from app.security.rate_limit import rate_limiter
 from app.services.auth_consent import REQUIRED_AT_REGISTRATION

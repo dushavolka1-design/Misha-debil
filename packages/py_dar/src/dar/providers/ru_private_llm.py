@@ -4,7 +4,7 @@ import os
 from typing import Any
 from uuid import UUID
 
-from dar.providers.ports import LLMProvider, LlmAnalysisResult
+from dar.providers.ports import LlmAnalysisResult, LLMProvider
 
 
 class RuPrivateLLMProvider(LLMProvider):

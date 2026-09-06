@@ -17,8 +17,12 @@ from sqlalchemy import (
     String,
     Text,
     UniqueConstraint,
-    Uuid as UUID,
     func,
+)
+from sqlalchemy import (
+    Uuid as UUID,
+)
+from sqlalchemy import (
     text as sql_text,
 )
 from sqlalchemy.dialects.postgresql import JSONB as PG_JSONB

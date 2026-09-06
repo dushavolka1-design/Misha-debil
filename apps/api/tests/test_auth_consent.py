@@ -19,7 +19,6 @@ from app.services.auth_consent import (
     seed_demo_legal,
 )
 
-
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"
 

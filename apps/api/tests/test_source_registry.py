@@ -15,7 +15,6 @@ from app.services.sources.url_policy import (
     validate_url,
 )
 
-
 ROOT = Path(__file__).resolve().parents[3]
 ALLOWLIST = str(ROOT / "sources" / "allowlist.json")
 

@@ -15,7 +15,6 @@ from app.services.entry.pack import (
 )
 from app.services.sources.registry import SourceRegistry, SourceState
 
-
 DISCLAIMER = (
     "Информационный чеклист по утверждённым правилам. "
     "Сервис не обещает допуск через границу и не гарантирует принятие заявления. "
