@@ -2,7 +2,23 @@
 
 from __future__ import annotations
 
-FINDING_ITEM_SCHEMA: dict = {
+from typing import Literal, TypedDict
+
+
+class JsonSchema(TypedDict, total=False):
+    type: Literal["object", "array", "string", "integer", "number", "boolean"]
+    additionalProperties: bool
+    required: list[str]
+    properties: dict[str, JsonSchema]
+    items: JsonSchema
+    enum: list[str]
+    minLength: int
+    maxLength: int
+    minimum: int | float
+    maximum: int | float
+
+
+FINDING_ITEM_SCHEMA: JsonSchema = {
     "type": "object",
     "additionalProperties": False,
     "required": [
@@ -75,7 +91,7 @@ FINDING_ITEM_SCHEMA: dict = {
     },
 }
 
-FACTS_RESPONSE_SCHEMA: dict = {
+FACTS_RESPONSE_SCHEMA: JsonSchema = {
     "type": "object",
     "additionalProperties": False,
     "required": ["findings"],

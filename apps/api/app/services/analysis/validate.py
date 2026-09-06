@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+import math
 from typing import Any
 
-from app.services.analysis.schema import FACTS_RESPONSE_SCHEMA, FINDING_ITEM_SCHEMA
+from app.services.analysis.schema import FACTS_RESPONSE_SCHEMA, FINDING_ITEM_SCHEMA, JsonSchema
 
 
 class SchemaValidationError(ValueError):
@@ -11,7 +12,7 @@ class SchemaValidationError(ValueError):
         self.path = path
 
 
-def _type_ok(value: Any, expected: str) -> bool:
+def _type_ok(value: object, expected: str) -> bool:
     if expected == "object":
         return isinstance(value, dict)
     if expected == "array":
@@ -21,13 +22,17 @@ def _type_ok(value: Any, expected: str) -> bool:
     if expected == "integer":
         return isinstance(value, int) and not isinstance(value, bool)
     if expected == "number":
-        return isinstance(value, (int, float)) and not isinstance(value, bool)
+        return (
+            isinstance(value, (int, float))
+            and not isinstance(value, bool)
+            and (not isinstance(value, float) or math.isfinite(value))
+        )
     if expected == "boolean":
         return isinstance(value, bool)
-    return True
+    raise SchemaValidationError("unsupported schema type")
 
 
-def validate_against_schema(instance: Any, schema: dict, path: str = "$") -> None:
+def validate_against_schema(instance: object, schema: JsonSchema, path: str = "$") -> None:
     """Minimal JSON Schema subset: type, required, enum, additionalProperties=False, min/max."""
     if "type" in schema and not _type_ok(instance, schema["type"]):
         raise SchemaValidationError(f"type mismatch at {path}", path=path)
@@ -36,12 +41,14 @@ def validate_against_schema(instance: Any, schema: dict, path: str = "$") -> Non
         raise SchemaValidationError(f"enum mismatch at {path}", path=path)
 
     if schema.get("type") == "string":
+        assert isinstance(instance, str)
         if "minLength" in schema and len(instance) < schema["minLength"]:
             raise SchemaValidationError(f"minLength at {path}", path=path)
         if "maxLength" in schema and len(instance) > schema["maxLength"]:
             raise SchemaValidationError(f"maxLength at {path}", path=path)
 
     if schema.get("type") == "number" or schema.get("type") == "integer":
+        assert isinstance(instance, (int, float))
         if "minimum" in schema and instance < schema["minimum"]:
             raise SchemaValidationError(f"minimum at {path}", path=path)
         if "maximum" in schema and instance > schema["maximum"]:
@@ -58,7 +65,7 @@ def validate_against_schema(instance: Any, schema: dict, path: str = "$") -> Non
             extras = set(instance) - set(props)
             if extras:
                 raise SchemaValidationError(
-                    f"additional properties not allowed at {path}: {sorted(extras)}",
+                    f"additional properties not allowed at {path}",
                     path=path,
                 )
         for key, child in instance.items():
@@ -73,17 +80,17 @@ def validate_against_schema(instance: Any, schema: dict, path: str = "$") -> Non
                 validate_against_schema(item, item_schema, f"{path}[{i}]")
 
 
-def validate_finding(finding: dict) -> None:
+def validate_finding(finding: object) -> None:
     validate_against_schema(finding, FINDING_ITEM_SCHEMA)
 
 
-def validate_facts_payload(payload: dict) -> None:
+def validate_facts_payload(payload: object) -> None:
     validate_against_schema(payload, FACTS_RESPONSE_SCHEMA)
 
 
-def reject_invalid_llm_findings(findings: list[dict]) -> tuple[list[dict], list[str]]:
+def reject_invalid_llm_findings(findings: list[dict[str, Any]]) -> tuple[list[dict[str, Any]], list[str]]:
     """Return only schema-valid findings; do not silently repair."""
-    ok: list[dict] = []
+    ok: list[dict[str, Any]] = []
     rejected: list[str] = []
     for i, f in enumerate(findings):
         try:
