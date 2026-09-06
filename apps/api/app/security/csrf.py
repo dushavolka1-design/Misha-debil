@@ -5,6 +5,8 @@ Full double-submit token: CSRF_DOUBLE_SUBMIT_NEEDS_REVIEW — tracked as blocker
 
 from __future__ import annotations
 
+from urllib.parse import urlsplit
+
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
@@ -36,7 +38,12 @@ class OriginCheckMiddleware(BaseHTTPMiddleware):
                     content={"code": "csrf_origin_rejected", "detail": "Origin not allowed"},
                 )
         elif referer:
-            if not any(referer.startswith(a) for a in self.allowed):
+            try:
+                parsed = urlsplit(referer)
+                referer_origin = f"{parsed.scheme}://{parsed.netloc}"
+            except ValueError:
+                referer_origin = ""
+            if referer_origin not in self.allowed:
                 return JSONResponse(
                     status_code=403,
                     content={"code": "csrf_referer_rejected", "detail": "Referer not allowed"},
