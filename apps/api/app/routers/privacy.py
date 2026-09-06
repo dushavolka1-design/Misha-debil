@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request
@@ -13,7 +14,7 @@ from app.schemas_auth import (
     UploadGateResponse,
     WithdrawRequest,
 )
-from app.services.auth_consent import SPECIAL_MEDICAL, AuthConsentError, AuthConsentService
+from app.services.auth_consent import SPECIAL_MEDICAL, AuthConsentError, AuthConsentService, UserRecord
 
 router = APIRouter(prefix="/privacy", tags=["privacy"])
 
@@ -25,7 +26,7 @@ def _http(exc: AuthConsentError) -> HTTPException:
 @router.get("/dashboard", response_model=PrivacyDashboardResponse)
 async def dashboard(
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> PrivacyDashboardResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
@@ -38,7 +39,7 @@ async def accept_consent(
     body: ConsentActionRequest,
     request: Request,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MessageResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
@@ -66,7 +67,7 @@ async def withdraw_consent(
     body: WithdrawRequest,
     request: Request,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MessageResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
@@ -89,14 +90,14 @@ async def withdraw_consent(
 
 
 @router.get("/consents/medical/consequences")
-async def medical_consequences(service: AuthConsentService = Depends(get_auth_service)) -> dict:
+async def medical_consequences(service: AuthConsentService = Depends(get_auth_service)) -> dict[str, Any]:
     return service.medical_withdraw_consequences()
 
 
 @router.post("/export-request", response_model=MessageResponse)
 async def export_request(
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MessageResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
@@ -108,7 +109,7 @@ async def export_request(
 @router.post("/delete-request", response_model=MessageResponse)
 async def delete_request(
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MessageResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
@@ -120,7 +121,7 @@ async def delete_request(
 async def upload_gate(
     body: UploadGateRequest,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> UploadGateResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
