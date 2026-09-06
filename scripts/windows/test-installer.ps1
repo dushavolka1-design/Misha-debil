@@ -44,8 +44,19 @@ function Check-Shortcut([string]$Path, [string]$Label) {
   Check (Test-Path -LiteralPath $Path) "$Label exists"
   $shell = New-Object -ComObject WScript.Shell
   $shortcut = $shell.CreateShortcut($Path)
+  $expectedArguments = '"' + (Join-Path $install 'scripts\windows\launch-installed.vbs') + '"'
+  # Synthetic acceptance paths only; preserve actual values before asserting.
+  $evidence = [ordered]@{
+    label = $Label
+    target = $shortcut.TargetPath
+    arguments = $shortcut.Arguments
+    expectedArguments = $expectedArguments
+    workingDirectory = $shortcut.WorkingDirectory
+    expectedWorkingDirectory = $install
+  } | ConvertTo-Json -Compress
+  Write-Host "Shortcut evidence: $evidence"
   Check ($shortcut.TargetPath -eq "$env:WINDIR\System32\wscript.exe") "$Label uses Windows script host"
-  Check ($shortcut.Arguments -eq ('"' + (Join-Path $install 'scripts\windows\launch-installed.vbs') + '"')) "$Label targets installed launcher"
+  Check ($shortcut.Arguments -eq $expectedArguments) "$Label targets installed launcher"
   Check ($shortcut.WorkingDirectory -eq $install) "$Label working directory"
 }
 function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string]$ExpectedSource, [string]$Tasks = '') {
