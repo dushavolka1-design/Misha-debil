@@ -5,6 +5,11 @@ on:
     branches: [fix/docly-desktop-upgrade-safety]
     paths:
       - '.github/workflows/docly-desktop-verification.yml'
+      - 'apps/**'
+      - 'packages/**'
+      - 'scripts/windows/**'
+      - 'pnpm-*'
+      - 'package.json'
   workflow_dispatch:
 
 permissions:
