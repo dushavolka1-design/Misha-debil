@@ -21,10 +21,10 @@ jobs:
               const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, per_page: 4});
               for (const [index, run] of runs.data.workflow_runs.entries()) {
                 sections.push(`- ${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
-                if (index > 0) continue;
+                if (index > 1) continue;
                 const jobs = await github.rest.actions.listJobsForWorkflowRun({...repo, run_id: run.id, per_page: 100});
                 for (const job of jobs.data.jobs) {
-                  const failed = job.steps?.filter(s => s.conclusion === 'failure').map(s => s.name).join(', ');
+                  const failed = job.steps?.filter(s => s.conclusion === 'failure' || s.status === 'in_progress').map(s => `${s.name} (${s.status}/${s.conclusion || 'pending'})`).join(', ');
                   sections.push(`  - ${job.name}: ${job.status}/${job.conclusion || 'pending'}; failed steps: ${failed || 'none'}; ${job.html_url}`);
                   if (job.conclusion !== 'failure') continue;
                   try {
