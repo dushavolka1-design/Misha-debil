@@ -37,6 +37,18 @@ class ProfileBackupError(RuntimeError):
     """A snapshot cannot be trusted; the caller must not start an upgrade."""
 
 
+def _flush(path: Path) -> None:
+    # Windows _commit/FlushFileBuffers requires a writable handle. These are
+    # private staging copies, not source profile files; retain read-only mode.
+    mode = path.stat().st_mode
+    try:
+        path.chmod(mode | stat.S_IWUSR)
+        with path.open("r+b") as stream:
+            os.fsync(stream.fileno())
+    finally:
+        path.chmod(mode)
+
+
 def _hash(path: Path) -> str:
     with path.open("rb") as stream:
         return hashlib.file_digest(stream, "sha256").hexdigest()
@@ -207,8 +219,7 @@ def create_profile_backup(
         verify_profile_backup(stage)
         for path in stage.rglob("*"):
             if path.is_file():
-                with path.open("rb") as stream:
-                    os.fsync(stream.fileno())
+                _flush(path)
         stage.rename(final)
         return final
     except BaseException:
