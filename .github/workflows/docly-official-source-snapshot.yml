@@ -85,7 +85,7 @@ jobs:
     timeout-minutes: 3
     permissions:
       contents: read
-      issues: write
+      pull-requests: write
     steps:
       - name: Report acquisition separately from legal and pixel acceptance
         env:

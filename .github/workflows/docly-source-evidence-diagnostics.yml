@@ -17,7 +17,7 @@ jobs:
     permissions:
       contents: read
       actions: read
-      issues: write
+      pull-requests: write
     steps:
       - name: Inspect the original acquisition run without executing repository code
         env:

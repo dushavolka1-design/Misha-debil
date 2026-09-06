@@ -63,7 +63,7 @@ jobs:
           set -euo pipefail
           mkdir -p ../../artifacts/python-runtime
           python -m pytest -q -ra tests ../../tests/smoke/test_migrations.py ../../tests/smoke/test_health.py ../../packages/py_dar/tests --junitxml=../../artifacts/python-runtime/full.xml 2>&1 | tee ../../artifacts/python-runtime/full.log
-      - name: Identify incomplete cases from actual JUnit evidence
+      - name: Reject incomplete cases from actual JUnit evidence
         if: always()
         run: |
           set -euo pipefail
@@ -72,20 +72,25 @@ jobs:
           from pathlib import Path
           import xml.etree.ElementTree as ET
           root = Path('artifacts/python-runtime')
+          incomplete = False
           for name in ('focused', 'full'):
               path = root / f'{name}.xml'
               if not path.is_file():
                   print(f'{name}: MISSING JUnit report; not accepted')
+                  incomplete = True
                   continue
               report = ET.parse(path).getroot()
               cases = list(report.iter('testcase'))
               skipped = [case for case in cases if case.find('skipped') is not None]
               failures = sum(case.find('failure') is not None for case in cases)
               errors = sum(case.find('error') is not None for case in cases)
+              incomplete |= not cases or bool(skipped) or failures > 0 or errors > 0
               print(f'{name}: cases={len(cases)}, failures={failures}, errors={errors}, skipped={len(skipped)}')
               for case in skipped:
                   reason = case.find('skipped')
                   print(f"INCOMPLETE: {case.get('classname')}.{case.get('name')}: {reason.get('message', '')}")
+          if incomplete:
+              raise SystemExit('Runtime evidence is incomplete or unsuccessful; acceptance blocked')
           PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
