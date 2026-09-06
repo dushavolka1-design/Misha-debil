@@ -29,6 +29,8 @@ jobs:
         run: |
           set -euo pipefail
           git fetch origin main backup-before-merge
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           if ! git merge-base HEAD origin/main >/dev/null; then
             expected=d4e6da60507efb3f6aed78a1dd8ccd294e453386
             test "$(git rev-parse origin/main)" = "$expected"
@@ -59,6 +61,7 @@ jobs:
     permissions:
       contents: read
       checks: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,6 +115,11 @@ jobs:
               .filter(path => fs.existsSync(path))
               .map(path => `### ${path}\n\n\`\`\`text\n${fs.readFileSync(path, 'utf8').slice(-12000)}\n\`\`\``)
               .join('\n\n');
+            const summary = logs || 'See workflow run for setup or regression-test failure.';
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: 1,
+              body: `## Desktop verification: ${process.env.JOB_STATUS}\n\nCommit: ${process.env.TESTED_SHA}\n\nSource setup and launcher only; installer lifecycle NOT verified.\n\n${summary}`
+            });
             await github.rest.checks.create({
               owner: context.repo.owner, repo: context.repo.repo,
               name: 'Docly desktop verification evidence',
