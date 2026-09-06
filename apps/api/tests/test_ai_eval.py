@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-from pathlib import Path
 
 from app.services.eval.policy import (
     filter_displayable_findings,

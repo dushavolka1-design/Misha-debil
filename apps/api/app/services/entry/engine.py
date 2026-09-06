@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import UTC, date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from app.services.entry.deadlines import DeadlineResult, calculate_deadline
+from app.services.entry.deadlines import calculate_deadline
 from app.services.entry.pack import (
     APPROVED_VISA_REGIMES,
     DECISION_RULES,

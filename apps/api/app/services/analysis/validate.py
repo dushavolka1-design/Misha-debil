@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from typing import Any
 
 from app.services.analysis.schema import FACTS_RESPONSE_SCHEMA, FINDING_ITEM_SCHEMA

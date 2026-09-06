@@ -16,7 +16,7 @@ from app.schemas_sources import (
     SnapshotOut,
     SourceOut,
 )
-from app.services.sources.registry import SourceError, SourceRegistry, SourceState
+from app.services.sources.registry import SourceError, SourceRegistry
 from app.services.sources.url_policy import load_allowlist
 
 router = APIRouter(prefix="/sources", tags=["sources"])

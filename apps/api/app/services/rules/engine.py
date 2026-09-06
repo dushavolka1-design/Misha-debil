@@ -3,12 +3,10 @@ from __future__ import annotations
 import re
 from typing import Any
 
-from app.services.rules.registry import REGISTRY_VERSION, RULES, RULES_BY_ID
+from app.services.rules.registry import REGISTRY_VERSION, RULES
 from app.services.rules.types import (
-    ResultKind,
     RuleDef,
     RuleHit,
-    Severity,
     Uncertainty,
     assert_safe_message,
 )

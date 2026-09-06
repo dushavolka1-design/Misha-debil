@@ -299,7 +299,7 @@ def test_medical_upload_gate_blocks(client: TestClient, store: AuthConsentStore)
     # verify + login
     # find user token from last register response — re-register won't work; use service path via store
     # Login after manually verifying
-    from app.security.crypto import hash_token, utcnow
+    from app.security.crypto import utcnow
 
     user_id = store.users_by_email["med@example.com"]
     store.users[user_id].email_verified_at = utcnow()

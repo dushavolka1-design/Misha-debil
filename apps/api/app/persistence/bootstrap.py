@@ -4,7 +4,7 @@ import json
 import logging
 from collections.abc import Callable
 from dataclasses import asdict, fields
-from datetime import UTC, datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 from uuid import UUID
 
@@ -15,7 +15,6 @@ from app.models import (
     AppStateBlob,
     ConsentEvent,
     Document,
-    DocumentFile,
     LegalDocument,
     Session,
     User,
