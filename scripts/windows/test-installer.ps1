@@ -8,12 +8,12 @@ $install = Join-Path $work 'Application'
 New-Item -ItemType Directory -Path $work | Out-Null
 $env:LOCALAPPDATA = Join-Path $work 'Profile Local'
 $env:DOCLY_DATA_DIR = Join-Path $env:LOCALAPPDATA 'Docly\data'
-$env:DOCLY_RUNTIME_DIR = Join-Path $env:LOCALAPPDATA 'Docly\Docly\runtime'
+$env:DOCLY_RUNTIME_DIR = Join-Path $env:LOCALAPPDATA 'Docly\runtime'
 $env:DOCLY_NO_BROWSER = '1'
 $env:DOCLY_HEADLESS = '1'
 $env:PYTHONDONTWRITEBYTECODE = '1'
 # Neither system Python nor system Node is available to the installed launcher.
-$env:PATH = "$env:WINDIR\System32;$env:WINDIR'
+$env:PATH = "$env:WINDIR\System32;$env:WINDIR"
 $py = Join-Path $install 'apps\api\.venv\Scripts\python.exe'
 $launcher = Join-Path $install 'scripts\windows\docly_launcher.py'
 $desktopShortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Docly.lnk'
