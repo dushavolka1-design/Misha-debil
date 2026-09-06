@@ -1,0 +1,43 @@
+name: Docly CI diagnostics
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths: ['.github/workflows/docly-ci-diagnostics.yml']
+  workflow_dispatch:
+permissions:
+  actions: read
+  pull-requests: write
+jobs:
+  report:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const sections = [];
+            for (const workflow_id of ['docly-desktop-verification.yml', 'ci.yml']) {
+              const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, per_page: 4});
+              for (const [index, run] of runs.data.workflow_runs.entries()) {
+                sections.push(`- ${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
+                if (index > 0) continue;
+                const jobs = await github.rest.actions.listJobsForWorkflowRun({...repo, run_id: run.id, per_page: 100});
+                for (const job of jobs.data.jobs) {
+                  const failed = job.steps?.filter(s => s.conclusion === 'failure').map(s => s.name).join(', ');
+                  sections.push(`  - ${job.name}: ${job.status}/${job.conclusion || 'pending'}; failed steps: ${failed || 'none'}; ${job.html_url}`);
+                  if (job.conclusion !== 'failure') continue;
+                  try {
+                    const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...repo, job_id: job.id});
+                    const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                    const lines = text.split('\n');
+                    const index = lines.findIndex(line => line.includes('##[error]'));
+                    const excerpt = (index >= 0 ? lines.slice(Math.max(0, index - 50), index + 8).join('\n') : text.slice(-6000)).slice(-8000);
+                    sections.push(`\n\`\`\`text\n${excerpt}\n\`\`\`\n`);
+                  } catch (error) {
+                    sections.push(`Log retrieval failed: ${error.message}`);
+                  }
+                }
+              }
+            }
+            await github.rest.issues.createComment({...repo, issue_number: 1, body: '## Current CI diagnostics\n\n' + sections.join('\n')});
