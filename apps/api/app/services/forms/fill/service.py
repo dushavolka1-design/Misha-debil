@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Form fill service: immutable FormVersion, four-eyes publish, GeneratedForm audit."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone

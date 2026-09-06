@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Output policy for AI findings — block unsupported legal/medical claims."""
+
+from __future__ import annotations
 
 import re
 from typing import Any

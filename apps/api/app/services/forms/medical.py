@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Medical section — approved sources only; never forge medical org documents."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date, datetime, timezone

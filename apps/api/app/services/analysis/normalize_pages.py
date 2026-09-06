@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Page normalization metadata — originals are never mutated."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256

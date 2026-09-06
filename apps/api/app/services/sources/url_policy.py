@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Deny-by-default official URL validator (SSRF / redirect / IDN safe)."""
+
+from __future__ import annotations
 
 import ipaddress
 import json

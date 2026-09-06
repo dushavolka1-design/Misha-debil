@@ -1,9 +1,9 @@
-from __future__ import annotations
-
 """Origin / Referer check for cookie-authenticated state changes (CSRF mitigation).
 
 Full double-submit token: CSRF_DOUBLE_SUBMIT_NEEDS_REVIEW — tracked as blocker B-06.
 """
+
+from __future__ import annotations
 
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.requests import Request

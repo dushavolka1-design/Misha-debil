@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Analytic report builder — PDF/JSON. No legal verdict language."""
+
+from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field

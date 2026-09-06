@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Strict JSON Schema for LLM fact extraction. Extra fields are rejected."""
+
+from __future__ import annotations
 
 FINDING_ITEM_SCHEMA: dict = {
     "type": "object",

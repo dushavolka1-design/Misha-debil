@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Coordinate map schema for pixel-perfect form fill."""
+
+from __future__ import annotations
 
 import hashlib
 import json

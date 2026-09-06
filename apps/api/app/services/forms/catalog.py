@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Form catalog — publish only with approved official source + verified raw hash."""
+
+from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field

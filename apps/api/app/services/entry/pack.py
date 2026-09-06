@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Versioned entry decision rules — separate from UI. No invented universal foreigner list."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import date

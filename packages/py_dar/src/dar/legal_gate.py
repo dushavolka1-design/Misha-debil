@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Production legal package gate (shared)."""
+
+from __future__ import annotations
 
 import json
 import re

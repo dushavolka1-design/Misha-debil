@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Synthetic AI eval harness — gates release on unsupported claims & citation coverage."""
+
+from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field

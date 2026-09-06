@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """API-facing legal package helpers — re-export gate + seed map."""
+
+from __future__ import annotations
 
 from dar.legal_gate import (
     DEFAULT_PLACEHOLDERS,

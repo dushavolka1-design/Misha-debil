@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Preview validation for form fill — length, alphabet, required, reserved fields."""
+
+from __future__ import annotations
 
 import re
 from dataclasses import dataclass, field

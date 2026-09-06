@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Build immutable A4 PDFs for test underlays and the service medical memo."""
+
+from __future__ import annotations
 
 import hashlib
 import io

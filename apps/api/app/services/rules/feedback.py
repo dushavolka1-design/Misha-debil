@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Append-only feedback — never mutates analysis results."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass, field
 from datetime import datetime, timezone

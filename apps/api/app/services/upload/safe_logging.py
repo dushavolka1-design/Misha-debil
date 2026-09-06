@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Helpers that keep sensitive document content out of logs/errors."""
+
+from __future__ import annotations
 
 import logging
 import re

@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Pixel-perfect form fill API — separate prefix to avoid /forms/{uuid} clashes."""
+
+from __future__ import annotations
 
 from uuid import UUID
 

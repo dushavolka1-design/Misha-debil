@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Form fill engine — clone underlay, overlay text only in approved bboxes."""
+
+from __future__ import annotations
 
 import hashlib
 import io

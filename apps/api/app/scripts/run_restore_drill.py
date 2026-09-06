@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Restore drill dry-run evidence (synthetic). Staging sign-off still required."""
+
+from __future__ import annotations
 
 import json
 from datetime import datetime, timezone

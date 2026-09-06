@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Privacy deletion + log canary drill — writes evidence under artifacts/drills/."""
+
+from __future__ import annotations
 
 import json
 import logging

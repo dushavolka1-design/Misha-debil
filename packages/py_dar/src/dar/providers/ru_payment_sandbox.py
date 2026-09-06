@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """Russian payment sandbox adapter — NO production API calls without credentials + contract.
 
 Mimics a RU PSP (YooKassa-like) webhook/signature shape for local/test.
 Production live mode requires RU_PAYMENT_SHOP_ID + RU_PAYMENT_SECRET + approved offer.
 """
+
+from __future__ import annotations
 
 import hashlib
 import hmac

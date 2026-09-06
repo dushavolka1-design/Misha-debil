@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Document comparison with ownership isolation and dual citations."""
+
+from __future__ import annotations
 
 import hashlib
 import re

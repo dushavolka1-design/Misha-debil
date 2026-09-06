@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Versioned general-purpose rule registry. Not universal legal advice."""
+
+from __future__ import annotations
 
 from app.services.rules.types import ResultKind, RuleDef, RuleTestCase, Severity, Uncertainty
 

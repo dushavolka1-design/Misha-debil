@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Deadline calculator — never pretends complex legal calendars are a single integer."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta

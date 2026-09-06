@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Pixel-diff report for form fill CI — mask approved bboxes; outside ≈ 0."""
+
+from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field

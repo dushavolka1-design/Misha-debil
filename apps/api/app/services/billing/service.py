@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Server-side subscription/billing — price table never trusted from client."""
+
+from __future__ import annotations
 
 import hashlib
 import hmac
