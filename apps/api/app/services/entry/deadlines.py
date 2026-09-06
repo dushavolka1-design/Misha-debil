@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Mapping
 from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from enum import StrEnum
@@ -49,7 +50,7 @@ def calculate_deadline(
     anchor: date | None,
     timezone: str = "Europe/Moscow",
     region_code: str | None = None,
-    context: dict | None = None,
+    context: Mapping[str, object] | None = None,
 ) -> DeadlineResult:
     """
     Parse expressions like:
