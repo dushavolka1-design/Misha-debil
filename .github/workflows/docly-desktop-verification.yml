@@ -1,0 +1,124 @@
+name: Docly desktop integration verification
+
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths:
+      - '.github/workflows/docly-desktop-verification.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrate-history:
+    if: github.ref == 'refs/heads/fix/docly-desktop-upgrade-safety'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      contents: write
+    outputs:
+      head: ${{ steps.integrate.outputs.head }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Preserve both histories on the integration branch only
+        id: integrate
+        shell: bash
+        run: |
+          set -euo pipefail
+          git fetch origin main backup-before-merge
+          if ! git merge-base HEAD origin/main >/dev/null; then
+            expected=d4e6da60507efb3f6aed78a1dd8ccd294e453386
+            test "$(git rev-parse origin/main)" = "$expected"
+            test "$(git rev-parse origin/backup-before-merge)" = "$expected"
+            mkdir -p docs/integration
+            git show origin/main:README.md > docs/integration/legacy-main-README.md
+            if ! git merge --no-commit --no-ff --allow-unrelated-histories origin/main; then
+              conflicts="$(git diff --name-only --diff-filter=U)"
+              if test "$conflicts" != README.md; then
+                echo 'Unexpected conflicts; no changes will be pushed.' >&2
+                exit 1
+              fi
+              git checkout --ours -- README.md
+              git add README.md
+            fi
+            git add docs/integration/legacy-main-README.md
+            git -c user.name='github-actions[bot]' \
+                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
+                commit -m 'merge: preserve main history and archive its original README'
+            git push origin HEAD:refs/heads/fix/docly-desktop-upgrade-safety
+          fi
+          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
+
+  desktop:
+    needs: integrate-history
+    runs-on: windows-latest
+    timeout-minutes: 40
+    permissions:
+      contents: read
+      checks: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ needs.integrate-history.outputs.head }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+      - name: Real SQLite backup regressions on Windows
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = Join-Path $pwd 'apps/api'
+          python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Prepare production desktop from clean checkout
+        shell: powershell
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup-desktop.ps1 *>&1 | Tee-Object -FilePath desktop-setup.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path apps/web/.next/BUILD_ID)) { throw 'Production web build missing' }
+      - name: Real desktop launcher acceptance
+        shell: powershell
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-launcher.ps1 *>&1 | Tee-Object -FilePath desktop-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload diagnostic logs (not a release)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-verification-logs
+          path: |
+            desktop-setup.log
+            desktop-tests.log
+          if-no-files-found: warn
+      - name: Attach verification result to the tested commit
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          TESTED_SHA: ${{ needs.integrate-history.outputs.head }}
+          JOB_STATUS: ${{ job.status }}
+        with:
+          script: |
+            const fs = require('fs');
+            const logs = ['desktop-setup.log', 'desktop-tests.log']
+              .filter(path => fs.existsSync(path))
+              .map(path => `### ${path}\n\n\`\`\`text\n${fs.readFileSync(path, 'utf8').slice(-12000)}\n\`\`\``)
+              .join('\n\n');
+            await github.rest.checks.create({
+              owner: context.repo.owner, repo: context.repo.repo,
+              name: 'Docly desktop verification evidence',
+              head_sha: process.env.TESTED_SHA, status: 'completed',
+              conclusion: process.env.JOB_STATUS === 'success' ? 'success' : 'failure',
+              output: {
+                title: 'Source setup and launcher only; installer lifecycle NOT verified',
+                summary: logs || 'See workflow run for setup or regression-test failure.'
+              }
+            });
