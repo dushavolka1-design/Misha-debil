@@ -61,11 +61,11 @@ async def worker_lifespan(*, legal_root: str) -> AsyncIterator[ProviderBundle]:
     state.analysis_store = analysis_store
     state.auth_store = store
 
-    load_persistence(state)  # type: ignore[arg-type]
+    load_persistence(state)
     seed_demo_legal(store, legal_root)
-    attach_persistence(state)  # type: ignore[arg-type]
+    attach_persistence(state)
     mark_auth_dirty()
-    flush_persistence(state)  # type: ignore[arg-type]
+    flush_persistence(state)
 
     stop = asyncio.Event()
     task = asyncio.create_task(
@@ -76,7 +76,7 @@ async def worker_lifespan(*, legal_root: str) -> AsyncIterator[ProviderBundle]:
             analysis_service=analysis_service,
             max_analysis_pages=settings.max_analysis_pages,
             demo_mode=settings.demo_mode,
-            flush_persistence=lambda: flush_persistence(state),  # type: ignore[arg-type]
+            flush_persistence=lambda: flush_persistence(state),
             stop=stop,
         ),
     )
@@ -89,5 +89,5 @@ async def worker_lifespan(*, legal_root: str) -> AsyncIterator[ProviderBundle]:
             await task
         except asyncio.CancelledError:
             pass
-        flush_persistence(state)  # type: ignore[arg-type]
+        flush_persistence(state)
         await bundle.redis.aclose()
