@@ -15,7 +15,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     steps:
-      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
         with:
           fetch-depth: 0
       - name: Refresh all branch and tag refs without pruning
@@ -29,7 +29,8 @@ jobs:
           name: all-branch-template-inventory
           path: artifacts/template-audit/inventory.json
           if-no-files-found: error
-      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+      - name: Collect actual checks, artifacts and failed job logs
+        uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         if: always()
         env:
           INVENTORY_URL: ${{ steps.inventory.outputs.artifact-url }}
@@ -37,28 +38,34 @@ jobs:
           script: |
             const fs = require('fs');
             const repo = {owner: context.repo.owner, repo: context.repo.repo};
-            const sections = [`Audit run: ${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`, `Inventory artifact: ${process.env.INVENTORY_URL || 'unavailable'}`];
+            const dir = 'artifacts/ci-diagnostics';
+            fs.mkdirSync(dir, {recursive: true});
+            const sections = [`Audit commit: ${context.sha}`, `Run: ${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`, `Inventory: ${process.env.INVENTORY_URL || 'unavailable'}`];
             if (fs.existsSync('artifacts/template-audit/inventory.json')) {
               const data = JSON.parse(fs.readFileSync('artifacts/template-audit/inventory.json', 'utf8'));
               sections.push('Branch/tag refs: ' + JSON.stringify(data.refs));
-              sections.push('Complete file index entries: ' + data.files.length);
-              const paths = [...new Set(data.files.filter(x => x.candidate && /forms|template|worksheet|fixture|pixel/i.test(x.path)).map(x => x.path))];
-              sections.push('Candidate paths (not verified official forms):\n' + paths.join('\n'));
+              sections.push('Indexed file entries: ' + data.files.length + '. Candidates are not verified official forms.');
             }
-            for (const workflow_id of ['docly-desktop-verification.yml', 'ci.yml', 'docly-launcher-safety.yml']) {
-              const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, branch: 'fix/docly-desktop-upgrade-safety', per_page: 3});
+            const records = [];
+            const workflows = ['ci.yml', 'docly-desktop-verification.yml', 'docly-launcher-safety.yml', 'docly-worker-regressions.yml', 'docly-security-regressions.yml', 'docly-quality-repair.yml', 'docly-profile-backup.yml'];
+            for (const workflow_id of workflows) {
+              const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, branch: 'fix/docly-desktop-upgrade-safety', per_page: 2});
               for (const run of runs.data.workflow_runs) {
-                sections.push(`\n${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
                 const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...repo, run_id: run.id, per_page: 100});
+                const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {...repo, run_id: run.id, per_page: 100});
+                records.push({workflow_id, run, jobs, artifacts});
+                sections.push(`\n${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
+                for (const artifact of artifacts) sections.push(`Artifact ${artifact.name}: ${run.html_url}/artifacts/${artifact.id}`);
                 for (const job of jobs) {
                   sections.push(`- ${job.name}: ${job.status}/${job.conclusion || 'pending'}; ${job.html_url}`);
                   if (job.conclusion !== 'failure') continue;
                   try {
                     const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...repo, job_id: job.id});
                     const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                    fs.writeFileSync(`${dir}/${run.id}-${job.id}.log`, text);
                     const lines = text.split('\n');
                     const index = lines.findIndex(line => line.includes('##[error]'));
-                    const excerpt = (index >= 0 ? lines.slice(Math.max(0, index - 45), index + 8).join('\n') : text.slice(-5000)).slice(-6000);
+                    const excerpt = (index >= 0 ? lines.slice(Math.max(0, index - 100), index + 8).join('\n') : text.slice(-9000)).slice(-12000);
                     sections.push(`\n\`\`\`text\n${excerpt}\n\`\`\`\n`);
                   } catch (error) {
                     sections.push(`Log retrieval failed: ${error.message}`);
@@ -66,4 +73,14 @@ jobs:
                 }
               }
             }
-            await github.rest.issues.createComment({...repo, issue_number: 1, body: ('## Current CI and template inventory diagnostics\n\n' + sections.join('\n')).slice(0, 60000)});
+            fs.writeFileSync(`${dir}/runs.json`, JSON.stringify(records, null, 2));
+            const report = sections.join('\n');
+            fs.writeFileSync(`${dir}/report.md`, report);
+            await github.rest.issues.createComment({...repo, issue_number: 1, body: ('## Current checks and artifacts (not a release approval)\n\n' + report).slice(0, 59000) + '\n\nFull metadata/report and available failed logs are retained in the ci-diagnostics artifact of this audit run. In-progress, skipped and cancelled checks are not successful acceptance.'});
+      - name: Preserve complete diagnostics rather than only comment excerpts
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: ci-diagnostics
+          path: artifacts/ci-diagnostics/
+          if-no-files-found: error
