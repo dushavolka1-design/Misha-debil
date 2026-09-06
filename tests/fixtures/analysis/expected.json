@@ -3,12 +3,20 @@
     {
       "entity_type": "doc.title",
       "raw_text": "ДОГОВОР АРЕНДЫ № 12/2026",
-      "citation": {"page": 1, "bbox": {"x": 72, "y": 72, "w": 400, "h": 18}, "quote": "ДОГОВОР АРЕНДЫ № 12/2026"}
+      "citation": {
+        "page": 1,
+        "bbox": { "x": 72, "y": 72, "w": 400, "h": 18 },
+        "quote": "ДОГОВОР АРЕНДЫ № 12/2026"
+      }
     },
     {
       "entity_type": "party.identifier",
       "raw_text": "ИНН 7707083893",
-      "citation": {"page": 1, "bbox": {"x": 72, "y": 110, "w": 420, "h": 14}, "quote": "ИНН 7707083893"}
+      "citation": {
+        "page": 1,
+        "bbox": { "x": 72, "y": 110, "w": 420, "h": 14 },
+        "quote": "ИНН 7707083893"
+      }
     }
   ]
 }

@@ -1,10 +1,8 @@
-import { getApiBase } from "./apiBase";
+import { getApiBase } from './apiBase';
 
 const DEFAULT_TIMEOUT_MS = 12_000;
 
 const DEFAULT_RETRIES = 2;
-
-
 
 export type ApiErrorCode =
   | 'network'
@@ -63,7 +61,9 @@ export class ApiError extends Error {
   }
 
   get isConnectionError(): boolean {
-    return this.code === 'network' || this.code === 'timeout' || this.code === 'service_unavailable';
+    return (
+      this.code === 'network' || this.code === 'timeout' || this.code === 'service_unavailable'
+    );
   }
 }
 
@@ -82,9 +82,14 @@ function sleep(ms: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-function mergeAbortSignals(timeoutSignal: AbortSignal, userSignal?: AbortSignal | null): AbortSignal {
+function mergeAbortSignals(
+  timeoutSignal: AbortSignal,
+  userSignal?: AbortSignal | null,
+): AbortSignal {
   if (!userSignal) return timeoutSignal;
-  const anyFn = (AbortSignal as typeof AbortSignal & { any?: (signals: AbortSignal[]) => AbortSignal }).any;
+  const anyFn = (
+    AbortSignal as typeof AbortSignal & { any?: (signals: AbortSignal[]) => AbortSignal }
+  ).any;
   if (typeof anyFn === 'function') {
     return anyFn([timeoutSignal, userSignal]);
   }
@@ -99,7 +104,11 @@ function mergeAbortSignals(timeoutSignal: AbortSignal, userSignal?: AbortSignal 
   return merged.signal;
 }
 
-function parseErrorBody(body: unknown): { backendCode?: string; message: string; correlationId?: string } {
+function parseErrorBody(body: unknown): {
+  backendCode?: string;
+  message: string;
+  correlationId?: string;
+} {
   const detail = (body as { detail?: unknown } | null)?.detail;
   if (Array.isArray(detail)) {
     return { backendCode: 'validation_failed', message: BACKEND_MESSAGES.validation_failed ?? '' };
@@ -137,9 +146,13 @@ function errorFromResponse(status: number, body: unknown, fallback: string): Api
   }
   if (status === 503) {
     return new ApiError(
-      backendCode === 'font_not_ready' || backendCode === 'generation_unavailable' ? 'http' : 'service_unavailable',
+      backendCode === 'font_not_ready' || backendCode === 'generation_unavailable'
+        ? 'http'
+        : 'service_unavailable',
       withCorrelation(
-        backendCode === 'font_not_ready' ? (BACKEND_MESSAGES.font_not_ready as string) : message || 'Сервис временно недоступен',
+        backendCode === 'font_not_ready'
+          ? (BACKEND_MESSAGES.font_not_ready as string)
+          : message || 'Сервис временно недоступен',
         correlationId,
       ),
       { status, detail: message, backendCode, correlationId },
@@ -154,13 +167,23 @@ function errorFromResponse(status: number, body: unknown, fallback: string): Api
 }
 
 function shouldRetry(err: ApiError): boolean {
-  if (err.code === 'unauthorized' || err.code === 'http' || err.code === 'catalog_corrupt' || err.code === 'aborted') {
+  if (
+    err.code === 'unauthorized' ||
+    err.code === 'http' ||
+    err.code === 'catalog_corrupt' ||
+    err.code === 'aborted'
+  ) {
     return false;
   }
   return true;
 }
 
-async function requestOnce(url: string, options: ApiFetchOptions, timeoutMs: number, accept: string): Promise<Response> {
+async function requestOnce(
+  url: string,
+  options: ApiFetchOptions,
+  timeoutMs: number,
+  accept: string,
+): Promise<Response> {
   const timeoutController = new AbortController();
   const timer = setTimeout(() => timeoutController.abort(), timeoutMs);
   const { timeoutMs: _timeout, retries: _retries, baseUrl: _base, ...init } = options;
@@ -179,11 +202,16 @@ async function requestOnce(url: string, options: ApiFetchOptions, timeoutMs: num
   }
 }
 
-export async function apiFetch<T = unknown>(path: string, options: ApiFetchOptions = {}): Promise<T> {
+export async function apiFetch<T = unknown>(
+  path: string,
+  options: ApiFetchOptions = {},
+): Promise<T> {
   const baseUrl = (options.baseUrl ?? getApiBase()).replace(/\/$/, '');
   const timeoutMs = options.timeoutMs ?? DEFAULT_TIMEOUT_MS;
   const retries = options.retries ?? DEFAULT_RETRIES;
-  const url = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = path.startsWith('http')
+    ? path
+    : `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   let lastError: ApiError | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -232,7 +260,9 @@ async function apiDownload(path: string, options: ApiFetchOptions = {}): Promise
   const baseUrl = (options.baseUrl ?? getApiBase()).replace(/\/$/, '');
   const timeoutMs = options.timeoutMs ?? 20_000;
   const retries = options.retries ?? DEFAULT_RETRIES;
-  const url = path.startsWith('http') ? path : `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
+  const url = path.startsWith('http')
+    ? path
+    : `${baseUrl}${path.startsWith('/') ? path : `/${path}`}`;
   let lastError: ApiError | null = null;
 
   for (let attempt = 0; attempt <= retries; attempt += 1) {
@@ -270,10 +300,7 @@ async function apiDownload(path: string, options: ApiFetchOptions = {}): Promise
   throw lastError ?? new ApiError('network', 'Не удалось скачать файл');
 }
 
-
-
 export type DocumentListItem = {
-
   id: string;
 
   state: string;
@@ -287,13 +314,9 @@ export type DocumentListItem = {
   latest_run_id: string | null;
 
   latest_run_status: string | null;
-
 };
 
-
-
 export type DocumentDetail = {
-
   id: string;
 
   state: string;
@@ -305,17 +328,15 @@ export type DocumentDetail = {
   error_code: string | null;
 
   created_at: string;
-
 };
 
-
-
-export type Citation = { page: number; bbox: { x: number; y: number; w: number; h: number }; quote: string };
-
-
+export type Citation = {
+  page: number;
+  bbox: { x: number; y: number; w: number; h: number };
+  quote: string;
+};
 
 export type AnalysisFinding = {
-
   id: string;
 
   kind: string;
@@ -331,13 +352,9 @@ export type AnalysisFinding = {
   uncertainty_state: string;
 
   citation: Citation;
-
 };
 
-
-
 export type RuleHit = {
-
   rule_id: string;
 
   rule_version: string;
@@ -357,13 +374,9 @@ export type RuleHit = {
   basis_fact_keys: string[];
 
   official_sources: string[];
-
 };
 
-
-
 export type AnalysisRun = {
-
   id: string;
 
   document_id: string;
@@ -381,7 +394,6 @@ export type AnalysisRun = {
   rule_hits: RuleHit[];
 
   pages: Array<{
-
     page_number: number;
 
     width: number;
@@ -399,17 +411,12 @@ export type AnalysisRun = {
     error_code: string | null;
 
     layout_region_types: string[];
-
   }>;
 
   progress: Array<{ stage: string; percent: number; error_code?: string | null }>;
-
 };
 
-
-
 export type CompareDiffItem = {
-
   change: string;
 
   path: string;
@@ -421,13 +428,9 @@ export type CompareDiffItem = {
   left_text: string | null;
 
   right_text: string | null;
-
 };
 
-
-
 export type CompareResult = {
-
   left_document_id: string;
 
   right_document_id: string;
@@ -441,13 +444,9 @@ export type CompareResult = {
   refused: boolean;
 
   refusal_reason: string | null;
-
 };
 
-
-
 export type UploadLimits = {
-
   max_bytes: number;
 
   max_pages: number;
@@ -455,133 +454,77 @@ export type UploadLimits = {
   allowed_extensions: string[];
 
   formats_label: string;
-
 };
 
-
-
 export async function fetchDocuments(): Promise<DocumentListItem[]> {
-
   return apiFetch<DocumentListItem[]>('/documents');
-
 }
-
-
 
 export async function fetchAnalysisRun(runId: string): Promise<AnalysisRun> {
-
   return apiFetch<AnalysisRun>(`/analysis/runs/${runId}`);
-
 }
-
-
 
 export async function fetchAnalysisProgress(runId: string) {
-
-  return apiFetch<Array<{ stage: string; percent: number; page?: number | null; error_code?: string | null }>>(
-
-    `/analysis/runs/${runId}/progress`,
-
-  );
-
+  return apiFetch<
+    Array<{ stage: string; percent: number; page?: number | null; error_code?: string | null }>
+  >(`/analysis/runs/${runId}/progress`);
 }
-
-
 
 export async function fetchUploadLimits(): Promise<UploadLimits> {
-
   return apiFetch<UploadLimits>('/documents/upload-limits');
-
 }
 
-
-
 export async function startAnalysis(documentId: string) {
-
   return apiFetch<{ run_id: string; status: string }>('/analysis/runs', {
-
     method: 'POST',
 
     headers: { 'Content-Type': 'application/json' },
 
     body: JSON.stringify({ document_id: documentId, fixture_id: null }),
-
   });
-
 }
 
-
-
 export async function retryAnalysis(runId: string, stage = 'analysis') {
-
   return apiFetch<{ run_id: string; status: string }>(`/analysis/runs/${runId}/retry`, {
-
     method: 'POST',
 
     headers: { 'Content-Type': 'application/json' },
 
     body: JSON.stringify({ stage }),
-
   });
-
 }
-
-
 
 export async function fetchDocumentRuns(documentId: string) {
-
-  return apiFetch<Array<{ run_id: string; status: string }>>(`/analysis/documents/${documentId}/runs`);
-
+  return apiFetch<Array<{ run_id: string; status: string }>>(
+    `/analysis/documents/${documentId}/runs`,
+  );
 }
-
-
 
 export async function fetchPublicConfig() {
-
   return apiFetch<{ demo_mode: boolean; max_analysis_pages: number }>('/config/public');
-
 }
-
-
 
 export async function fetchDocument(documentId: string): Promise<DocumentDetail> {
-
   return apiFetch<DocumentDetail>(`/documents/${documentId}`);
-
 }
-
-
 
 export async function deleteDocument(documentId: string): Promise<DocumentDetail> {
-
   return apiFetch<DocumentDetail>(`/documents/${documentId}`, { method: 'DELETE' });
-
 }
 
-
-
 export async function compareDocuments(documentIds: string[]): Promise<CompareResult> {
-
   return apiFetch<CompareResult>('/reports/compare/documents', {
-
     method: 'POST',
 
     headers: { 'Content-Type': 'application/json' },
 
     body: JSON.stringify({ document_ids: documentIds }),
-
   });
-
 }
-
-
 
 export type FeedbackKind = 'useful' | 'error' | 'bad_citation';
 
-
-
 export async function submitFeedback(payload: {
-
   target_type: 'finding' | 'rule_hit' | 'report';
 
   target_id: string;
@@ -589,38 +532,25 @@ export async function submitFeedback(payload: {
   kind: FeedbackKind;
 
   comment?: string;
-
 }) {
-
   return apiFetch<{ id: string; message: string }>('/reports/feedback', {
-
     method: 'POST',
 
     headers: { 'Content-Type': 'application/json' },
 
     body: JSON.stringify(payload),
-
   });
-
 }
 
-
-
 export async function exportAnalysisRun(runId: string, format: 'pdf' | 'json'): Promise<Blob> {
-
   return apiDownload('/reports/export/run', {
-
     method: 'POST',
 
     headers: { 'Content-Type': 'application/json', Accept: '*/*' },
 
     body: JSON.stringify({ analysis_run_id: runId, format }),
-
   });
-
 }
-
-
 
 export async function downloadDocumentDerived(documentId: string): Promise<Blob> {
   return apiDownload(`/documents/${documentId}/download`);
@@ -645,14 +575,15 @@ export type FormCard = {
 };
 
 export async function fetchForms(query = '', signal?: AbortSignal): Promise<FormCard[]> {
-  const data = await apiFetch<FormCard[]>(`/forms${query}`, signal ? { signal, retries: 0 } : { retries: DEFAULT_RETRIES });
+  const data = await apiFetch<FormCard[]>(
+    `/forms${query}`,
+    signal ? { signal, retries: 0 } : { retries: DEFAULT_RETRIES },
+  );
   if (!Array.isArray(data)) {
     throw new ApiError('catalog_corrupt', 'Каталог шаблонов повреждён.');
   }
   return data;
 }
-
-
 
 export type GenerationCapabilities = {
   catalog_ready: boolean;
@@ -683,7 +614,9 @@ function filenameFromDisposition(header: string | null, fallback: string): strin
   return simple?.[1] || fallback;
 }
 
-export async function downloadGeneratedPdf(generatedId: string): Promise<{ blob: Blob; filename: string }> {
+export async function downloadGeneratedPdf(
+  generatedId: string,
+): Promise<{ blob: Blob; filename: string }> {
   const baseUrl = getApiBase().replace(/\/$/, '');
   const url = `${baseUrl}/forms/fill/generated/${generatedId}/pdf`;
   let lastError: ApiError | null = null;
@@ -705,10 +638,16 @@ export async function downloadGeneratedPdf(generatedId: string): Promise<{ blob:
         } catch {
           // ignore
         }
-        throw new ApiError('http', String(detail || `HTTP ${res.status}`), { status: res.status, detail: String(detail) });
+        throw new ApiError('http', String(detail || `HTTP ${res.status}`), {
+          status: res.status,
+          detail: String(detail),
+        });
       }
       const blob = await res.blob();
-      const filename = filenameFromDisposition(res.headers.get('content-disposition'), `document.pdf`);
+      const filename = filenameFromDisposition(
+        res.headers.get('content-disposition'),
+        `document.pdf`,
+      );
       return { blob, filename };
     } catch (err) {
       clearTimeout(timer);
@@ -729,8 +668,6 @@ export async function downloadGeneratedPdf(generatedId: string): Promise<{ blob:
   throw lastError ?? new ApiError('network', 'Не удалось скачать файл');
 }
 
-
-
 export async function exportEntryChecklistPdf(snapshotId: string): Promise<Blob> {
   return apiDownload(`/entry/snapshots/${snapshotId}/checklist.pdf`, {
     method: 'POST',
@@ -738,8 +675,13 @@ export async function exportEntryChecklistPdf(snapshotId: string): Promise<Blob>
   });
 }
 
-export async function fetchVisaRegimes(): Promise<Array<{ id: string; label: string; source_slug: string }>> {
-  const data = await apiFetch<Array<{ id: string; label: string; source_slug: string }>>('/entry/visa-regimes');
+export async function fetchVisaRegimes(): Promise<
+  Array<{ id: string; label: string; source_slug: string }>
+> {
+  const data =
+    await apiFetch<Array<{ id: string; label: string; source_slug: string }>>(
+      '/entry/visa-regimes',
+    );
   if (!Array.isArray(data)) {
     throw new ApiError('parse', 'Не удалось загрузить список визовых режимов');
   }
@@ -755,10 +697,7 @@ export async function checkApiLive(): Promise<boolean> {
   }
 }
 
-
-
 export function downloadBlob(blob: Blob, filename: string) {
-
   const url = URL.createObjectURL(blob);
 
   const a = document.createElement('a');
@@ -770,19 +709,12 @@ export function downloadBlob(blob: Blob, filename: string) {
   a.click();
 
   URL.revokeObjectURL(url);
-
 }
 
-
-
 export function buildAnalyzerDocumentUrl(documentId: string, runId?: string | null) {
-
   const params = new URLSearchParams({ tab: 'documents', document: documentId });
 
   if (runId) params.set('run', runId);
 
   return `/app/analyzer?${params.toString()}`;
-
 }
-
-

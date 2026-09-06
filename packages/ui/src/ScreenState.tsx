@@ -6,13 +6,7 @@ import { EmptyState } from './Domain';
 import { Skeleton } from './Feedback';
 
 export type ScreenState =
-  | 'ready'
-  | 'loading'
-  | 'empty'
-  | 'error'
-  | 'forbidden'
-  | 'expired'
-  | 'offline';
+  'ready' | 'loading' | 'empty' | 'error' | 'forbidden' | 'expired' | 'offline';
 
 export function ScreenStateView({
   state,

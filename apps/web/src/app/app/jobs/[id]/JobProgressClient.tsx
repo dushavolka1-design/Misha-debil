@@ -9,7 +9,12 @@ import { ServiceUnavailable } from '../../../../components/ServiceUnavailable';
 import { ApiError, fetchAnalysisProgress, fetchAnalysisRun } from '../../../../lib/apiClient';
 import { formatStatus } from '../../../../lib/statusLabels';
 
-type ProgressItem = { stage: string; percent: number; page?: number | null; error_code?: string | null };
+type ProgressItem = {
+  stage: string;
+  percent: number;
+  page?: number | null;
+  error_code?: string | null;
+};
 
 export default function JobProgressClient({ runId }: { runId: string }) {
   const [title, setTitle] = useState<string>('Анализ документа');

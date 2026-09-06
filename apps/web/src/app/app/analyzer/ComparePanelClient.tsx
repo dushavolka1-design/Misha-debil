@@ -29,7 +29,9 @@ function DiffList({ title, items }: { title: string; items: CompareDiffItem[] })
       <ul style={{ margin: 0, paddingLeft: 20 }}>
         {items.map((item) => (
           <li key={`${item.path}-${item.change}`} style={{ marginBottom: 12 }}>
-            <Badge tone={item.change === 'changed' ? 'warning' : 'info'}>{formatChangeType(item.change)}</Badge>{' '}
+            <Badge tone={item.change === 'changed' ? 'warning' : 'info'}>
+              {formatChangeType(item.change)}
+            </Badge>{' '}
             <strong>{item.path}</strong>
             {item.left_text || item.right_text ? (
               <div style={{ fontSize: 'var(--dar-text-sm)', marginTop: 4 }}>
@@ -38,9 +40,19 @@ function DiffList({ title, items }: { title: string; items: CompareDiffItem[] })
               </div>
             ) : null}
             {(item.left_citation || item.right_citation) && (
-              <div style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)', marginTop: 4 }}>
-                {item.left_citation?.quote ? <div>Цитата A: «{item.left_citation.quote.slice(0, 120)}»</div> : null}
-                {item.right_citation?.quote ? <div>Цитата B: «{item.right_citation.quote.slice(0, 120)}»</div> : null}
+              <div
+                style={{
+                  fontSize: 'var(--dar-text-sm)',
+                  color: 'var(--dar-color-text-muted)',
+                  marginTop: 4,
+                }}
+              >
+                {item.left_citation?.quote ? (
+                  <div>Цитата A: «{item.left_citation.quote.slice(0, 120)}»</div>
+                ) : null}
+                {item.right_citation?.quote ? (
+                  <div>Цитата B: «{item.right_citation.quote.slice(0, 120)}»</div>
+                ) : null}
               </div>
             )}
           </li>
@@ -51,7 +63,13 @@ function DiffList({ title, items }: { title: string; items: CompareDiffItem[] })
 }
 
 export default function ComparePanelClient({ presetIds = [], onOpenDocument }: Props) {
-  const [docs, setDocs] = useState<Array<{ id: string; display_name: string; detected_type: string | null; state: string; latest_run_status: string | null }> | null>(null);
+  const [docs, setDocs] = useState<Array<{
+    id: string;
+    display_name: string;
+    detected_type: string | null;
+    state: string;
+    latest_run_status: string | null;
+  }> | null>(null);
   const [selected, setSelected] = useState<Set<string>>(new Set(presetIds));
   const [result, setResult] = useState<CompareResult | null>(null);
   const [loading, setLoading] = useState(true);
@@ -144,8 +162,7 @@ export default function ComparePanelClient({ presetIds = [], onOpenDocument }: P
           <label key={d.id} className="dar-check">
             <input type="checkbox" checked={selected.has(d.id)} onChange={() => toggle(d.id)} />
             <span>
-              {d.display_name}{' '}
-              {d.detected_type ? <Badge>{d.detected_type}</Badge> : null}
+              {d.display_name} {d.detected_type ? <Badge>{d.detected_type}</Badge> : null}
             </span>
           </label>
         ))}
@@ -172,11 +189,19 @@ export default function ComparePanelClient({ presetIds = [], onOpenDocument }: P
             <div className="dar-panel">
               <p style={{ margin: 0 }}>
                 Сравнение документов{' '}
-                <Button variant="ghost" size="sm" onClick={() => onOpenDocument?.(result.left_document_id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenDocument?.(result.left_document_id)}
+                >
                   {result.left_document_id.slice(0, 8)}…
                 </Button>{' '}
                 и{' '}
-                <Button variant="ghost" size="sm" onClick={() => onOpenDocument?.(result.right_document_id)}>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => onOpenDocument?.(result.right_document_id)}
+                >
                   {result.right_document_id.slice(0, 8)}…
                 </Button>
               </p>
@@ -184,14 +209,17 @@ export default function ComparePanelClient({ presetIds = [], onOpenDocument }: P
             <DiffList title="Стороны" items={result.party_diffs} />
             <DiffList title="Разделы" items={result.section_diffs} />
             <DiffList title="Пункты" items={result.clause_diffs} />
-            {!result.party_diffs.length && !result.section_diffs.length && !result.clause_diffs.length ? (
+            {!result.party_diffs.length &&
+            !result.section_diffs.length &&
+            !result.clause_diffs.length ? (
               <p role="status">Различий по извлечённым фактам не найдено.</p>
             ) : null}
           </>
         ) : (
           <div className="dar-panel">
             <p style={{ margin: 0, color: 'var(--dar-color-text-secondary)' }}>
-              Выберите два документа и нажмите «Сравнить». Данные загружаются с сервера по вашим document ID.
+              Выберите два документа и нажмите «Сравнить». Данные загружаются с сервера по вашим
+              document ID.
             </p>
           </div>
         )}

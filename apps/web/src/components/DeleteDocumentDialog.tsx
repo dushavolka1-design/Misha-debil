@@ -34,7 +34,9 @@ export function DeleteDocumentDialog({ documentId, displayName, open, onClose, o
       setDone(true);
       onDeleted();
     } catch (err) {
-      setError(err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось удалить документ');
+      setError(
+        err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось удалить документ',
+      );
     } finally {
       setBusy(false);
     }

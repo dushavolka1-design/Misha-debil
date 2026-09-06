@@ -81,7 +81,9 @@ export async function uploadPdfAndWaitReady(
 
   await expect(page.getByText(/Файл загружен|обработк/i).first()).toBeVisible({ timeout: 60_000 });
 
-  await expect(page.getByRole('button', { name: /Открыть результат/i })).toBeVisible({ timeout: 180_000 });
+  await expect(page.getByRole('button', { name: /Открыть результат/i })).toBeVisible({
+    timeout: 180_000,
+  });
   await page.getByRole('button', { name: /Открыть результат/i }).click();
 
   const url = page.url();

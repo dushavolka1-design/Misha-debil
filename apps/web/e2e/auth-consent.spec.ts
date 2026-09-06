@@ -6,7 +6,8 @@ test('registration checkboxes are unchecked and PD is separate', async ({ page }
   await page.locator('#reg-email').fill('example@example.invalid');
   await page.locator('#reg-password').fill('ExampleOnly123');
   await page.getByRole('button', { name: 'Продолжить', exact: true }).click();
-  for (const id of ['#reg-terms', '#reg-offer', '#reg-pd', '#reg-marketing']) await expect(page.locator(id)).not.toBeChecked();
+  for (const id of ['#reg-terms', '#reg-offer', '#reg-pd', '#reg-marketing'])
+    await expect(page.locator(id)).not.toBeChecked();
   await expect(page.getByText(/Отдельно даю согласие/)).toBeVisible();
   await expect(page.getByText(/сообщения — необязательно/)).toBeVisible();
   await expect(page.getByRole('link', { name: /пользовательское соглашение/ })).toBeVisible();
@@ -21,5 +22,7 @@ test('billing cancel is visible without support contact requirement', async ({ p
 });
 test('analyzer result shows disclaimer that does not waive mandatory rights', async ({ page }) => {
   await page.goto('/app/analyzer');
-  await expect(page.getByText(/информационный помощник|не оказывает юридическую/i).first()).toBeVisible();
+  await expect(
+    page.getByText(/информационный помощник|не оказывает юридическую/i).first(),
+  ).toBeVisible();
 });

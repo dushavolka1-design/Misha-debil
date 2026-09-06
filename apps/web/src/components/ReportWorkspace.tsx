@@ -28,7 +28,11 @@ type RunPayload = {
     normalized_value: unknown;
     confidence: number;
     uncertainty_state: string;
-    citation: { page?: number; quote?: string; bbox?: { x: number; y: number; w: number; h: number } };
+    citation: {
+      page?: number;
+      quote?: string;
+      bbox?: { x: number; y: number; w: number; h: number };
+    };
   }>;
   pages: Array<{
     page_number: number;
@@ -164,7 +168,9 @@ export function ReportWorkspace() {
                 : null
             }
           >
-            <p className="dar-doc-line">{active?.citation?.quote ?? 'Текст фрагмента недоступен в предпросмотре.'}</p>
+            <p className="dar-doc-line">
+              {active?.citation?.quote ?? 'Текст фрагмента недоступен в предпросмотре.'}
+            </p>
           </DocumentViewer>
         </div>
         {active?.citation?.quote ? (

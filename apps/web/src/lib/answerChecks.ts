@@ -137,7 +137,8 @@ export function checkAnswers(
       issues.push({
         field_id: 'migration_card_series',
         code: 'migration_card_format',
-        message: 'Серия миграционной карты — 4 цифры, как на карте, без выдуманной последовательности.',
+        message:
+          'Серия миграционной карты — 4 цифры, как на карте, без выдуманной последовательности.',
         severity: 'error',
       });
     }

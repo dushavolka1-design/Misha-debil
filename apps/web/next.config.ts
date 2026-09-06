@@ -14,8 +14,16 @@ const nextConfig: NextConfig = {
       { source: '/app/compare', destination: '/app/analyzer?tab=compare', permanent: false },
       { source: '/app/forms', destination: '/app/generator?tab=templates', permanent: false },
       { source: '/app/entry-wizard', destination: '/app/generator?tab=wizard', permanent: false },
-      { source: '/app/jobs/:id', destination: '/app/analyzer?tab=documents&run=:id', permanent: false },
-      { source: '/app/reports/:id', destination: '/app/analyzer?tab=documents&run=:id', permanent: false },
+      {
+        source: '/app/jobs/:id',
+        destination: '/app/analyzer?tab=documents&run=:id',
+        permanent: false,
+      },
+      {
+        source: '/app/reports/:id',
+        destination: '/app/analyzer?tab=documents&run=:id',
+        permanent: false,
+      },
     ];
   },
 };

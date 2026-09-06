@@ -36,12 +36,14 @@ export default async function SourcesPage({
     <div>
       <h1 className="dar-page-title">Источники норм и форм</h1>
       <p className="dar-page-lead">
-        Справочник официальных публикаций, на которых основаны шаблоны и проверки. Нормы не подставляются «из памяти
-        модели».
+        Справочник официальных публикаций, на которых основаны шаблоны и проверки. Нормы не
+        подставляются «из памяти модели».
       </p>
       {fetchFailed ? (
         <div className="dar-panel" role="alert">
-          <p style={{ margin: 0 }}>Не удалось загрузить реестр источников. Проверьте подключение к серверу.</p>
+          <p style={{ margin: 0 }}>
+            Не удалось загрузить реестр источников. Проверьте подключение к серверу.
+          </p>
         </div>
       ) : null}
       <ScreenStateView
@@ -57,8 +59,15 @@ export default async function SourcesPage({
                 version="Подтверждённая редакция"
                 snapshotId="пример"
               />
-              <p style={{ marginBottom: 0, color: 'var(--dar-color-text-muted)', fontSize: 'var(--dar-text-sm)' }}>
-                Орган, документ, номер и дата, цитата, ссылка и статус проверки — в карточке каждого шаблона и отчёта.
+              <p
+                style={{
+                  marginBottom: 0,
+                  color: 'var(--dar-color-text-muted)',
+                  fontSize: 'var(--dar-text-sm)',
+                }}
+              >
+                Орган, документ, номер и дата, цитата, ссылка и статус проверки — в карточке каждого
+                шаблона и отчёта.
               </p>
             </div>
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 12 }}>
@@ -66,7 +75,9 @@ export default async function SourcesPage({
                 <li key={s.id} className="dar-panel">
                   <div className="dar-row" style={{ justifyContent: 'space-between' }}>
                     <strong>{s.title}</strong>
-                    <Badge tone={s.state === 'approved' ? 'success' : 'warning'}>{formatSourceState(s.state)}</Badge>
+                    <Badge tone={s.state === 'approved' ? 'success' : 'warning'}>
+                      {formatSourceState(s.state)}
+                    </Badge>
                   </div>
                   <p style={{ marginBottom: 4 }}>{s.organ}</p>
                   <p style={{ marginBottom: 0 }}>
