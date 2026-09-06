@@ -1,6 +1,6 @@
 #Requires -Version 5.1
 param(
-  [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.2.1',
+  [ValidatePattern('^\d+\.\d+\.\d+$')][string]$Version = '0.2.2',
   [string]$SourceRef = 'HEAD'
 )
 $ErrorActionPreference = 'Stop'

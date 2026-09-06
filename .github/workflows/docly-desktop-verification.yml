@@ -58,22 +58,24 @@ jobs:
         run: |
           & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.0 -SourceRef 7ab48303efa92b2e52702256dcdd360c9540d273 *>&1 | Tee-Object -FilePath installer-build-old.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.1 *>&1 | Tee-Object -FilePath installer-build.log
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.2 *>&1 | Tee-Object -FilePath installer-build.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Real installer lifecycle acceptance
+      - name: Limited installer lifecycle verification (not release acceptance)
         id: installer-tests
         shell: pwsh
+        env:
+          EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
         run: |
-          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer.ps1 -OldInstaller "$pwd/artifacts/installer/Docly-0.2.0-windows-x64-setup.exe" -NewInstaller "$pwd/artifacts/installer/Docly-0.2.1-windows-x64-setup.exe" *>&1 | Tee-Object -FilePath installer-tests.log
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer.ps1 -OldInstaller "$pwd/artifacts/installer/Docly-0.2.0-windows-x64-setup.exe" -NewInstaller "$pwd/artifacts/installer/Docly-0.2.2-windows-x64-setup.exe" -NewSourceCommit $env:EXPECTED_SOURCE_COMMIT *>&1 | Tee-Object -FilePath installer-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
-      - name: Upload tested installer candidate
+      - name: Upload limited-test candidate (NOT RELEASE)
         id: installer-artifact
         uses: actions/upload-artifact@v4
         with:
-          name: Docly-0.2.1-windows-x64-installer
+          name: Docly-0.2.2-windows-x64-candidate-NOT-RELEASE
           path: |
-            artifacts/installer/Docly-0.2.1-windows-x64-setup.exe
-            artifacts/installer/Docly-0.2.1-windows-x64-setup.exe.sha256
+            artifacts/installer/Docly-0.2.2-windows-x64-setup.exe
+            artifacts/installer/Docly-0.2.2-windows-x64-setup.exe.sha256
           if-no-files-found: error
           compression-level: 0
       - name: Upload diagnostic logs
@@ -109,7 +111,7 @@ jobs:
               .join('\n\n');
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: 1,
-              body: `## Windows verification: ${process.env.JOB_STATUS}\n\nCommit: ${context.sha}\n\nInstaller lifecycle: ${process.env.INSTALLER_TEST_STATUS || 'not run'}\n\nInstaller artifact: ${process.env.INSTALLER_ARTIFACT || 'not available'}\n\n${logs}`
+              body: `## Windows verification: ${process.env.JOB_STATUS}\n\nCommit: ${context.sha}\n\nLimited installer lifecycle: ${process.env.INSTALLER_TEST_STATUS || 'not run'}\n\nCandidate artifact (NOT RELEASE): ${process.env.INSTALLER_ARTIFACT || 'not available'}\n\nRelease readiness: NO-GO. Transactional rollback, PostgreSQL migration and official-form acceptance are not covered by this job.\n\n${logs}`
             });
 
   diagnostics:

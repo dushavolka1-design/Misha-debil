@@ -1,6 +1,7 @@
 #Requires -Version 5.1
 param([Parameter(Mandatory=$true)][string]$OldInstaller,
-      [Parameter(Mandatory=$true)][string]$NewInstaller)
+      [Parameter(Mandatory=$true)][string]$NewInstaller,
+      [Parameter(Mandatory=$true)][ValidatePattern('^[a-fA-F0-9]{40}$')][string]$NewSourceCommit)
 $ErrorActionPreference = 'Stop'
 $work = Join-Path ([IO.Path]::GetTempPath()) ("Docly acceptance's " + [char]0x414 + [guid]::NewGuid().ToString('N'))
 $install = Join-Path $work 'Application'
@@ -19,12 +20,25 @@ function Check([bool]$Value, [string]$Message) {
   if (-not $Value) { throw $Message }
   Write-Host "PASS: $Message"
 }
-function Install([string]$Exe, [string]$Label) {
+function VerifiedHash([string]$Exe) {
+  $checksum = (Get-Content -LiteralPath "$Exe.sha256" -Raw).Trim()
+  if ($checksum -notmatch '^([a-fA-F0-9]{64})  (.+)$') { throw 'Invalid installer checksum sidecar' }
+  $expectedHash = $Matches[1]
+  $expectedName = $Matches[2]
+  Check ($expectedName -ceq [IO.Path]::GetFileName($Exe)) 'checksum sidecar names the exact installer'
+  $actualHash = (Get-FileHash -LiteralPath $Exe -Algorithm SHA256).Hash.ToLower()
+  Check ($actualHash -eq $expectedHash) 'installer SHA-256 matches sidecar'
+  return $actualHash
+}
+function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string]$ExpectedSource) {
   $log = Join-Path $work "$Label.log"
   $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"") -PassThru
   Check ($process.WaitForExit(600000)) "$Label completed within ten minutes"
   Check ($process.ExitCode -eq 0) "$Label exit code"
   Check (Test-Path $py) "$Label bundled Python environment"
+  $version = Get-Content (Join-Path $install 'version.json') -Raw | ConvertFrom-Json
+  Check ($version.version -eq $ExpectedVersion) "$Label application version $ExpectedVersion"
+  Check ($version.source_commit -eq $ExpectedSource) "$Label source commit identity"
 }
 function Launch {
   $wrapper = Join-Path $install 'scripts\windows\launch-installed.vbs'
@@ -47,7 +61,9 @@ function Stop-Docly {
   Check ($LASTEXITCODE -eq 0) 'installed services stopped'
 }
 try {
-  Install $OldInstaller 'clean-old-install'
+  $oldHash = VerifiedHash $OldInstaller
+  $newHash = VerifiedHash $NewInstaller
+  Install $OldInstaller 'clean-old-install' '0.2.0' '7ab48303efa92b2e52702256dcdd360c9540d273'
   Launch
   Stop-Docly
   $db = Join-Path $env:DOCLY_DATA_DIR 'docly.db'
@@ -58,9 +74,7 @@ try {
   $document = Join-Path $env:DOCLY_DATA_DIR 'objects\acceptance.bin'
   $settingsHash = (Get-FileHash $settings).Hash
   $documentHash = (Get-FileHash $document).Hash
-  Install $NewInstaller 'upgrade-install'
-  $version = Get-Content (Join-Path $install 'version.json') -Raw | ConvertFrom-Json
-  Check ($version.version -eq '0.2.1') 'new application version installed'
+  Install $NewInstaller 'upgrade-install' '0.2.2' $NewSourceCommit
   Launch
   Stop-Docly
   & $py -c "import os,sqlite3; from pathlib import Path; c=sqlite3.connect(Path(os.environ['DOCLY_DATA_DIR'])/'docly.db'); assert c.execute('SELECT value FROM installer_acceptance').fetchall()==[('retained user state',)]; assert c.execute('PRAGMA integrity_check').fetchone()==('ok',); c.close()"
@@ -83,10 +97,13 @@ try {
   $env:DOCLY_DATA_DIR = Join-Path $work 'Fresh profile\Docly\data'
   $env:DOCLY_RUNTIME_DIR = Join-Path $work 'Fresh profile\Docly\runtime'
   Check (-not (Test-Path $env:DOCLY_DATA_DIR)) 'new-version clean profile is empty'
-  Install $NewInstaller 'clean-new-install'
+  Install $NewInstaller 'clean-new-install' '0.2.2' $NewSourceCommit
   Launch
   Stop-Docly
-  Write-Host 'Installer lifecycle acceptance passed.'
+  Check ((VerifiedHash $OldInstaller) -eq $oldHash) 'old installer unchanged throughout tests'
+  Check ((VerifiedHash $NewInstaller) -eq $newHash) 'new installer unchanged throughout tests'
+  Write-Host "Candidate SHA-256: $newHash"
+  Write-Host 'Limited installer lifecycle passed. NOT release acceptance: rollback, PostgreSQL migration and official forms remain unverified.'
 } finally {
   # Keep all evidence/data for diagnostics. Never recursively delete a profile.
   Write-Host "Acceptance evidence: $work"
