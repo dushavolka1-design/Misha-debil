@@ -1,0 +1,75 @@
+name: Docly Python runtime evidence
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+  workflow_dispatch:
+permissions:
+  contents: read
+concurrency:
+  group: docly-python-runtime-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  runtime:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+      pull-requests: write
+    defaults:
+      run:
+        shell: bash
+    env:
+      APP_ENV: test
+      ALLOW_FAKE_PROVIDERS: 'true'
+      DATABASE_URL: postgresql+psycopg://dar_local:dar_local_password_change_me@localhost:5432/dar_local
+      REDIS_URL: redis://localhost:6379/0
+      SESSION_SECRET: test_session_secret_not_for_production_use
+      S3_ENDPOINT_URL: http://localhost:9000
+      S3_ACCESS_KEY: dar_minio_access
+      S3_SECRET_KEY: dar_minio_secret_change_me
+      S3_BUCKET_ORIGINALS: dar-originals
+      S3_BUCKET_DERIVED: dar-derived
+      S3_BUCKET_REPORTS: dar-reports
+      OBJECT_STORAGE_PROVIDER: fake_object_storage
+      LEGAL_ROOT: ${{ github.workspace }}/legal
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Install unchanged API test dependencies
+        run: python -m pip install -e packages/py_dar -r apps/api/requirements.txt -e 'apps/api[dev]'
+      - name: Focused security and form regressions
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/python-runtime
+          python -m pytest -q apps/api/tests/test_document_log_arguments.py apps/api/tests/test_logging_redaction.py apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py apps/api/tests/test_generation_gate_contract.py apps/api/tests/test_prompt3_generation_guards.py --junitxml=artifacts/python-runtime/focused.xml 2>&1 | tee artifacts/python-runtime/focused.log
+      - name: All API, shared Python and no-infrastructure smoke tests
+        if: ${{ !cancelled() }}
+        working-directory: apps/api
+        run: |
+          set -euo pipefail
+          mkdir -p ../../artifacts/python-runtime
+          python -m pytest -q tests ../../tests/smoke/test_migrations.py ../../tests/smoke/test_health.py ../../packages/py_dar/tests --junitxml=../../artifacts/python-runtime/full.xml 2>&1 | tee ../../artifacts/python-runtime/full.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        id: evidence
+        with:
+          name: python-runtime-evidence
+          path: artifacts/python-runtime/
+          if-no-files-found: error
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        if: always()
+        env:
+          JOB_STATUS: ${{ job.status }}
+          EVIDENCE_URL: ${{ steps.evidence.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const logs = ['focused', 'full'].map(name => {
+              const path = `artifacts/python-runtime/${name}.log`;
+              return `### ${name}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-18000) : 'NOT RUN'}\n\`\`\``;
+            });
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Python runtime evidence: ${process.env.JOB_STATUS}\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nArtifact: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs.join('\n')}\nScope: existing no-infrastructure test configuration with synthetic providers, not real-provider/installer acceptance. Skips are not passes. Strict typing and original CI remain required.`});
