@@ -11,6 +11,7 @@ import pypdfium2 as pdfium
 from PIL import Image, ImageChops, ImageDraw
 
 from app.services.forms.fill.coord_map import CoordinateMap, ReservedFor
+from app.services.forms.fill.pixel_metrics import rgb_difference_metrics
 
 # Antialias / merge soft edges: documented technical tolerance (absolute RGB delta)
 TECHNICAL_TOLERANCE = 2
@@ -137,22 +138,8 @@ def compare_underlay_vs_output(
         outside = Image.composite(diff, black, inv)  # outside fillable zones
         inside = Image.composite(diff, black, mask)  # inside approved bboxes
 
-        outside_max = 0
-        outside_changed = 0
-        inside_changed = 0
-        # Use load() to avoid getdata deprecation and speed
-        ox = outside.load()
-        ix = inside.load()
-        w, h = a.size
-        for y in range(h):
-            for x in range(w):
-                op = ox[x, y]
-                if op != (0, 0, 0):
-                    outside_changed += 1
-                    outside_max = max(outside_max, max(op))
-                ip = ix[x, y]
-                if ip != (0, 0, 0):
-                    inside_changed += 1
+        outside_max, outside_changed = rgb_difference_metrics(outside)
+        _, inside_changed = rgb_difference_metrics(inside)
 
         box_match = True
         if i < len(coord_map.page_boxes):
