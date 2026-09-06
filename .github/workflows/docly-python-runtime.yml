@@ -55,14 +55,38 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/python-runtime
-          python -m pytest -q apps/api/tests/test_auth_route_regressions.py apps/api/tests/test_document_log_arguments.py apps/api/tests/test_logging_redaction.py apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py apps/api/tests/test_generation_gate_contract.py apps/api/tests/test_prompt3_generation_guards.py --junitxml=artifacts/python-runtime/focused.xml 2>&1 | tee artifacts/python-runtime/focused.log
+          python -m pytest -q -ra apps/api/tests/test_auth_route_regressions.py apps/api/tests/test_document_maintenance_authorization.py apps/api/tests/test_document_log_arguments.py apps/api/tests/test_logging_redaction.py apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py apps/api/tests/test_generation_gate_contract.py apps/api/tests/test_prompt3_generation_guards.py --junitxml=artifacts/python-runtime/focused.xml 2>&1 | tee artifacts/python-runtime/focused.log
       - name: All API, shared Python and smoke tests with Redis
         if: ${{ !cancelled() }}
         working-directory: apps/api
         run: |
           set -euo pipefail
           mkdir -p ../../artifacts/python-runtime
-          python -m pytest -q tests ../../tests/smoke/test_migrations.py ../../tests/smoke/test_health.py ../../packages/py_dar/tests --junitxml=../../artifacts/python-runtime/full.xml 2>&1 | tee ../../artifacts/python-runtime/full.log
+          python -m pytest -q -ra tests ../../tests/smoke/test_migrations.py ../../tests/smoke/test_health.py ../../packages/py_dar/tests --junitxml=../../artifacts/python-runtime/full.xml 2>&1 | tee ../../artifacts/python-runtime/full.log
+      - name: Identify incomplete cases from actual JUnit evidence
+        if: always()
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/python-runtime
+          python - <<'PY' | tee artifacts/python-runtime/coverage.log
+          from pathlib import Path
+          import xml.etree.ElementTree as ET
+          root = Path('artifacts/python-runtime')
+          for name in ('focused', 'full'):
+              path = root / f'{name}.xml'
+              if not path.is_file():
+                  print(f'{name}: MISSING JUnit report; not accepted')
+                  continue
+              report = ET.parse(path).getroot()
+              cases = list(report.iter('testcase'))
+              skipped = [case for case in cases if case.find('skipped') is not None]
+              failures = sum(case.find('failure') is not None for case in cases)
+              errors = sum(case.find('error') is not None for case in cases)
+              print(f'{name}: cases={len(cases)}, failures={failures}, errors={errors}, skipped={len(skipped)}')
+              for case in skipped:
+                  reason = case.find('skipped')
+                  print(f"INCOMPLETE: {case.get('classname')}.{case.get('name')}: {reason.get('message', '')}")
+          PY
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         id: evidence
@@ -78,8 +102,8 @@ jobs:
         with:
           script: |
             const fs = require('fs');
-            const logs = ['focused', 'full'].map(name => {
+            const logs = ['focused', 'full', 'coverage'].map(name => {
               const path = `artifacts/python-runtime/${name}.log`;
               return `### ${name}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-18000) : 'NOT RUN'}\n\`\`\``;
             });
-            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Python runtime evidence: ${process.env.JOB_STATUS}\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nArtifact: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs.join('\n')}\nScope: synthetic providers plus real Redis service; PostgreSQL persistence, real-provider and installer acceptance remain separate. Skips are not passes. Strict typing and original CI remain required.`});
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Python runtime evidence: ${process.env.JOB_STATUS}\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nArtifact: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs.join('\n')}\nScope: synthetic providers plus real Redis service; PostgreSQL persistence, real-provider and installer acceptance remain separate. Skips and missing reports are not passes. Strict typing and original CI remain required.`});
