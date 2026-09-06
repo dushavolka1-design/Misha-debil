@@ -47,7 +47,7 @@ jobs:
               sections.push('Indexed file entries: ' + data.files.length + '. Candidates are not verified official forms.');
             }
             const records = [];
-            const workflows = ['ci.yml', 'docly-desktop-verification.yml', 'docly-launcher-safety.yml', 'docly-worker-regressions.yml', 'docly-security-regressions.yml', 'docly-quality-repair.yml', 'docly-profile-backup.yml'];
+            const workflows = ['docly-python-runtime.yml', 'docly-quality-evidence.yml', 'ci.yml', 'docly-desktop-verification.yml', 'docly-launcher-safety.yml', 'docly-worker-regressions.yml', 'docly-security-regressions.yml', 'docly-quality-repair.yml', 'docly-profile-backup.yml'];
             for (const workflow_id of workflows) {
               const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, branch: 'fix/docly-desktop-upgrade-safety', per_page: 2});
               for (const run of runs.data.workflow_runs) {
@@ -58,7 +58,10 @@ jobs:
                 for (const artifact of artifacts) sections.push(`Artifact ${artifact.name}: ${run.html_url}/artifacts/${artifact.id}`);
                 for (const job of jobs) {
                   sections.push(`- ${job.name}: ${job.status}/${job.conclusion || 'pending'}; ${job.html_url}`);
-                  if (job.conclusion !== 'failure') continue;
+                  if (workflow_id === 'docly-python-runtime.yml') {
+                    for (const step of job.steps || []) sections.push(`  Step ${step.number} ${step.name}: ${step.status}/${step.conclusion || 'pending'}`);
+                  }
+                  if (!['failure', 'timed_out', 'cancelled'].includes(job.conclusion)) continue;
                   try {
                     const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...repo, job_id: job.id});
                     const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
