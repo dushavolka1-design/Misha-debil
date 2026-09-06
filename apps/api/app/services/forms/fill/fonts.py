@@ -80,7 +80,7 @@ def _bundled_font_status() -> FontStatus:
     if actual != expected:
         return FontStatus(
             ok=False,
-            reason="Контрольная сумма шрифта форм не совпадает сзафиксированной.",
+            reason="Контрольная сумма шрифта форм не совпадает с зафиксированной.",
             path=bundled,
             sha256=actual,
             license_ok=license_ok,
