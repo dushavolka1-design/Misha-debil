@@ -81,7 +81,7 @@ jobs:
         with:
           script: |
             const repo = {owner: context.repo.owner, repo: context.repo.repo};
-            const run = `https://github.com/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
+            const run = `${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}`;
             const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {...repo, run_id: context.runId});
             const files = artifacts.map(a => `${a.name}: ${run}/artifacts/${a.id}`).join('\n');
             await github.rest.issues.createComment({...repo, issue_number: 1, body:
