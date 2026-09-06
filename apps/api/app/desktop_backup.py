@@ -7,7 +7,7 @@ import tempfile
 import time
 from collections.abc import Mapping, Set
 from contextlib import closing
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -40,17 +40,17 @@ def backup_before_schema_change(
                 row[0]
                 for row in source.execute("SELECT name FROM sqlite_master WHERE type='table'")
             }
-            needs_change = not required_tables.issubset(tables)
+            needs_change = not required_tables <= tables
             for table, expected in required_columns.items():
                 quoted = '"' + table.replace('"', '""') + '"'
                 columns = {row[1] for row in source.execute(f"PRAGMA table_info({quoted})")}
-                needs_change = needs_change or not expected.issubset(columns)
+                needs_change = needs_change or not expected <= columns
             if not needs_change:
                 return None
 
             backup_dir = db_path.parent / "backups"
             backup_dir.mkdir(mode=0o700, exist_ok=True)
-            stamp = datetime.now(timezone.utc).strftime("%Y%m%dT%H%M%S%fZ")
+            stamp = datetime.now(UTC).strftime("%Y%m%dT%H%M%S%fZ")
             final = backup_dir / f"docly-before-schema-{stamp}-{uuid4().hex}.db"
             fd, name = tempfile.mkstemp(prefix=".docly-backup-", suffix=".tmp", dir=backup_dir)
             os.close(fd)

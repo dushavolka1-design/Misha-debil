@@ -1,8 +1,8 @@
-name: Docly desktop integration verification
+name: Docly Windows installer verification
 
 on:
   push:
-    branches: [fix/docly-desktop-upgrade-safety]
+    branches: [main, fix/docly-desktop-upgrade-safety]
     paths:
       - '.github/workflows/docly-desktop-verification.yml'
       - 'apps/**'
@@ -16,61 +16,16 @@ permissions:
   contents: read
 
 jobs:
-  integrate-history:
-    if: github.ref == 'refs/heads/fix/docly-desktop-upgrade-safety'
-    runs-on: ubuntu-latest
-    timeout-minutes: 5
-    permissions:
-      contents: write
-    outputs:
-      head: ${{ steps.integrate.outputs.head }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-      - name: Preserve both histories on the integration branch only
-        id: integrate
-        shell: bash
-        run: |
-          set -euo pipefail
-          git fetch origin main backup-before-merge
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          if ! git merge-base HEAD origin/main >/dev/null; then
-            expected=d4e6da60507efb3f6aed78a1dd8ccd294e453386
-            test "$(git rev-parse origin/main)" = "$expected"
-            test "$(git rev-parse origin/backup-before-merge)" = "$expected"
-            mkdir -p docs/integration
-            git show origin/main:README.md > docs/integration/legacy-main-README.md
-            if ! git merge --no-commit --no-ff --allow-unrelated-histories origin/main; then
-              conflicts="$(git diff --name-only --diff-filter=U)"
-              if test "$conflicts" != README.md; then
-                echo 'Unexpected conflicts; no changes will be pushed.' >&2
-                exit 1
-              fi
-              git checkout --ours -- README.md
-              git add README.md
-            fi
-            git add docs/integration/legacy-main-README.md
-            git -c user.name='github-actions[bot]' \
-                -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-                commit -m 'merge: preserve main history and archive its original README'
-            git push origin HEAD:refs/heads/fix/docly-desktop-upgrade-safety
-          fi
-          echo "head=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
-
   desktop:
-    needs: integrate-history
     runs-on: windows-latest
     timeout-minutes: 60
     permissions:
       contents: read
-      checks: write
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ needs.integrate-history.outputs.head }}
+          fetch-depth: 0
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
@@ -85,21 +40,21 @@ jobs:
         shell: pwsh
         run: |
           $env:PYTHONPATH = Join-Path $pwd 'apps/api'
-          python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v
+          python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v 2>&1 | Tee-Object -FilePath sqlite-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Prepare production desktop from clean checkout
-        shell: powershell
+        shell: pwsh
         run: |
           & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup-desktop.ps1 *>&1 | Tee-Object -FilePath desktop-setup.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
           if (-not (Test-Path apps/web/.next/BUILD_ID)) { throw 'Production web build missing' }
       - name: Real desktop launcher acceptance
-        shell: powershell
+        shell: pwsh
         run: |
           & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-launcher.ps1 *>&1 | Tee-Object -FilePath desktop-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Build original-source and updated installers
-        shell: powershell
+        shell: pwsh
         run: |
           & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.0 -SourceRef 7ab48303efa92b2e52702256dcdd360c9540d273 *>&1 | Tee-Object -FilePath installer-build-old.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -107,7 +62,7 @@ jobs:
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
       - name: Real installer lifecycle acceptance
         id: installer-tests
-        shell: powershell
+        shell: pwsh
         run: |
           & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer.ps1 -OldInstaller "$pwd/artifacts/installer/Docly-0.2.0-windows-x64-setup.exe" -NewInstaller "$pwd/artifacts/installer/Docly-0.2.1-windows-x64-setup.exe" *>&1 | Tee-Object -FilePath installer-tests.log
           if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
@@ -121,23 +76,23 @@ jobs:
             artifacts/installer/Docly-0.2.1-windows-x64-setup.exe.sha256
           if-no-files-found: error
           compression-level: 0
-      - name: Upload diagnostic logs (not a release)
+      - name: Upload diagnostic logs
         if: always()
         uses: actions/upload-artifact@v4
         with:
           name: desktop-verification-logs
           path: |
+            sqlite-tests.log
             desktop-setup.log
             desktop-tests.log
             installer-build-old.log
             installer-build.log
             installer-tests.log
           if-no-files-found: warn
-      - name: Attach verification result to the tested commit
+      - name: Report actual verification outcome
         if: always()
         uses: actions/github-script@v7
         env:
-          TESTED_SHA: ${{ needs.integrate-history.outputs.head }}
           JOB_STATUS: ${{ job.status }}
           INSTALLER_TEST_STATUS: ${{ steps.installer-tests.outcome }}
           INSTALLER_ARTIFACT: ${{ steps.installer-artifact.outputs.artifact-url }}
@@ -148,22 +103,49 @@ jobs:
               const raw = fs.readFileSync(path);
               return raw.toString(raw[0] === 0xff && raw[1] === 0xfe ? 'utf16le' : 'utf8');
             };
-            const logs = ['desktop-setup.log', 'desktop-tests.log', 'installer-build-old.log', 'installer-build.log', 'installer-tests.log']
+            const logs = ['sqlite-tests.log', 'desktop-setup.log', 'desktop-tests.log', 'installer-build-old.log', 'installer-build.log', 'installer-tests.log']
               .filter(path => fs.existsSync(path))
-              .map(path => `### ${path}\n\n\`\`\`text\n${readLog(path).slice(-5000)}\n\`\`\``)
+              .map(path => `### ${path}\n\n\`\`\`text\n${readLog(path).slice(-4000)}\n\`\`\``)
               .join('\n\n');
-            const summary = logs || 'See workflow run for setup or regression-test failure.';
             await github.rest.issues.createComment({
               owner: context.repo.owner, repo: context.repo.repo, issue_number: 1,
-              body: `## Desktop verification: ${process.env.JOB_STATUS}\n\nCommit: ${process.env.TESTED_SHA}\n\nInstaller lifecycle outcome: ${process.env.INSTALLER_TEST_STATUS || 'not run'}\n\nInstaller artifact: ${process.env.INSTALLER_ARTIFACT || 'not available'}\n\n${summary}`
+              body: `## Windows verification: ${process.env.JOB_STATUS}\n\nCommit: ${context.sha}\n\nInstaller lifecycle: ${process.env.INSTALLER_TEST_STATUS || 'not run'}\n\nInstaller artifact: ${process.env.INSTALLER_ARTIFACT || 'not available'}\n\n${logs}`
             });
-            await github.rest.checks.create({
-              owner: context.repo.owner, repo: context.repo.repo,
-              name: 'Docly desktop verification evidence',
-              head_sha: process.env.TESTED_SHA, status: 'completed',
-              conclusion: process.env.JOB_STATUS === 'success' ? 'success' : 'failure',
-              output: {
-                title: `Installer lifecycle: ${process.env.INSTALLER_TEST_STATUS || 'not run'}`,
-                summary: logs || 'See workflow run for setup or regression-test failure.'
+
+  diagnostics:
+    needs: desktop
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: 'ci.yml', per_page: 5
+            });
+            const ids = [context.runId, ...runs.data.workflow_runs.filter(r => r.head_sha === context.sha).map(r => r.id)];
+            const sections = [];
+            for (const run_id of [...new Set(ids)]) {
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({...repo, run_id, per_page: 100});
+              for (const job of jobs.data.jobs.filter(j => j.conclusion === 'failure')) {
+                try {
+                  const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...repo, job_id: job.id});
+                  const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                  const lines = text.split('\n');
+                  const index = lines.findIndex(line => line.includes('##[error]'));
+                  const excerpt = (index >= 0 ? lines.slice(Math.max(0, index - 35), index + 8).join('\n') : text.slice(-5000)).slice(-6000);
+                  sections.push(`### ${job.name}\n${job.html_url}\n\n\`\`\`text\n${excerpt}\n\`\`\``);
+                } catch (error) {
+                  sections.push(`### ${job.name}\n${job.html_url}\nLog retrieval failed: ${error.message}`);
+                }
               }
+            }
+            if (sections.length) await github.rest.issues.createComment({
+              ...repo, issue_number: 1,
+              body: `## Failed-check diagnostics\n\nCommit: ${context.sha}\n\n${sections.join('\n\n')}`
             });
