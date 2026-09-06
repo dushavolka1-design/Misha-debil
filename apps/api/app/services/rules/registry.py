@@ -2,6 +2,8 @@
 
 from __future__ import annotations
 
+from typing import Any
+
 from app.services.rules.types import ResultKind, RuleDef, RuleTestCase, Severity, Uncertainty
 
 GENERAL = (
@@ -14,7 +16,13 @@ GENERAL = (
 )
 
 
-def _tc(case_id: str, facts: list, expect: bool, unc: Uncertainty | None = None, note: str = "") -> RuleTestCase:
+def _tc(
+    case_id: str,
+    facts: list[dict[str, Any]],
+    expect: bool,
+    unc: Uncertainty | None = None,
+    note: str = "",
+) -> RuleTestCase:
     return RuleTestCase(case_id=case_id, facts=facts, expect_trigger=expect, expect_uncertainty=unc, note=note)
 
 
