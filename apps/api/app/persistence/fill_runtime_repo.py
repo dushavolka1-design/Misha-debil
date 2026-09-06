@@ -17,7 +17,7 @@ from app.services.forms.fill.service import FormDraftRecord, FormVersionRecord, 
 def fill_runtime_tables_ready() -> bool:
     try:
         insp = inspect(get_sync_engine())
-        return insp.has_table("fill_runtime_versions")
+        return bool(insp.has_table("fill_runtime_versions"))
     except Exception:
         return False
 
@@ -144,36 +144,36 @@ def load_fill_runtime() -> tuple[
     if not fill_runtime_tables_ready():
         return versions, by_catalog, drafts, generated
     with sync_session() as sess:
-        for row in sess.scalars(select(FillRuntimeVersion)).all():
-            rec = _row_to_version(row)
+        for version_row in sess.scalars(select(FillRuntimeVersion)).all():
+            rec = _row_to_version(version_row)
             versions[rec.id] = rec
             if rec.catalog_form_id:
                 by_catalog[rec.catalog_form_id] = rec.id
-        for row in sess.scalars(select(FillRuntimeDraft)).all():
-            drafts[row.id] = FormDraftRecord(
-                id=row.id,
-                user_id=row.user_id,
-                catalog_form_id=row.catalog_form_id,
-                form_version_id=row.form_version_id,
-                answers=dict(row.answers_json or {}),
-                updated_at=row.updated_at or datetime.now(UTC),
+        for draft_row in sess.scalars(select(FillRuntimeDraft)).all():
+            drafts[draft_row.id] = FormDraftRecord(
+                id=draft_row.id,
+                user_id=draft_row.user_id,
+                catalog_form_id=draft_row.catalog_form_id,
+                form_version_id=draft_row.form_version_id,
+                answers=dict(draft_row.answers_json or {}),
+                updated_at=draft_row.updated_at or datetime.now(UTC),
             )
-        for row in sess.scalars(select(FillRuntimeGenerated)).all():
-            generated[row.id] = GeneratedFormRecord(
-                id=row.id,
-                user_id=row.user_id,
-                form_version_id=row.form_version_id,
-                catalog_form_id=row.catalog_form_id,
-                answers=dict(row.answers_json or {}),
-                template_hash=row.template_hash,
-                coord_map_hash=row.coord_map_hash,
-                input_hash=row.input_hash,
-                output_hash=row.output_hash,
-                engine_version=row.engine_version,
-                output_pdf=row.output_pdf or b"",
-                preview=dict(row.preview_json or {}),
-                audit=list(row.audit_json or []),
-                created_at=row.created_at or datetime.now(UTC),
-                deleted_at=row.deleted_at,
+        for generated_row in sess.scalars(select(FillRuntimeGenerated)).all():
+            generated[generated_row.id] = GeneratedFormRecord(
+                id=generated_row.id,
+                user_id=generated_row.user_id,
+                form_version_id=generated_row.form_version_id,
+                catalog_form_id=generated_row.catalog_form_id,
+                answers=dict(generated_row.answers_json or {}),
+                template_hash=generated_row.template_hash,
+                coord_map_hash=generated_row.coord_map_hash,
+                input_hash=generated_row.input_hash,
+                output_hash=generated_row.output_hash,
+                engine_version=generated_row.engine_version,
+                output_pdf=generated_row.output_pdf or b"",
+                preview=dict(generated_row.preview_json or {}),
+                audit=list(generated_row.audit_json or []),
+                created_at=generated_row.created_at or datetime.now(UTC),
+                deleted_at=generated_row.deleted_at,
             )
     return versions, by_catalog, drafts, generated

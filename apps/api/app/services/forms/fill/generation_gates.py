@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import date
-from typing import Any
+from typing import Any, NoReturn
 
 from app.services.forms.fill.engine import FillError
 from app.services.forms.fill.fonts import bundled_font_status
@@ -27,7 +27,7 @@ DOWNLOAD_STEMS = {
     "worksheet.mvd.work_notification": "chernovik-uvedomlenie-trud",
     "worksheet.mvd.rvp.application": "chernovik-zayavlenie-rvp",
     "worksheet.mvd.vnz.application": "chernovik-zayavlenie-vnzh",
-    "worksheet.mvd.invitation.business": "chernovik-hodataystvo-priglashenie",
+    "worksheet.mvd.invitation.business": "chernnovik-hodataystvo-priglashenie",
     "worksheet.mvd.stay_extension": "chernovik-zayavlenie-prodlenie",
 }
 
@@ -95,7 +95,7 @@ def pdf_is_synthetic_underlay(pdf: bytes) -> bool:
     return SYNTHETIC_MARKER in pdf or b"source:demo-underlay" in pdf
 
 
-def _deny(code: str, message: str) -> None:
+def _deny(code: str, message: str) -> NoReturn:
     raise FillError(code, message, http_status=409)
 
 
@@ -181,12 +181,13 @@ def catalog_checklist(card: dict[str, Any], *, version: Any | None = None) -> li
     published = card.get("status") == "published"
     official_version = bool(version and inferred_form_kind(version.slug) == "government_form")
     two_eyes = bool(
-        official_version
+        version is not None
+        and official_version
         and version.author_id
         and version.second_reviewer_id
         and version.second_reviewer_id != version.author_id
     )
-    snapshot_ok = bool(official_version and version.source_snapshot_id and has_source)
+    snapshot_ok = bool(version is not None and official_version and version.source_snapshot_id and has_source)
     return [
         {"id": "official_file", "done": has_file, "label": "Официальный файл формы сохранён без изменений"},
         {"id": "source", "done": has_source, "label": "Официальный источник подтверждён на текущую дату"},
