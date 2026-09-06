@@ -1,9 +1,9 @@
-name: Docly reviewed desktop test contract repair
+name: Docly reviewed test fixture repair
 on:
   push:
     branches: [fix/docly-desktop-upgrade-safety]
     paths:
-      - scripts/repair_desktop_auth_test_contracts.py
+      - scripts/repair_runtime_fixture_alignment.py
       - .github/workflows/docly-test-contract-repair.yml
 permissions:
   contents: read
@@ -28,9 +28,9 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          python scripts/repair_desktop_auth_test_contracts.py
+          python scripts/repair_runtime_fixture_alignment.py
           python -m pip install ruff==0.15.0
-          python -m ruff check --select I --fix apps/api/tests/test_auth_consent.py apps/api/tests/test_form_catalog_api_contract.py apps/api/tests/test_prompt6_acceptance.py apps/api/tests/test_worksheets_official_acts.py
+          python -m ruff check --select I --fix apps/api/tests/test_forms_medical.py apps/api/tests/test_upload_lifecycle.py
           python -m compileall -q apps/api/tests
           git diff --check
           git diff --stat
@@ -44,9 +44,9 @@ jobs:
           test "$(git rev-parse FETCH_HEAD)" = "$GITHUB_SHA"
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add apps/api/tests/test_auth_consent.py apps/api/tests/test_form_catalog_api_contract.py apps/api/tests/test_prompt6_acceptance.py apps/api/tests/test_worksheets_official_acts.py
-          git commit -m 'test(auth): assert desktop activation and reject consumed-token replay'
+          git add apps/api/tests/test_forms_medical.py apps/api/tests/test_upload_lifecycle.py
+          git commit -m 'test(api): preserve consumer-owned services and await actual upload readiness'
           git push origin HEAD:refs/heads/fix/docly-desktop-upgrade-safety
           gh workflow run docly-python-runtime.yml --ref fix/docly-desktop-upgrade-safety
           gh workflow run docly-quality-evidence.yml --ref fix/docly-desktop-upgrade-safety
-          gh pr comment 1 --body "Applied reviewed desktop-only test corrections at $(git rev-parse HEAD). Assertions now require existing user activation and consumed-token rejection; production and manual-verification regressions remain unchanged. Runtime and strict quality checks dispatched. Original CI, installer and release acceptance are still required; this repair job is NOT acceptance."
+          gh pr comment 1 --body "Applied reviewed source-host and asynchronous-upload fixture corrections at $(git rev-parse HEAD). The consumer and HTTP handlers now use the same real lifespan-owned service; the test requires eventual READY and successful owner download before checking IDOR. Runtime and quality checks dispatched. This repair job is NOT acceptance; original CI and installer checks remain required."
