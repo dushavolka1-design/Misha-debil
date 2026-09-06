@@ -27,7 +27,7 @@ DOWNLOAD_STEMS = {
     "worksheet.mvd.work_notification": "chernovik-uvedomlenie-trud",
     "worksheet.mvd.rvp.application": "chernovik-zayavlenie-rvp",
     "worksheet.mvd.vnz.application": "chernovik-zayavlenie-vnzh",
-    "worksheet.mvd.invitation.business": "chernnovik-hodataystvo-priglashenie",
+    "worksheet.mvd.invitation.business": "chernovik-hodataystvo-priglashenie",
     "worksheet.mvd.stay_extension": "chernovik-zayavlenie-prodlenie",
 }
 
@@ -151,7 +151,7 @@ def assert_government_generatable(ver: Any, *, catalog: Any | None, sources: Any
         _deny("version_blocked", "Официальный источник заменён или не подтверждён.")
     latest_fetched = sources.latest_snapshot(snap.source_id)
     if latest_fetched and latest_fetched.id != snap.id and latest_fetched.content_hash != snap.content_hash:
-        _deny("source_changed", "Источник изменился; до проверки новой редакции генерация заблокирована.")
+        _deny("source_changed", "Источник изменился; до проверки новой редакции генерации заблокированы.")
 
     if not ver.catalog_form_id:
         _deny("catalog_missing", "Версия не привязана к карточке официальной формы.")
