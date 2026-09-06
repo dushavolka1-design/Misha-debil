@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, UTC
 from pathlib import Path
 from uuid import uuid4
 
@@ -163,7 +163,7 @@ def test_cannot_register_form_without_approved_source(registry: SourceRegistry) 
             act_title="Приказ",
             valid_from=date(2024, 1, 1),
             valid_to=None,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
             reviewer="editor",
         )
     assert ei.value.code == "source_not_approved"
@@ -188,7 +188,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
             act_title="Приказ",
             valid_from=date(2024, 1, 1),
             valid_to=None,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
             reviewer="editor",
         )
     assert ei.value.code == "hash_mismatch"
@@ -208,7 +208,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
         act_title="Приказ МВД N 856",
         valid_from=date(2024, 1, 1),
         valid_to=None,
-        reviewed_at=datetime.now(timezone.utc),
+        reviewed_at=datetime.now(UTC),
         reviewer="editor@test",
     )
     assert rec.status == "published"
@@ -235,7 +235,7 @@ def test_catalog_filters_and_cards(registry: SourceRegistry) -> None:
         act_title="Act",
         valid_from=date(2024, 1, 1),
         valid_to=date(2030, 6, 1),
-        reviewed_at=datetime.now(timezone.utc),
+        reviewed_at=datetime.now(UTC),
         reviewer="ed",
     )
     assert catalog.list_forms(purpose="migration_registration", status="published", as_of=date(2025, 1, 1))

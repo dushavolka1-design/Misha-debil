@@ -5,7 +5,7 @@ import hmac
 import secrets
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -36,7 +36,7 @@ PLAN_LIMITS: dict[str, dict[str, int]] = {
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class UploadError(Exception):

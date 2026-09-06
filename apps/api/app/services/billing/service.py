@@ -5,7 +5,7 @@ from __future__ import annotations
 import hashlib
 import hmac
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, UTC
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -18,7 +18,7 @@ TRIAL_NOTICE_DAYS_BEFORE = 3
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class BillingError(Exception):
@@ -376,7 +376,7 @@ class BillingService:
         occurred = None
         if verification.occurred_at:
             try:
-                occurred = datetime.fromtimestamp(float(verification.occurred_at), tz=timezone.utc)
+                occurred = datetime.fromtimestamp(float(verification.occurred_at), tz=UTC)
             except Exception:  # noqa: BLE001
                 try:
                     occurred = datetime.fromisoformat(verification.occurred_at.replace("Z", "+00:00"))

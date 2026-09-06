@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
@@ -25,7 +25,7 @@ from app.services.analysis.validate import reject_invalid_llm_findings, validate
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class AnalysisStatus(StrEnum):

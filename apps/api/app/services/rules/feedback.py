@@ -3,7 +3,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from enum import StrEnum
 from uuid import UUID, uuid4
 
@@ -46,7 +46,7 @@ class FeedbackStore:
             target_id=target_id,
             kind=kind,
             comment=comment,
-            created_at=datetime.now(timezone.utc),
+            created_at=datetime.now(UTC),
         )
         self.events.append(ev)
         return ev

@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from uuid import UUID
 
 from sqlalchemy import inspect, select
@@ -127,7 +127,7 @@ def _row_to_version(row: FillRuntimeVersion) -> FormVersionRecord:
         published_at=row.published_at,
         source_snapshot_id=row.source_snapshot_id,
         blocked_reason=row.blocked_reason,
-        created_at=row.created_at or datetime.now(timezone.utc),
+        created_at=row.created_at or datetime.now(UTC),
     )
 
 
@@ -156,7 +156,7 @@ def load_fill_runtime() -> tuple[
                 catalog_form_id=row.catalog_form_id,
                 form_version_id=row.form_version_id,
                 answers=dict(row.answers_json or {}),
-                updated_at=row.updated_at or datetime.now(timezone.utc),
+                updated_at=row.updated_at or datetime.now(UTC),
             )
         for row in sess.scalars(select(FillRuntimeGenerated)).all():
             generated[row.id] = GeneratedFormRecord(
@@ -173,7 +173,7 @@ def load_fill_runtime() -> tuple[
                 output_pdf=row.output_pdf or b"",
                 preview=dict(row.preview_json or {}),
                 audit=list(row.audit_json or []),
-                created_at=row.created_at or datetime.now(timezone.utc),
+                created_at=row.created_at or datetime.now(UTC),
                 deleted_at=row.deleted_at,
             )
     return versions, by_catalog, drafts, generated

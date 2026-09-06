@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 import time
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from typing import Any, Protocol
 
@@ -86,7 +86,7 @@ class SqliteJobBroker:
                     payload_json=json.dumps(safe, default=str),
                     status="pending",
                     attempt=int(payload.get("attempt", 0)),
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 )
             )
             session.commit()
@@ -128,7 +128,7 @@ class SqliteJobBroker:
                     payload_json=json.dumps(payload, default=str),
                     status="pending" if status == "pending" else "dead",
                     attempt=attempt,
-                    created_at=datetime.now(timezone.utc),
+                    created_at=datetime.now(UTC),
                 )
             )
             session.commit()

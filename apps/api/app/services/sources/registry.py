@@ -2,9 +2,10 @@ from __future__ import annotations
 
 import hashlib
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import date, datetime, timedelta, timezone, UTC
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 from uuid import UUID, uuid4
 
 from app.services.sources.url_policy import (
@@ -18,7 +19,7 @@ from app.services.sources.url_policy import (
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class SourceState(StrEnum):

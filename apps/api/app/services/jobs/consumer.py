@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import asyncio
 import logging
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 
 from app.services.jobs.broker import JobBroker
 from app.services.jobs.runner import handle_job_payload

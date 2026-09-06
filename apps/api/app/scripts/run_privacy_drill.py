@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from pathlib import Path
 from uuid import uuid4
 
@@ -41,7 +41,7 @@ def main() -> None:
 
     evidence = {
         "drill": "privacy_deletion_and_log_canary",
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(UTC).isoformat(),
         "synthetic_user_id": str(uuid4()),
         "deletion_status_simulated": "deletion_requested",
         "export_status_simulated": "export_requested",

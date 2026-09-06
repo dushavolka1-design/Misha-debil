@@ -95,7 +95,7 @@ def test_checklist_pdf_is_informational_with_marking() -> None:
     assert pdf.startswith(b"%PDF")
     assert CHECKLIST_BANNER.encode("utf-8") in pdf or CHECKLIST_BANNER.encode("latin-1", "replace") in pdf
     lower = pdf.lower()
-    assert b"informational" in lower or "информационн".encode("utf-8") in pdf
+    assert b"informational" in lower or "информационн".encode() in pdf
     assert b"/Encrypt" not in pdf
 
 

@@ -3,8 +3,9 @@ from __future__ import annotations
 import json
 import logging
 from dataclasses import asdict, fields
-from datetime import datetime, timezone
-from typing import Any, Callable
+from datetime import datetime, timezone, UTC
+from typing import Any
+from collections.abc import Callable
 from uuid import UUID
 
 from sqlalchemy import delete, select, text
@@ -106,7 +107,7 @@ def _aware(value: datetime | None) -> datetime | None:
     if value is None:
         return None
     if value.tzinfo is None:
-        return value.replace(tzinfo=timezone.utc)
+        return value.replace(tzinfo=UTC)
     return value
 
 
@@ -591,7 +592,7 @@ def _save_blob(namespace: str, blob_key: str, value: Any) -> None:
             namespace=namespace,
             blob_key=blob_key,
             value_json=payload,
-            updated_at=datetime.now(timezone.utc),
+            updated_at=datetime.now(UTC),
         )
         stmt = stmt.on_conflict_do_update(
             index_elements=["namespace", "blob_key"],

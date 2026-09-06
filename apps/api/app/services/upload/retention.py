@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta, timezone, UTC
 
 
 @dataclass(frozen=True)
@@ -35,7 +35,7 @@ MEDICAL_RETENTION = RetentionPolicy(
 
 def expires_at(created: datetime, days: int) -> datetime:
     if created.tzinfo is None:
-        created = created.replace(tzinfo=timezone.utc)
+        created = created.replace(tzinfo=UTC)
     return created + timedelta(days=days)
 
 

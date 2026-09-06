@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
-from datetime import datetime, timezone
+from datetime import datetime, timezone, UTC
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -72,7 +72,7 @@ def build_report(
         document_id=document_id,
         user_id=user_id,
         analysis_run_id=analysis_run_id,
-        created_at=datetime.now(timezone.utc),
+        created_at=datetime.now(UTC),
         report_version=REPORT_VERSION,
         pipeline_versions=pipeline_versions or {},
         disclaimer=DISCLAIMER,

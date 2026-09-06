@@ -4,7 +4,8 @@ import json
 import os
 import socket
 from pathlib import Path
-from typing import Any, Callable
+from typing import Any
+from collections.abc import Callable
 from uuid import uuid4
 
 from sqlalchemy import create_engine
