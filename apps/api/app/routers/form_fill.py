@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -16,6 +17,7 @@ from app.schemas_forms import (
     FillPreDownloadRequest,
     FillPreviewRequest,
 )
+from app.services.auth_consent import UserRecord
 from app.services.forms.catalog import FormCatalogService, FormError
 from app.services.forms.fill.engine import FillError, engine_info
 from app.services.forms.fill.generation_gates import inferred_form_kind, is_test_synthetic_slug
@@ -25,11 +27,17 @@ router = APIRouter(prefix="/forms/fill", tags=["form-fill"])
 
 
 def get_fill(request: Request) -> FormFillService:
-    return request.app.state.form_fill
+    service = request.app.state.form_fill
+    if not isinstance(service, FormFillService):
+        raise RuntimeError("Form fill service is not initialized")
+    return service
 
 
 def get_catalog(request: Request) -> FormCatalogService:
-    return request.app.state.form_catalog
+    service = request.app.state.form_catalog
+    if not isinstance(service, FormCatalogService):
+        raise RuntimeError("Form catalog service is not initialized")
+    return service
 
 
 def _http(exc: FillError) -> None:
@@ -39,7 +47,7 @@ def _http(exc: FillError) -> None:
 
 
 @router.get("/engine")
-async def fill_engine_info() -> dict:
+async def fill_engine_info() -> dict[str, Any]:
     return engine_info()
 
 
@@ -48,7 +56,7 @@ async def fill_by_catalog(
     catalog_form_id: UUID,
     fill: FormFillService = Depends(get_fill),
     catalog: FormCatalogService = Depends(get_catalog),
-) -> dict:
+) -> dict[str, Any]:
     try:
         form = catalog.get(catalog_form_id)
     except FormError as exc:
@@ -63,8 +71,8 @@ async def fill_by_catalog(
 async def get_fill_draft(
     catalog_form_id: UUID,
     fill: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, Any]:
     if not user:
         from fastapi import HTTPException
 
@@ -79,8 +87,8 @@ async def get_fill_draft(
 async def save_fill_draft(
     body: FillDraftSaveRequest,
     fill: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, Any]:
     if not user:
         from fastapi import HTTPException
 
@@ -97,8 +105,8 @@ async def save_fill_draft(
 async def list_generated_forms(
     fill: FormFillService = Depends(get_fill),
     catalog: FormCatalogService = Depends(get_catalog),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, Any]:
     if not user:
         from fastapi import HTTPException
 
@@ -129,8 +137,8 @@ async def list_generated_forms(
 async def copy_generated_form(
     generated_id: UUID,
     fill: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, Any]:
     if not user:
         from fastapi import HTTPException
 
@@ -150,7 +158,7 @@ async def copy_generated_form(
 async def pre_download_checklist(
     body: FillPreDownloadRequest,
     fill: FormFillService = Depends(get_fill),
-) -> dict:
+) -> dict[str, Any]:
     try:
         return fill.pre_download_checklist(body.form_version_id, body.answers)
     except FillError as exc:
@@ -159,12 +167,12 @@ async def pre_download_checklist(
 
 
 @router.get("/versions")
-async def list_fill_versions(service: FormFillService = Depends(get_fill)) -> list[dict]:
+async def list_fill_versions(service: FormFillService = Depends(get_fill)) -> list[dict[str, Any]]:
     return [service.version_card(v) for v in service.versions.values() if not is_test_synthetic_slug(v.slug)]
 
 
 @router.get("/versions/{version_id}")
-async def get_fill_version(version_id: UUID, service: FormFillService = Depends(get_fill)) -> dict:
+async def get_fill_version(version_id: UUID, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
     ver = service.versions.get(version_id)
     if not ver:
         from fastapi import HTTPException
@@ -200,7 +208,7 @@ async def get_underlay_pdf(version_id: UUID, service: FormFillService = Depends(
 
 
 @router.post("/coord-maps/submit")
-async def submit_coord_map(body: CoordMapSubmitRequest, service: FormFillService = Depends(get_fill)) -> dict:
+async def submit_coord_map(body: CoordMapSubmitRequest, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
     try:
         draft = service.submit_coord_map_for_review(
             form_version_id=body.form_version_id,
@@ -214,7 +222,7 @@ async def submit_coord_map(body: CoordMapSubmitRequest, service: FormFillService
 
 
 @router.post("/coord-maps/approve")
-async def approve_coord_map(body: CoordMapApproveRequest, service: FormFillService = Depends(get_fill)) -> dict:
+async def approve_coord_map(body: CoordMapApproveRequest, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
     try:
         ver = service.approve_coord_map(body.draft_id, reviewer_id=body.reviewer_id)
     except FillError as exc:
@@ -224,7 +232,7 @@ async def approve_coord_map(body: CoordMapApproveRequest, service: FormFillServi
 
 
 @router.post("/preview")
-async def preview_fill(body: FillPreviewRequest, service: FormFillService = Depends(get_fill)) -> dict:
+async def preview_fill(body: FillPreviewRequest, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
     try:
         result = service.preview(body.form_version_id, body.answers)
     except FillError as exc:
@@ -237,8 +245,8 @@ async def preview_fill(body: FillPreviewRequest, service: FormFillService = Depe
 async def generate_fill(
     body: FillGenerateRequest,
     service: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, Any]:
     if not user:
         from fastapi import HTTPException
 
@@ -263,7 +271,7 @@ async def generate_fill(
 async def download_generated(
     generated_id: UUID,
     service: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> Response:
     if not user:
         from fastapi import HTTPException
@@ -294,8 +302,8 @@ async def download_generated(
 async def delete_generated(
     generated_id: UUID,
     service: FormFillService = Depends(get_fill),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, bool]:
     if not user:
         from fastapi import HTTPException
 
