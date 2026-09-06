@@ -316,65 +316,65 @@ def _save_consent_event(event: ConsentEventRecord) -> None:
 
 def _load_auth_store(store: AuthConsentStore) -> None:
     with sync_session() as session:
-        for row in session.scalars(select(User)).all():
+        for user_row in session.scalars(select(User)).all():
             user = UserRecord(
-                id=row.id,
-                tenant_id=row.tenant_id,
-                email=row.email,
-                password_hash=row.password_hash or "",
-                role=row.role,
-                status=row.status,
-                email_verified_at=_aware(row.email_verified_at),
-                created_at=_aware(row.created_at) or row.created_at,
-                display_name=getattr(row, "display_name", None) or "",
-                avatar_jpeg=getattr(row, "avatar_jpeg", None),
+                id=user_row.id,
+                tenant_id=user_row.tenant_id,
+                email=user_row.email,
+                password_hash=user_row.password_hash or "",
+                role=user_row.role,
+                status=user_row.status,
+                email_verified_at=_aware(user_row.email_verified_at),
+                created_at=_aware(user_row.created_at) or user_row.created_at,
+                display_name=getattr(user_row, "display_name", None) or "",
+                avatar_jpeg=getattr(user_row, "avatar_jpeg", None),
             )
             store.index_user(user)
-        for row in session.scalars(select(Session)).all():
+        for session_row in session.scalars(select(Session)).all():
             sess = SessionRecord(
-                id=row.id,
-                user_id=row.user_id,
-                tenant_id=row.tenant_id,
-                token_hash=row.token_hash,
-                expires_at=_aware(row.expires_at) or row.expires_at,
-                revoked_at=_aware(row.revoked_at),
-                rotated_from=row.rotated_from,
-                user_agent=row.user_agent,
-                ip=row.ip,
+                id=session_row.id,
+                user_id=session_row.user_id,
+                tenant_id=session_row.tenant_id,
+                token_hash=session_row.token_hash,
+                expires_at=_aware(session_row.expires_at) or session_row.expires_at,
+                revoked_at=_aware(session_row.revoked_at),
+                rotated_from=session_row.rotated_from,
+                user_agent=session_row.user_agent,
+                ip=session_row.ip,
             )
             store.sessions[sess.id] = sess
             store.sessions_by_token[sess.token_hash] = sess.id
-        for row in session.scalars(select(LegalDocument)).all():
+        for legal_row in session.scalars(select(LegalDocument)).all():
             doc = LegalDoc(
-                id=row.id,
-                consent_id=row.consent_id,
-                consent_version=row.consent_version,
-                locale=row.locale,
-                canonical_text=row.canonical_text or "",
-                content_hash=row.content_hash,
-                effective_at=_aware(row.effective_from) or row.effective_from,
-                supersedes_id=row.supersedes_id,
-                reviewer_id=row.reviewer_id,
-                publication_status=PublicationStatus(row.publication_status),
-                body_path=row.body_path,
-                immutable=row.publication_status in {"published", "retired"},
+                id=legal_row.id,
+                consent_id=legal_row.consent_id,
+                consent_version=legal_row.consent_version,
+                locale=legal_row.locale,
+                canonical_text=legal_row.canonical_text or "",
+                content_hash=legal_row.content_hash,
+                effective_at=_aware(legal_row.effective_from) or legal_row.effective_from,
+                supersedes_id=legal_row.supersedes_id,
+                reviewer_id=legal_row.reviewer_id,
+                publication_status=PublicationStatus(legal_row.publication_status),
+                body_path=legal_row.body_path,
+                immutable=legal_row.publication_status in {"published", "retired"},
             )
             store.legal[doc.id] = doc
-        for row in session.scalars(select(ConsentEvent)).all():
+        for consent_row in session.scalars(select(ConsentEvent)).all():
             event = ConsentEventRecord(
-                id=row.id,
-                subject_user_id=row.user_id,
-                legal_document_id=row.legal_document_id,
-                consent_id=row.consent_id or "",
-                consent_version=row.consent_version or "",
-                content_hash=row.content_hash or "",
-                action=ConsentAction(row.action),
-                occurred_at=_aware(row.occurred_at or row.accepted_at) or row.accepted_at,
-                ip=row.ip,
-                user_agent=row.user_agent,
-                locale=row.locale,
-                request_id=row.request_id or "",
-                evidence_schema_version=row.evidence_schema_version,
+                id=consent_row.id,
+                subject_user_id=consent_row.user_id,
+                legal_document_id=consent_row.legal_document_id,
+                consent_id=consent_row.consent_id or "",
+                consent_version=consent_row.consent_version or "",
+                content_hash=consent_row.content_hash or "",
+                action=ConsentAction(consent_row.action),
+                occurred_at=_aware(consent_row.occurred_at or consent_row.accepted_at) or consent_row.accepted_at,
+                ip=consent_row.ip,
+                user_agent=consent_row.user_agent,
+                locale=consent_row.locale,
+                request_id=consent_row.request_id or "",
+                evidence_schema_version=consent_row.evidence_schema_version,
             )
             store.consent_events.append(event)
     blob = _load_blob("auth", "email_tokens")
