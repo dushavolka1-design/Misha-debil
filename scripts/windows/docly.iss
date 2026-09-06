@@ -15,6 +15,7 @@ AppVersion={#AppVersion}
 AppPublisher=Docly
 DefaultDirName={localappdata}\Programs\Docly
 DefaultGroupName=Docly
+DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
@@ -29,12 +30,32 @@ RestartApplications=no
 UninstallDisplayIcon={app}\scripts\windows\assets\docly-icon.ico
 SetupIconFile={#PayloadDir}\scripts\windows\assets\docly-icon.ico
 
+[Languages]
+Name: "english"; MessagesFile: "compiler:Default.isl"
+Name: "russian"; MessagesFile: "compiler:Languages\Russian.isl"
+
+[CustomMessages]
+english.StartMenuTask=Create a Start menu shortcut
+russian.StartMenuTask=Создать ярлык в меню «Пуск»
+english.AutostartTask=Start Docly when you sign in
+russian.AutostartTask=Запускать Docly при входе в систему
+
+[Tasks]
+Name: "startmenu"; Description: "{cm:StartMenuTask}"; Flags: unchecked
+Name: "autostart"; Description: "{cm:AutostartTask}"; Flags: unchecked
+
 [Files]
 Source: "{#PayloadDir}\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
 
 [Icons]
-Name: "{group}\Docly"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\scripts\windows\assets\docly-icon.ico"
+Name: "{group}\Docly"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\scripts\windows\assets\docly-icon.ico"; Tasks: startmenu
 Name: "{userdesktop}\Docly"; Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; IconFilename: "{app}\scripts\windows\assets\docly-icon.ico"
+
+[Registry]
+Root: HKCU; Subkey: "Software\Microsoft\Windows\CurrentVersion\Run"; ValueType: string; ValueName: "Docly"; ValueData: """{sys}\wscript.exe"" ""{app}\scripts\windows\launch-installed.vbs"""; Flags: uninsdeletevalue; Tasks: autostart
+
+[Run]
+Filename: "{sys}\wscript.exe"; Parameters: """{app}\scripts\windows\launch-installed.vbs"""; WorkingDir: "{app}"; Description: "{cm:LaunchProgram,Docly}"; Flags: nowait postinstall skipifsilent unchecked
 
 [UninstallDelete]
 ; Only generated application/runtime files. Never delete LocalAppData\Docly.

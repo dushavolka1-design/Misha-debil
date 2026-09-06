@@ -16,6 +16,9 @@ $env:PYTHONDONTWRITEBYTECODE = '1'
 $env:PATH = "$env:WINDIR\System32;$env:WINDIR"
 $py = Join-Path $install 'apps\api\.venv\Scripts\python.exe'
 $launcher = Join-Path $install 'scripts\windows\docly_launcher.py'
+$desktopShortcut = Join-Path ([Environment]::GetFolderPath('Desktop')) 'Docly.lnk'
+$startMenuShortcut = Join-Path ([Environment]::GetFolderPath('Programs')) 'Docly\Docly.lnk'
+$autostartKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 function Check([bool]$Value, [string]$Message) {
   if (-not $Value) { throw $Message }
   Write-Host "PASS: $Message"
@@ -30,15 +33,44 @@ function VerifiedHash([string]$Exe) {
   Check ($actualHash -eq $expectedHash) 'installer SHA-256 matches sidecar'
   return $actualHash
 }
-function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string]$ExpectedSource) {
+function Read-Autostart {
+  if (-not (Test-Path -LiteralPath $autostartKey)) { return $null }
+  $values = Get-ItemProperty -LiteralPath $autostartKey -ErrorAction Stop
+  $property = $values.PSObject.Properties['Docly']
+  if ($null -eq $property) { return $null }
+  return $property.Value
+}
+function Check-Shortcut([string]$Path, [string]$Label) {
+  Check (Test-Path -LiteralPath $Path) "$Label exists"
+  $shell = New-Object -ComObject WScript.Shell
+  $shortcut = $shell.CreateShortcut($Path)
+  Check ($shortcut.TargetPath -eq "$env:WINDIR\System32\wscript.exe") "$Label uses Windows script host"
+  Check ($shortcut.Arguments -eq ('"' + (Join-Path $install 'scripts\windows\launch-installed.vbs') + '"')) "$Label targets installed launcher"
+  Check ($shortcut.WorkingDirectory -eq $install) "$Label working directory"
+}
+function Install([string]$Exe, [string]$Label, [string]$ExpectedVersion, [string]$ExpectedSource, [string]$Tasks = '') {
   $log = Join-Path $work "$Label.log"
-  $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"") -PassThru
+  $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"", "/TASKS=`"$Tasks`"") -PassThru
   Check ($process.WaitForExit(600000)) "$Label completed within ten minutes"
   Check ($process.ExitCode -eq 0) "$Label exit code"
   Check (Test-Path $py) "$Label bundled Python environment"
   $version = Get-Content (Join-Path $install 'version.json') -Raw | ConvertFrom-Json
   Check ($version.version -eq $ExpectedVersion) "$Label application version $ExpectedVersion"
   Check ($version.source_commit -eq $ExpectedSource) "$Label source commit identity"
+  if ($ExpectedVersion -eq '0.2.2') {
+    Check-Shortcut $desktopShortcut "$Label mandatory desktop shortcut"
+    if ($Tasks -eq 'startmenu,autostart') {
+      Check-Shortcut $startMenuShortcut "$Label selected Start menu shortcut"
+      $expectedRun = '"' + "$env:WINDIR\System32\wscript.exe" + '" "' + (Join-Path $install 'scripts\windows\launch-installed.vbs') + '"'
+      Check ((Read-Autostart) -eq $expectedRun) "$Label selected per-user autostart"
+    } else {
+      Check ($null -eq (Read-Autostart)) "$Label autostart disabled"
+    }
+    if ($Label -eq 'clean-new-install') {
+      Check (-not (Test-Path -LiteralPath $startMenuShortcut)) 'fresh install has no unselected Start menu shortcut'
+    }
+    Check (-not (Test-Path (Join-Path $env:DOCLY_RUNTIME_DIR 'instance.json'))) "$Label did not launch during silent setup"
+  }
 }
 function Launch {
   $wrapper = Join-Path $install 'scripts\windows\launch-installed.vbs'
@@ -77,6 +109,7 @@ try {
   Install $NewInstaller 'upgrade-install' '0.2.2' $NewSourceCommit
   Launch
   Stop-Docly
+  Install $NewInstaller 'optional-shortcuts-install' '0.2.2' $NewSourceCommit 'startmenu,autostart'
   & $py -c "import os,sqlite3; from pathlib import Path; c=sqlite3.connect(Path(os.environ['DOCLY_DATA_DIR'])/'docly.db'); assert c.execute('SELECT value FROM installer_acceptance').fetchall()==[('retained user state',)]; assert c.execute('PRAGMA integrity_check').fetchone()==('ok',); c.close()"
   Check ($LASTEXITCODE -eq 0) 'database rows and integrity preserved through upgrade'
   Check ((Get-FileHash $settings).Hash -eq $settingsHash) 'settings preserved through upgrade'
@@ -91,6 +124,9 @@ try {
   while ((Test-Path $py) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 300 }
   Check (-not (Test-Path $py)) 'generated Python environment removed'
   Check (-not (Test-Path (Join-Path $install 'runtime\node\node.exe'))) 'bundled Node removed'
+  Check (-not (Test-Path -LiteralPath $desktopShortcut)) 'uninstall removed application desktop shortcut'
+  Check (-not (Test-Path -LiteralPath $startMenuShortcut)) 'uninstall removed selected Start menu shortcut'
+  Check ($null -eq (Read-Autostart)) 'uninstall removed selected autostart entry'
   Check ((Get-FileHash $db).Hash -eq $databaseHash) 'uninstall retained database'
   Check ((Get-FileHash $settings).Hash -eq $settingsHash) 'uninstall retained settings'
   Check ((Get-FileHash $document).Hash -eq $documentHash) 'uninstall retained document'
