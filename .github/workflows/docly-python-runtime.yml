@@ -12,6 +12,16 @@ jobs:
   runtime:
     runs-on: ubuntu-latest
     timeout-minutes: 20
+    services:
+      redis:
+        image: redis:7.4
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 5s
+          --health-timeout 3s
+          --health-retries 10
     permissions:
       contents: read
       pull-requests: write
@@ -45,8 +55,8 @@ jobs:
         run: |
           set -euo pipefail
           mkdir -p artifacts/python-runtime
-          python -m pytest -q apps/api/tests/test_document_log_arguments.py apps/api/tests/test_logging_redaction.py apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py apps/api/tests/test_generation_gate_contract.py apps/api/tests/test_prompt3_generation_guards.py --junitxml=artifacts/python-runtime/focused.xml 2>&1 | tee artifacts/python-runtime/focused.log
-      - name: All API, shared Python and no-infrastructure smoke tests
+          python -m pytest -q apps/api/tests/test_auth_route_regressions.py apps/api/tests/test_document_log_arguments.py apps/api/tests/test_logging_redaction.py apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py apps/api/tests/test_generation_gate_contract.py apps/api/tests/test_prompt3_generation_guards.py --junitxml=artifacts/python-runtime/focused.xml 2>&1 | tee artifacts/python-runtime/focused.log
+      - name: All API, shared Python and smoke tests with Redis
         if: ${{ !cancelled() }}
         working-directory: apps/api
         run: |
@@ -72,4 +82,4 @@ jobs:
               const path = `artifacts/python-runtime/${name}.log`;
               return `### ${name}\n\`\`\`text\n${fs.existsSync(path) ? fs.readFileSync(path, 'utf8').slice(-18000) : 'NOT RUN'}\n\`\`\``;
             });
-            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Python runtime evidence: ${process.env.JOB_STATUS}\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nArtifact: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs.join('\n')}\nScope: existing no-infrastructure test configuration with synthetic providers, not real-provider/installer acceptance. Skips are not passes. Strict typing and original CI remain required.`});
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Python runtime evidence: ${process.env.JOB_STATUS}\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}\nArtifact: ${process.env.EVIDENCE_URL || 'unavailable'}\n${logs.join('\n')}\nScope: synthetic providers plus real Redis service; PostgreSQL persistence, real-provider and installer acceptance remain separate. Skips are not passes. Strict typing and original CI remain required.`});
