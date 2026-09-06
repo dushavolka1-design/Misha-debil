@@ -7,19 +7,20 @@ from __future__ import annotations
 
 from urllib.parse import urlsplit
 
-from starlette.middleware.base import BaseHTTPMiddleware
+from starlette.middleware.base import BaseHTTPMiddleware, RequestResponseEndpoint
 from starlette.requests import Request
 from starlette.responses import JSONResponse, Response
+from starlette.types import ASGIApp
 
 SAFE_METHODS = frozenset({"GET", "HEAD", "OPTIONS", "TRACE"})
 
 
 class OriginCheckMiddleware(BaseHTTPMiddleware):
-    def __init__(self, app, *, allowed_origins: list[str]) -> None:
+    def __init__(self, app: ASGIApp, *, allowed_origins: list[str]) -> None:
         super().__init__(app)
         self.allowed = {o.rstrip("/") for o in allowed_origins if o}
 
-    async def dispatch(self, request: Request, call_next) -> Response:
+    async def dispatch(self, request: Request, call_next: RequestResponseEndpoint) -> Response:
         if request.method in SAFE_METHODS:
             return await call_next(request)
         # Webhooks use signature auth — skip Origin (providers often omit it)

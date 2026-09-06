@@ -19,7 +19,7 @@ class LocalExtractOCRProvider(OCRProvider):
         *,
         object_ref: StoredObject,
         content_type: str,
-        page_bytes: bytes | None,
+        page_bytes: bytes | None = None,
         fixture_id: str | None = None,
     ) -> OcrDocumentResult:
         _ = (object_ref, fixture_id)

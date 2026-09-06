@@ -78,6 +78,12 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -e packages/py_dar -r apps/api/requirements.txt -e 'apps/api[dev]'
+      - name: Focused runtime regressions and full Python lint
+        run: |
+          set -euo pipefail
+          mkdir -p artifacts/typing-evidence
+          python -m pytest -q apps/api/tests/test_filename_controls.py apps/api/tests/test_local_extract_contract.py apps/api/tests/test_csrf_referer_origin.py --junitxml=artifacts/typing-evidence/regressions.xml 2>&1 | tee artifacts/typing-evidence/regressions.log
+          python -m ruff check apps/api/app apps/api/tests packages/py_dar/src apps/worker/worker 2>&1 | tee artifacts/typing-evidence/ruff.log
       - name: Full strict API typing with complete diagnostics
         working-directory: apps/api
         run: |
