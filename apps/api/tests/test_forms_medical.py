@@ -170,7 +170,7 @@ def test_cannot_register_form_without_approved_source(registry: SourceRegistry) 
 
 
 def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> None:
-    _, snap, body = _approve_host(registry, "mvd.gov.ru", act_number="856")
+    _, snap, body = _approve_host(registry, "xn--b1aew.xn--p1ai", act_number="856")
     catalog = FormCatalogService(registry)
     with pytest.raises(FormError) as ei:
         catalog.register_form(
@@ -218,7 +218,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
 
 
 def test_catalog_filters_and_cards(registry: SourceRegistry) -> None:
-    _, snap, body = _approve_host(registry, "mvd.gov.ru")
+    _, snap, body = _approve_host(registry, "xn--b1aew.xn--p1ai")
     catalog = FormCatalogService(registry)
     catalog.register_form(
         slug="mvd.a",
