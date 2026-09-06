@@ -96,8 +96,11 @@ class ProfileBackupTests(unittest.TestCase):
 
     def test_sqlite_timeout_removes_incomplete_snapshot(self) -> None:
         original = self.hashes()
-        with self.assertRaises(TimeoutError):
-            self.backup(sqlite_timeout=1e-12)
+        # Inject only elapsed time; filesystem and SQLite backup remain real.
+        # A sub-clock-resolution timeout is nondeterministic on Windows.
+        with patch("app.profile_backup.time.monotonic", side_effect=[100.0, 161.0]):
+            with self.assertRaises(TimeoutError):
+                self.backup(sqlite_timeout=60.0)
         self.assertEqual(self.hashes(), original)
         self.assert_no_published_snapshot()
 
