@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from docly_auth_test_support import assert_desktop_email_is_verified
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -275,7 +276,7 @@ def test_api_register_and_login_session_cookie(client: TestClient, store: AuthCo
     assert res.status_code == 200
     token = res.json()["verification_token_dev"]
     assert token
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
     login = client.post("/auth/login", json={"email": "ok@example.com", "password": "longpassword1"})
     assert login.status_code == 200
     assert "dar_session" in login.cookies
@@ -432,7 +433,7 @@ def test_profile_name_and_avatar_roundtrip(client: TestClient, store: AuthConsen
     )
     assert res.status_code == 200
     token = res.json()["verification_token_dev"]
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
     assert (
         client.post("/auth/login", json={"email": "avatar@example.com", "password": "longpassword1"}).status_code == 200
     )
