@@ -1,0 +1,118 @@
+name: Docly official source snapshot (NOT acceptance)
+
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths:
+      - '.github/workflows/docly-official-source-snapshot.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    outputs:
+      sha256: ${{ steps.snapshot.outputs.sha256 }}
+    steps:
+      - name: Install PDF inspection tools
+        run: |
+          set -euo pipefail
+          sudo timeout 120 apt-get update
+          sudo timeout 120 apt-get install -y poppler-utils
+      - name: Acquire original PDF without accepting a template
+        id: snapshot
+        env:
+          SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          source='https://publication.pravo.gov.ru/file/pdf?eoNumber=0001202606020025'
+          file='evidence/mvd-2026-290.pdf'
+          curl --proto '=https' --proto-redir '=https' --fail --location --retry 2 --connect-timeout 20 --max-time 120 --max-filesize 10485760 --output "$file" "$source"
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('evidence/mvd-2026-290.pdf')
+          data = path.read_bytes()
+          if not (1024 < len(data) <= 10485760) or not data.startswith(b'%PDF-'):
+              raise SystemExit('Rejected source: not a bounded PDF payload')
+          PY
+          pdfinfo "$file" > evidence/pdfinfo.txt
+          pages=$(awk '/^Pages:/ {print $2}' evidence/pdfinfo.txt)
+          test "$pages" = '46'
+          pdftotext -layout "$file" evidence/extracted-text.txt
+          (cd evidence && sha256sum mvd-2026-290.pdf > mvd-2026-290.pdf.sha256)
+          python3 - <<'PY'
+          import hashlib
+          import json
+          import os
+          from datetime import datetime, timezone
+          from pathlib import Path
+          path = Path('evidence/mvd-2026-290.pdf')
+          data = path.read_bytes()
+          digest = hashlib.sha256(data).hexdigest()
+          record = {
+              'publication_number': '0001202606020025',
+              'source_url': 'https://publication.pravo.gov.ru/file/pdf?eoNumber=0001202606020025',
+              'acquired_at_utc': datetime.now(timezone.utc).isoformat(),
+              'workflow_source_commit': os.environ['SOURCE_COMMIT'],
+              'sha256': digest,
+              'size_bytes': len(data),
+              'page_count': 46,
+              'legal_acceptance': False,
+              'pixel_acceptance': False,
+              'status': 'SOURCE_SNAPSHOT_ONLY_NOT_ACCEPTED',
+          }
+          Path('evidence/source-snapshot.json').write_text(json.dumps(record, indent=2) + '\n')
+          with open(os.environ['GITHUB_OUTPUT'], 'a', encoding='utf-8') as output:
+              output.write(f'sha256={digest}\n')
+          print(json.dumps(record, indent=2))
+          PY
+      - name: Archive unapproved official source snapshot
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: mvd-290-2026-source-NOT-ACCEPTED
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
+
+  report:
+    needs: acquire
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      issues: write
+    steps:
+      - name: Report acquisition separately from legal and pixel acceptance
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          SOURCE_COMMIT: ${{ github.sha }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          ACQUISITION_STATUS: ${{ needs.acquire.result }}
+          PDF_SHA256: ${{ needs.acquire.outputs.sha256 }}
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+          digest = os.environ['PDF_SHA256'] or 'NOT AVAILABLE; acquisition incomplete or failed'
+          body = (
+              '## Official PDF source acquisition — NOT release/template acceptance\n'
+              f"Commit: {os.environ['SOURCE_COMMIT']}\n"
+              f"Acquisition job: **{os.environ['ACQUISITION_STATUS']}**\n"
+              f"Run/artifact: {os.environ['RUN_URL']}\n"
+              'Source: https://publication.pravo.gov.ru/file/pdf?eoNumber=0001202606020025\n'
+              f'Original PDF SHA-256: `{digest}`\n\n'
+              'Artifact (only after successful acquisition): `mvd-290-2026-source-NOT-ACCEPTED`. '
+              'Success verifies only acquisition, bounded PDF payload and 46 pages. '
+              'Legal revision/all-annex review and official-vs-Docly pixel comparison remain UNVERIFIED. '
+              'Catalog readiness is unchanged. Draft / NO-GO remains.\n'
+          )
+          Path('report.md').write_text(body)
+          PY
+          gh pr comment 1 --repo "$REPO" --body-file report.md
