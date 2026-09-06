@@ -117,6 +117,16 @@ def _relative(root: Path, name: str) -> Path:
     return path
 
 
+def _reject_rollback_journal(relative: str, files: dict[str, FileDigest]) -> None:
+    # A crashed rollback-mode writer can spill UNCOMMITTED pages to the main
+    # file. Copying it without journal recovery can pass integrity_check while
+    # silently retaining those pages. Recovery (including super-journals) is
+    # outside this read-only snapshot contract; fail closed, never discard it.
+    journal = files.get(relative + "-journal")
+    if journal is not None and journal["size"] > 0:
+        raise ProfileBackupError("SQLite rollback journal requires recovery before backup or restore")
+
+
 def verify_profile_backup(snapshot: Path) -> BackupManifest:
     snapshot = _checked_root(snapshot)
     try:
@@ -135,6 +145,7 @@ def verify_profile_backup(snapshot: Path) -> BackupManifest:
         if set(manifest["sqlite_images"]) != expected_databases:
             raise ProfileBackupError("SQLite image inventory is incomplete")
         for relative, expected in manifest["sqlite_images"].items():
+            _reject_rollback_journal(relative, files)
             if relative not in files:
                 raise ProfileBackupError("SQLite image has no corresponding profile file")
             image = _relative(snapshot / "sqlite", relative)
@@ -200,6 +211,7 @@ def create_profile_backup(
             raise ProfileBackupError("Profile changed during backup; stop all writers and retry")
         # Even mode=ro can modify SHM read marks: open only disposable DB/WAL copies.
         for relative in databases:
+            _reject_rollback_journal(relative, before_files)
             image = _relative(stage / "sqlite", relative)
             image.parent.mkdir(parents=True, exist_ok=True)
             with tempfile.TemporaryDirectory(dir=stage) as scratch:
