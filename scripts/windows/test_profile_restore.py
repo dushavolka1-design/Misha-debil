@@ -4,6 +4,8 @@ from __future__ import annotations
 import json
 import shutil
 import sqlite3
+import subprocess
+import sys
 import tempfile
 import unittest
 from contextlib import closing
@@ -156,6 +158,39 @@ class ProfileRestoreTests(unittest.TestCase):
         stage = stage_profile_restore(snapshot, profile_dir=missing, program_dir=self.program)
         self.assertFalse(missing.exists())
         self.assertEqual((stage / "settings.json").read_bytes(), b"synthetic settings")
+
+    def test_crashed_rollback_writer_is_refused_without_changing_source(self) -> None:
+        with closing(sqlite3.connect(self.profile / "docly.db")) as db:
+            db.executemany("INSERT INTO records VALUES (?, ?)", [(n, "original" + "x" * 1000) for n in range(2, 102)])
+            db.commit()
+        # Force real dirty-page spill, then emulate a process crash without
+        # connection.close() (which would recover/rollback this fixture).
+        code = (
+            "import sqlite3,os,sys;c=sqlite3.connect(sys.argv[1]);"
+            "c.execute('PRAGMA cache_size=5');c.execute('BEGIN IMMEDIATE');"
+            "c.execute(\"UPDATE records SET value='uncommitted'||value\");os._exit(0)"
+        )
+        subprocess.run([sys.executable, "-c", code, str(self.profile / "docly.db")], check=True, timeout=15)
+        self.assertGreater((self.profile / "docly.db-journal").stat().st_size, 0)
+        original = self.tree(self.profile)
+        with self.assertRaisesRegex(ProfileBackupError, "rollback journal"):
+            self.backup()
+        self.assertEqual(self.tree(self.profile), original)
+        self.assertEqual(list(self.backups.iterdir()), [])
+
+    def test_old_snapshot_with_nonempty_journal_is_refused_even_with_valid_hashes(self) -> None:
+        snapshot = self.backup()
+        journal = snapshot / "profile" / "docly.db-journal"
+        journal.write_bytes(b"synthetic nonempty archived rollback journal")
+        from app.profile_backup import _hash
+
+        manifest_path = snapshot / "manifest.json"
+        manifest = json.loads(manifest_path.read_text())
+        manifest["files"]["docly.db-journal"] = {"size": journal.stat().st_size, "sha256": _hash(journal)}
+        manifest_path.write_text(json.dumps(manifest))
+        with self.assertRaisesRegex(ProfileBackupError, "rollback journal"):
+            self.stage(snapshot)
+        self.assertEqual(list(self.root.glob(".docly-restore-*")), [])
 
     def test_manifest_traversal_never_writes_outside_stage(self) -> None:
         snapshot = self.backup()
