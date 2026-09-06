@@ -16,10 +16,13 @@ LEGAL = ROOT / "legal"
 
 @pytest.fixture()
 def client(monkeypatch: pytest.MonkeyPatch) -> Iterator[TestClient]:
-    # This suite must exercise the non-demo security boundary independently of
-    # developer/CI defaults. Shared conftest restores the environment afterwards.
+    # Exercise the non-demo security boundary independently of developer/CI
+    # defaults. Use real non-demo-safe provider selections so application
+    # startup succeeds without weakening the fake-provider production gate.
     monkeypatch.setenv("APP_ENV", "test")
     monkeypatch.setenv("DEMO_MODE", "false")
+    monkeypatch.setenv("OCR_PROVIDER", "local_extract")
+    monkeypatch.setenv("LLM_PROVIDER", "unavailable")
     get_settings.cache_clear()
     app = create_app()
     with TestClient(app) as c:

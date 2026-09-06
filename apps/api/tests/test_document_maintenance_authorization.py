@@ -77,7 +77,7 @@ def test_non_admin_cannot_run_maintenance(path: str, role: str) -> None:
     assert service.calls == []
 
 
-@pytest.mark.parametrize("path,operation", zip(PATHS, ["purge", "scan", "process", "purge"], strict=True))
+@pytest.mark.parametrize("path,operation", list(zip(PATHS, ["purge", "scan", "process", "purge"], strict=True)))
 def test_server_admin_reaches_maintenance_service(path: str, operation: str) -> None:
     service = ServiceSpy()
     app = application(service)
