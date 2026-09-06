@@ -18,7 +18,7 @@ jobs:
             const repo = {owner: context.repo.owner, repo: context.repo.repo};
             const sections = [];
             for (const workflow_id of ['docly-desktop-verification.yml', 'ci.yml']) {
-              const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, per_page: 4});
+              const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, branch: context.ref.replace('refs/heads/', ''), per_page: 4});
               for (const [index, run] of runs.data.workflow_runs.entries()) {
                 sections.push(`- ${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
                 if (index > 1) continue;
@@ -40,4 +40,4 @@ jobs:
                 }
               }
             }
-            await github.rest.issues.createComment({...repo, issue_number: 1, body: '## Current CI diagnostics\n\n' + sections.join('\n')});
+            await github.rest.issues.createComment({...repo, issue_number: 1, body: ('## Current CI diagnostics\n\n' + sections.join('\n')).slice(0, 60000)});

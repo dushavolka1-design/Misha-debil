@@ -60,6 +60,41 @@ jobs:
             git diff --cached --stat
             git commit -m 'style(python): format code with unchanged syntax trees'
           fi
+      - name: Place misplaced module documentation before future imports
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          roots = ['apps/api/app', 'apps/api/tests', 'packages/py_dar/src']
+          for root in roots:
+              for path in Path(root).rglob('*.py'):
+                  text = path.read_text(encoding='utf-8')
+                  tree = ast.parse(text)
+                  if len(tree.body) < 2:
+                      continue
+                  first, doc = tree.body[:2]
+                  if not (isinstance(first, ast.ImportFrom) and first.module == '__future__'):
+                      continue
+                  if not (isinstance(doc, ast.Expr) and isinstance(doc.value, ast.Constant) and isinstance(doc.value.value, str)):
+                      continue
+                  lines = text.splitlines(keepends=True)
+                  replacement = ''.join(lines[:first.lineno-1] + lines[doc.lineno-1:doc.end_lineno] + lines[first.end_lineno:doc.lineno-1] + lines[first.lineno-1:first.end_lineno] + lines[doc.end_lineno:])
+                  expected = ast.Module(body=[doc, first, *tree.body[2:]], type_ignores=tree.type_ignores)
+                  assert ast.dump(ast.parse(replacement)) == ast.dump(expected), path
+                  path.write_text(replacement, encoding='utf-8')
+          PY
+          python -m ruff format apps/api/app apps/api/tests packages/py_dar/src
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(python): place module documentation before future imports'
+          fi
+      - name: Use supported Python 3.12 annotation and UTC spellings
+        run: |
+          python -m ruff check --select UP035,UP017,UP012 --fix apps/api/app apps/api/tests packages/py_dar/src
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(python): use Python 3.12 annotation and UTC spellings'
+          fi
       - name: Sort Python imports with the configured linter
         run: |
           python -m ruff check --select I --fix apps/api/app apps/api/tests packages/py_dar/src
