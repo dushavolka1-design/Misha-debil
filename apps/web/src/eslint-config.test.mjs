@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import test from 'node:test';
-import { fileURLToPath } from 'node:url';
+import { fileURLToPath, URL } from 'node:url';
 import { ESLint } from 'eslint';
 
 const cwd = fileURLToPath(new URL('../', import.meta.url));
@@ -36,6 +36,21 @@ test('runtime browser global is recognized without disabling undefined-name chec
 test('browser global does not leak into Node scripts', async () => {
   const result = await messages('window.__DOCLY_API__ = 1;\n', 'runtime-regression.mjs');
   assert.ok(result.some((message) => message.ruleId === 'no-undef'));
+});
+
+test('object rest can omit client options without admitting unused rest values', async () => {
+  const omission =
+    'export const strip = (options: object) => { const { timeoutMs, ...init } = options; return init; };';
+  assert.deepEqual(await messages(omission, 'src/rest.ts'), []);
+  const unused =
+    'export const strip = (options: object) => { const { timeoutMs, ...init } = options; return timeoutMs; };';
+  const result = await messages(unused, 'src/rest.ts');
+  assert.ok(result.some((message) => message.ruleId === '@typescript-eslint/no-unused-vars'));
+});
+
+test('ordinary underscore-prefixed variables still fail', async () => {
+  const result = await messages('const _unused = 1; export {};', 'src/unused.ts');
+  assert.ok(result.some((message) => message.ruleId === '@typescript-eslint/no-unused-vars'));
 });
 
 test('unused application imports still fail', async () => {
