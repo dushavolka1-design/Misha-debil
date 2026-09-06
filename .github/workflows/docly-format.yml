@@ -30,7 +30,7 @@ jobs:
         with:
           python-version: '3.12'
       - run: pnpm install --frozen-lockfile
-      - run: python -m pip install 'ruff>=0.9'
+      - run: python -m pip install -e packages/py_dar -r apps/api/requirements.txt -e 'apps/api[dev]'
       - name: Format tracked frontend files
         run: |
           git config user.name 'github-actions[bot]'
@@ -90,10 +90,10 @@ jobs:
           fi
       - name: Use supported Python 3.12 annotation and UTC spellings
         run: |
-          python -m ruff check --select UP035,UP017,UP012 --fix apps/api/app apps/api/tests packages/py_dar/src
+          python -m ruff check --select UP035,UP017,UP012,F401 --fix apps/api/app apps/api/tests packages/py_dar/src
           git add -u -- apps/api/app apps/api/tests packages/py_dar/src
           if ! git diff --cached --quiet; then
-            git commit -m 'style(python): use Python 3.12 annotation and UTC spellings'
+            git commit -m 'style(python): modernize annotations and remove unused imports'
           fi
       - name: Sort Python imports with the configured linter
         run: |
@@ -106,6 +106,7 @@ jobs:
       - name: Verify SQLite regressions and publish reviewable commits
         run: |
           PYTHONPATH=apps/api python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v
+          PYTHONPATH=apps/api python -m pytest apps/api/tests/test_desktop*.py apps/api/tests/test_csrf_referer_origin.py -q
           git push origin HEAD
       - name: Report remaining lint findings without hiding failure
         id: lint
@@ -130,6 +131,9 @@ jobs:
             const findings = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
             const groups = {};
             for (const f of findings || []) groups[f.code] = (groups[f.code] || 0) + 1;
-            const sample = (findings || []).slice(0, 50).map(f => `${f.filename.replace(process.env.GITHUB_WORKSPACE + '/', '')}:${f.location.row}:${f.location.column} ${f.code} ${f.message}`).join('\n');
+            const sample = (findings || []).slice(0, 60).map(f => {
+              const lines = fs.readFileSync(f.filename, 'utf8').split('\n');
+              return `${f.filename.replace(process.env.GITHUB_WORKSPACE + '/', '')}:${f.location.row}:${f.location.column} ${f.code} ${f.message}\n${lines.slice(Math.max(0, f.location.row - 2), f.location.row + 1).join('\n')}`;
+            }).join('\n\n');
             const body = `## Formatting and remaining quality gates\n\nRun: ${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}\n\nRemaining Ruff findings: ${findings?.length ?? 'unavailable'}\n\n${JSON.stringify(groups)}\n\n\`\`\`text\n${sample}\n\`\`\`\n\nFormatting is not a substitute for full CI. Bot pushes do not automatically rerun workflows; a new verification run is required before merge.`;
             await github.rest.issues.createComment({...repo, issue_number: prs.data[0].number, body});
