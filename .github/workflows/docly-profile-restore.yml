@@ -38,7 +38,7 @@ jobs:
         run: |
           set -euo pipefail
           python -m pip install ruff
-          python -m ruff check scripts/windows/profile_restore.py scripts/windows/test_profile_restore.py
+          python -m ruff check scripts/windows/profile_restore.py scripts/windows/test_profile_restore.py 2>&1 | tee lint.log
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         if: always()
         with:
@@ -46,6 +46,7 @@ jobs:
           path: |
             backup.log
             restore.log
+            lint.log
           if-no-files-found: error
   report:
     needs: restore-stage
@@ -67,3 +68,35 @@ jobs:
             const statuses = jobs.map(j => `${j.name}: ${j.status}/${j.conclusion || 'pending'}; ${j.html_url}`).join('\n');
             const files = artifacts.map(a => `${a.name}: ${run}/artifacts/${a.id}`).join('\n');
             await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Profile restore staging: ${process.env.RESULT}\nCommit: ${context.sha}\nRun: ${run}\n${statuses}\n${files}\n\nScope: real filesystem and SQLite WAL staging, checksums and failure cleanup. No live activation, program rollback, Inno integration or installer acceptance claimed.`});
+            for (const job of jobs.filter(j => j.conclusion === 'failure')) {
+              const response = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+              const fetched = await fetch(response.url);
+              if (!fetched.ok) throw new Error(`Job log download failed: ${fetched.status}`);
+              const text = await fetched.text();
+              await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Restore failure diagnostics\nCommit: ${context.sha}\n${job.html_url}\n\n\`\`\`text\n${text.slice(-18000)}\n\`\`\``});
+            }
+  prior-failure-diagnostics:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            // Read the original diagnostic build, never replace its exact assertion.
+            for (const run_id of [34052463158, 34053048156]) {
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id});
+              for (const job of jobs.filter(j => j.conclusion === 'failure')) {
+                const response = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+                const fetched = await fetch(response.url);
+                if (!fetched.ok) throw new Error(`Job log download failed: ${fetched.status}`);
+                const text = await fetched.text();
+                const lines = text.split('\n');
+                const hit = lines.findIndex(line => line.includes('##[error]'));
+                const excerpt = lines.slice(Math.max(0, hit - 100), hit + 30).join('\n').slice(-18000);
+                await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Original installer/restore failure diagnostics\n${job.html_url}\n\n\`\`\`text\n${excerpt}\n\`\`\`\nDiagnostic only; tests and exact shortcut assertions remain mandatory.`});
+              }
+            }
