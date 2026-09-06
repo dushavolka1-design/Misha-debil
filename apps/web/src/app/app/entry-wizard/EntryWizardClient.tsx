@@ -9,7 +9,6 @@ import { Badge, Button, Checkbox, Input, ScreenStateView, Tabs, parseScreenState
 import { formatOutcome, formatStatus } from '../../../lib/statusLabels';
 import { useToast } from '../../../components/Toast';
 import {
-  ApiError,
   apiFetch,
   downloadBlob,
   exportEntryChecklistPdf,
