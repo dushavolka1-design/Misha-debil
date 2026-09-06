@@ -17,7 +17,14 @@ from app.schemas_analysis import (
     StartAnalysisResponse,
 )
 from app.schemas_rules import RuleHitOut
-from app.services.analysis.pipeline import LOCAL_STEP_LABELS, AnalysisError, AnalysisPipelineService, AnalysisStatus
+from app.services.analysis.pipeline import (
+    LOCAL_STEP_LABELS,
+    AnalysisError,
+    AnalysisPipelineService,
+    AnalysisRunRecord,
+    AnalysisStatus,
+)
+from app.services.auth_consent import UserRecord
 from app.services.jobs.queue import enqueue_job
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentLifecycleService, UploadError
@@ -26,23 +33,30 @@ router = APIRouter(prefix="/analysis", tags=["analysis"])
 
 
 def get_analysis(request: Request) -> AnalysisPipelineService:
-    return request.app.state.analysis_service
+    service = request.app.state.analysis_service
+    if not isinstance(service, AnalysisPipelineService):
+        raise RuntimeError("Analysis service is not initialized")
+    return service
 
 
 def get_doc_service(request: Request) -> DocumentLifecycleService:
-    return request.app.state.doc_service
+    service = request.app.state.doc_service
+    if not isinstance(service, DocumentLifecycleService):
+        raise RuntimeError("Document service is not initialized")
+    return service
 
 
-def _require_user(user: object) -> None:
+def _require_user(user: UserRecord | None) -> UserRecord:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
+    return user
 
 
 def _http(exc: AnalysisError | UploadError) -> None:
     raise HTTPException(status_code=exc.http_status, detail={"code": exc.code, "detail": exc.message})
 
 
-def serialize_run(service: AnalysisPipelineService, run) -> AnalysisRunOut:
+def serialize_run(service: AnalysisPipelineService, run: AnalysisRunRecord) -> AnalysisRunOut:
     llm_available = bool(getattr(run, "llm_available", False))
     if not llm_available and run.llm_provider not in {"unavailable", "none", "fake_llm", ""}:
         llm_available = True
@@ -99,11 +113,11 @@ def serialize_run(service: AnalysisPipelineService, run) -> AnalysisRunOut:
 async def start_analysis(
     body: StartAnalysisRequest,
     request: Request,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: AnalysisPipelineService = Depends(get_analysis),
     doc_service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> StartAnalysisResponse:
-    _require_user(user)
+    user = _require_user(user)
     settings = request.app.state.providers.settings
     if body.fixture_id and not settings.demo_mode:
         raise HTTPException(
@@ -156,10 +170,10 @@ async def retry_analysis(
     run_id: UUID,
     body: RetryAnalysisRequest,
     request: Request,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: AnalysisPipelineService = Depends(get_analysis),
 ) -> StartAnalysisResponse:
-    _require_user(user)
+    user = _require_user(user)
     settings = request.app.state.providers.settings
     try:
         run = service.get_run(run_id, user.id)
@@ -204,10 +218,10 @@ async def retry_analysis(
 @router.get("/runs/{run_id}", response_model=AnalysisRunOut)
 async def get_run(
     run_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: AnalysisPipelineService = Depends(get_analysis),
 ) -> AnalysisRunOut:
-    _require_user(user)
+    user = _require_user(user)
     try:
         run = service.get_run(run_id, user.id)
     except AnalysisError as exc:
@@ -219,10 +233,10 @@ async def get_run(
 @router.get("/documents/{document_id}/runs", response_model=list[StartAnalysisResponse])
 async def list_runs(
     document_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: AnalysisPipelineService = Depends(get_analysis),
 ) -> list[StartAnalysisResponse]:
-    _require_user(user)
+    user = _require_user(user)
     runs = service.list_runs(document_id, user.id)
     return [
         StartAnalysisResponse(
@@ -239,10 +253,10 @@ async def list_runs(
 @router.get("/runs/{run_id}/progress", response_model=list[ProgressEventOut])
 async def get_progress(
     run_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: AnalysisPipelineService = Depends(get_analysis),
 ) -> list[ProgressEventOut]:
-    _require_user(user)
+    user = _require_user(user)
     try:
         run = service.get_run(run_id, user.id)
     except AnalysisError as exc:

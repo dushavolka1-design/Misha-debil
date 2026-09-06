@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from typing import Any, NoReturn
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -16,23 +17,27 @@ from app.schemas_sources import (
     SnapshotOut,
     SourceOut,
 )
-from app.services.sources.registry import SourceError, SourceRegistry
+from app.services.auth_consent import UserRecord
+from app.services.sources.registry import SnapshotRecord, SourceError, SourceRegistry
 from app.services.sources.url_policy import load_allowlist
 
 router = APIRouter(prefix="/sources", tags=["sources"])
 
 
 def get_registry(request: Request) -> SourceRegistry:
-    return request.app.state.source_registry
+    registry = request.app.state.source_registry
+    if not isinstance(registry, SourceRegistry):
+        raise RuntimeError("Source registry is not initialized")
+    return registry
 
 
-def _http(exc: SourceError):
+def _http(exc: SourceError) -> NoReturn:
     from fastapi import HTTPException
 
     raise HTTPException(status_code=exc.http_status, detail={"code": exc.code, "detail": exc.message})
 
 
-def _snap_out(s) -> SnapshotOut:
+def _snap_out(s: SnapshotRecord) -> SnapshotOut:
     return SnapshotOut(
         id=s.id,
         source_id=s.source_id,
@@ -79,7 +84,7 @@ async def list_sources(registry: SourceRegistry = Depends(get_registry)) -> list
 async def fetch_source(
     source_id: UUID,
     registry: SourceRegistry = Depends(get_registry),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> SnapshotOut:
     if not user:
         from fastapi import HTTPException
@@ -89,7 +94,6 @@ async def fetch_source(
         snap = registry.fetch_and_parse(source_id, actor=getattr(user, "email", "editor"))
     except SourceError as exc:
         _http(exc)
-        raise
     return _snap_out(snap)
 
 
@@ -104,7 +108,7 @@ async def get_snapshot(snapshot_id: UUID, registry: SourceRegistry = Depends(get
 
 
 @router.get("/snapshots/{snapshot_id}/production-visible")
-async def production_visible(snapshot_id: UUID, registry: SourceRegistry = Depends(get_registry)) -> dict:
+async def production_visible(snapshot_id: UUID, registry: SourceRegistry = Depends(get_registry)) -> dict[str, bool]:
     return {"usable_as_basis": registry.production_basis_visible(snapshot_id)}
 
 
@@ -123,7 +127,7 @@ async def approve(
     snapshot_id: UUID,
     body: ReviewDecision,
     registry: SourceRegistry = Depends(get_registry),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> SnapshotOut:
     if not user:
         from fastapi import HTTPException
@@ -142,7 +146,6 @@ async def approve(
         )
     except SourceError as exc:
         _http(exc)
-        raise
     return _snap_out(snap)
 
 
@@ -151,7 +154,7 @@ async def reject(
     snapshot_id: UUID,
     body: ReviewDecision,
     registry: SourceRegistry = Depends(get_registry),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> SnapshotOut:
     if not user:
         from fastapi import HTTPException
@@ -161,7 +164,6 @@ async def reject(
         snap = registry.reject(snapshot_id, actor=getattr(user, "email", "reviewer"), comment=body.comment)
     except SourceError as exc:
         _http(exc)
-        raise
     return _snap_out(snap)
 
 
@@ -171,7 +173,6 @@ async def cite(body: CitationRequest, registry: SourceRegistry = Depends(get_reg
         payload = registry.citation(body.snapshot_id, quote=body.quote, on_date=body.on_date)
     except SourceError as exc:
         _http(exc)
-        raise
     return CitationResponse(payload=payload)
 
 
@@ -207,7 +208,7 @@ async def audit_log(registry: SourceRegistry = Depends(get_registry)) -> list[Au
 
 
 @router.get("/allowlist")
-async def allowlist_meta() -> dict:
+async def allowlist_meta() -> dict[str, Any]:
     cfg = load_allowlist()
     return {
         "version": cfg.version,
@@ -217,7 +218,7 @@ async def allowlist_meta() -> dict:
 
 
 @router.post("/freshness/run")
-async def freshness_run(registry: SourceRegistry = Depends(get_registry)) -> dict:
+async def freshness_run(registry: SourceRegistry = Depends(get_registry)) -> dict[str, Any]:
     due = registry.freshness_due()
     refreshed = 0
     errors = []
