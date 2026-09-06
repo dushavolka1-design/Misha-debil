@@ -76,7 +76,7 @@ jobs:
               await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Restore failure diagnostics\nCommit: ${context.sha}\n${job.html_url}\n\n\`\`\`text\n${text.slice(-18000)}\n\`\`\``});
             }
   prior-failure-diagnostics:
-    if: github.event_name == 'push'
+    if: github.event_name == 'push' && contains(github.event.head_commit.message, 'inspect original shortcut run')
     runs-on: ubuntu-latest
     timeout-minutes: 5
     permissions:
@@ -86,17 +86,17 @@ jobs:
       - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
         with:
           script: |
-            // Read the original diagnostic build, never replace its exact assertion.
-            for (const run_id of [34052463158, 34053048156]) {
-              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id});
-              for (const job of jobs.filter(j => j.conclusion === 'failure')) {
-                const response = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
-                const fetched = await fetch(response.url);
-                if (!fetched.ok) throw new Error(`Job log download failed: ${fetched.status}`);
-                const text = await fetched.text();
-                const lines = text.split('\n');
-                const hit = lines.findIndex(line => line.includes('##[error]'));
-                const excerpt = lines.slice(Math.max(0, hit - 100), hit + 30).join('\n').slice(-18000);
-                await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Original installer/restore failure diagnostics\n${job.html_url}\n\n\`\`\`text\n${excerpt}\n\`\`\`\nDiagnostic only; tests and exact shortcut assertions remain mandatory.`});
-              }
+            // One-shot read-only diagnosis, not an acceptance job.
+            const run_id = 34052463158;
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id});
+            const statuses = jobs.map(j => `${j.name}: ${j.status}/${j.conclusion || 'pending'}; ${j.html_url}`).join('\n');
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Original shortcut diagnostic run status\n${statuses}\nNot acceptance; original exact assertions remain mandatory.`});
+            for (const job of jobs.filter(j => j.status === 'completed' && j.name === 'windows')) {
+              const response = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+              const fetched = await fetch(response.url);
+              if (!fetched.ok) throw new Error(`Job log download failed: ${fetched.status}`);
+              const lines = (await fetched.text()).split('\n');
+              const hit = lines.findIndex(line => line.includes('##[error]'));
+              const excerpt = hit >= 0 ? lines.slice(Math.max(0, hit - 100), hit + 30).join('\n') : lines.slice(-150).join('\n');
+              await github.rest.issues.createComment({...context.repo, issue_number: 1, body: `## Original shortcut diagnostic log\n${job.html_url}\n\n\`\`\`text\n${excerpt.slice(-18000)}\n\`\`\``});
             }
