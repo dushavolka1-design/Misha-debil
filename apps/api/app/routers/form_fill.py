@@ -208,7 +208,9 @@ async def get_underlay_pdf(version_id: UUID, service: FormFillService = Depends(
 
 
 @router.post("/coord-maps/submit")
-async def submit_coord_map(body: CoordMapSubmitRequest, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
+async def submit_coord_map(
+    body: CoordMapSubmitRequest, service: FormFillService = Depends(get_fill)
+) -> dict[str, Any]:
     try:
         draft = service.submit_coord_map_for_review(
             form_version_id=body.form_version_id,
@@ -222,7 +224,9 @@ async def submit_coord_map(body: CoordMapSubmitRequest, service: FormFillService
 
 
 @router.post("/coord-maps/approve")
-async def approve_coord_map(body: CoordMapApproveRequest, service: FormFillService = Depends(get_fill)) -> dict[str, Any]:
+async def approve_coord_map(
+    body: CoordMapApproveRequest, service: FormFillService = Depends(get_fill)
+) -> dict[str, Any]:
     try:
         ver = service.approve_coord_map(body.draft_id, reviewer_id=body.reviewer_id)
     except FillError as exc:
