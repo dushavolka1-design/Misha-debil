@@ -9,6 +9,8 @@ from uuid import uuid4
 
 from sqlalchemy import create_engine
 
+from app.desktop_backup import backup_before_schema_change
+
 
 def default_data_dir() -> Path:
     local = os.environ.get("LOCALAPPDATA") or os.environ.get("HOME") or str(Path.cwd())
@@ -55,32 +57,27 @@ def apply_desktop_env(*, data_dir: Path | None = None, instance_token: str | Non
 
 
 def migrate_sqlite(data_dir: Path) -> Path:
-    import sqlite3
-
     from app.models import Base
 
     db_path = (data_dir / "docly.db").resolve()
     data_dir.mkdir(parents=True, exist_ok=True)
-    if db_path.exists() and db_path.stat().st_size > 0:
-        try:
-            conn = sqlite3.connect(str(db_path))
-            try:
-                row = conn.execute("PRAGMA integrity_check").fetchone()
-            finally:
-                conn.close()
-            if not row or str(row[0]).lower() != "ok":
-                raise RuntimeError(f"sqlite_integrity:{row}")
-        except sqlite3.Error as exc:
-            raise RuntimeError("Повреждена локальная база SQLite") from exc
+    # Fail closed before any DDL when validation or a required backup fails.
+    backup_before_schema_change(
+        db_path,
+        required_tables=set(Base.metadata.tables),
+        required_columns={"users": {"display_name", "avatar_jpeg"}},
+    )
     engine = create_engine("sqlite:///" + db_path.as_posix(), future=True)
-    Base.metadata.create_all(engine)
-    with engine.begin() as conn:
-        cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)")}
-        if "display_name" not in cols:
-            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN display_name VARCHAR(80)")
-        if "avatar_jpeg" not in cols:
-            conn.exec_driver_sql("ALTER TABLE users ADD COLUMN avatar_jpeg BLOB")
-    engine.dispose()
+    try:
+        Base.metadata.create_all(engine)
+        with engine.begin() as conn:
+            cols = {row[1] for row in conn.exec_driver_sql("PRAGMA table_info(users)")}
+            if "display_name" not in cols:
+                conn.exec_driver_sql("ALTER TABLE users ADD COLUMN display_name VARCHAR(80)")
+            if "avatar_jpeg" not in cols:
+                conn.exec_driver_sql("ALTER TABLE users ADD COLUMN avatar_jpeg BLOB")
+    finally:
+        engine.dispose()
     return db_path
 
 
