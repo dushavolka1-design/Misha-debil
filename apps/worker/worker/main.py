@@ -13,9 +13,8 @@ def _legal_root() -> str:
 
 
 async def run(stop: asyncio.Event) -> None:
-    from dar.logging_utils import configure_logging
-
     from app.services.jobs.worker_runtime import worker_lifespan
+    from dar.logging_utils import configure_logging
 
     configure_logging("INFO")
     async with worker_lifespan(legal_root=_legal_root()):
