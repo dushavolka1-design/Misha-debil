@@ -12,7 +12,11 @@ from contextlib import closing
 from pathlib import Path
 from unittest.mock import patch
 
-from app.profile_backup import ProfileBackupError, create_profile_backup, verify_profile_backup
+from app.profile_backup import (
+    ProfileBackupError,
+    create_profile_backup,
+    verify_profile_backup,
+)
 from profile_restore import stage_profile_restore
 
 
@@ -92,9 +96,11 @@ class ProfileRestoreTests(unittest.TestCase):
         sentinel = self.root / ".docly-restore-user-owned"
         sentinel.mkdir()
         (sentinel / "keep").write_bytes(b"keep")
-        with patch("profile_restore.shutil.copy2", side_effect=OSError("injected disk failure")):
-            with self.assertRaises(OSError):
-                self.stage(snapshot)
+        with (
+            patch("profile_restore.shutil.copy2", side_effect=OSError("injected disk failure")),
+            self.assertRaises(OSError),
+        ):
+            self.stage(snapshot)
         self.assertEqual(list(self.root.glob(".docly-restore-*")), [sentinel])
         self.assertEqual((sentinel / "keep").read_bytes(), b"keep")
         self.assertEqual(self.tree(self.profile), live)
@@ -112,9 +118,11 @@ class ProfileRestoreTests(unittest.TestCase):
     def test_restore_volume_free_space_is_checked_before_copying(self) -> None:
         snapshot = self.backup()
         usage = shutil.disk_usage(self.root)
-        with patch("profile_restore.shutil.disk_usage", return_value=type(usage)(usage.total, usage.total, 0)) as check:
-            with self.assertRaisesRegex(ProfileBackupError, "space"):
-                self.stage(snapshot)
+        with (
+            patch("profile_restore.shutil.disk_usage", return_value=type(usage)(usage.total, usage.total, 0)) as check,
+            self.assertRaisesRegex(ProfileBackupError, "space"),
+        ):
+            self.stage(snapshot)
         check.assert_called_once_with(self.profile.parent)
         self.assertEqual(list(self.root.glob(".docly-restore-*")), [])
 
@@ -128,17 +136,21 @@ class ProfileRestoreTests(unittest.TestCase):
                 Path(target).write_bytes(b"copy corruption")
             return result
 
-        with patch("profile_restore.shutil.copy2", side_effect=corrupt):
-            with self.assertRaisesRegex(ProfileBackupError, "checksum"):
-                self.stage(snapshot)
+        with (
+            patch("profile_restore.shutil.copy2", side_effect=corrupt),
+            self.assertRaisesRegex(ProfileBackupError, "checksum"),
+        ):
+            self.stage(snapshot)
         self.assertEqual(list(self.root.glob(".docly-restore-*")), [])
         verify_profile_backup(snapshot)
 
     def test_flush_failure_is_blocking(self) -> None:
         snapshot = self.backup()
-        with patch("profile_restore._flush", side_effect=OSError("injected flush failure")):
-            with self.assertRaises(OSError):
-                self.stage(snapshot)
+        with (
+            patch("profile_restore._flush", side_effect=OSError("injected flush failure")),
+            self.assertRaises(OSError),
+        ):
+            self.stage(snapshot)
         self.assertEqual(list(self.root.glob(".docly-restore-*")), [])
         verify_profile_backup(snapshot)
 
@@ -148,9 +160,8 @@ class ProfileRestoreTests(unittest.TestCase):
                                  (snapshot.parent, self.program),
                                  (self.profile, self.profile / "program"),
                                  (self.program / "profile", self.program)]:
-            with self.subTest(profile=profile, program=program):
-                with self.assertRaises(ProfileBackupError):
-                    stage_profile_restore(snapshot, profile_dir=profile, program_dir=program)
+            with self.subTest(profile=profile, program=program), self.assertRaises(ProfileBackupError):
+                stage_profile_restore(snapshot, profile_dir=profile, program_dir=program)
 
     def test_missing_profile_can_be_staged_without_being_created(self) -> None:
         snapshot = self.backup()
