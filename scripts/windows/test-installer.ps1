@@ -21,13 +21,17 @@ function Check([bool]$Value, [string]$Message) {
 }
 function Install([string]$Exe, [string]$Label) {
   $log = Join-Path $work "$Label.log"
-  $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"") -PassThru -Wait
+  $process = Start-Process -FilePath $Exe -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART', "/DIR=`"$install`"", "/LOG=`"$log`"") -PassThru
+  Check ($process.WaitForExit(600000)) "$Label completed within ten minutes"
   Check ($process.ExitCode -eq 0) "$Label exit code"
   Check (Test-Path $py) "$Label bundled Python environment"
 }
 function Launch {
   $wrapper = Join-Path $install 'scripts\windows\launch-installed.vbs'
-  $null = Start-Process -FilePath "$env:WINDIR\System32\wscript.exe" -ArgumentList "`"$wrapper`"" -PassThru -Wait
+  $wrapperProcess = Start-Process -FilePath "$env:WINDIR\System32\wscript.exe" -ArgumentList "`"$wrapper`"" -PassThru
+  # Wait only for the wrapper, not its long-lived API/web descendants.
+  Check ($wrapperProcess.WaitForExit(15000)) 'launch wrapper exited within fifteen seconds'
+  Check ($wrapperProcess.ExitCode -eq 0) 'launch wrapper exit code'
   $instance = Join-Path $env:DOCLY_RUNTIME_DIR 'instance.json'
   $deadline = (Get-Date).AddSeconds(120)
   while (-not (Test-Path $instance) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 500 }
@@ -66,7 +70,8 @@ try {
   $databaseHash = (Get-FileHash $db).Hash
   $uninstaller = Join-Path $install 'unins000.exe'
   Check (Test-Path $uninstaller) 'registered uninstaller exists'
-  $process = Start-Process $uninstaller -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru -Wait
+  $process = Start-Process $uninstaller -ArgumentList @('/VERYSILENT', '/SUPPRESSMSGBOXES', '/NORESTART') -PassThru
+  Check ($process.WaitForExit(300000)) 'uninstaller completed within five minutes'
   Check ($process.ExitCode -eq 0) 'uninstaller exit code'
   $deadline = (Get-Date).AddSeconds(30)
   while ((Test-Path $py) -and (Get-Date) -lt $deadline) { Start-Sleep -Milliseconds 300 }

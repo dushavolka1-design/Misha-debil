@@ -58,7 +58,7 @@ def backup_before_schema_change(
             deadline = time.monotonic() + timeout
 
             def progress(_status: int, _remaining: int, _total: int) -> None:
-                if time.monotonic() > deadline:
+                if time.monotonic() >= deadline:
                     raise TimeoutError("SQLite backup timed out; schema was not changed")
 
             with closing(sqlite3.connect(str(temporary))) as destination:
