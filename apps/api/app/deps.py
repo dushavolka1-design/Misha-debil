@@ -110,7 +110,7 @@ def build_providers(settings: Settings) -> ProviderBundle:
 
 async def check_database(session: AsyncSession) -> bool:
     result = await session.execute(text("SELECT 1"))
-    return result.scalar_one() == 1
+    return bool(result.scalar_one() == 1)
 
 
 async def check_queue(bundle: ProviderBundle) -> bool:
