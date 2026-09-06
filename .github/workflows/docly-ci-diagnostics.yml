@@ -17,7 +17,7 @@ jobs:
           script: |
             const repo = {owner: context.repo.owner, repo: context.repo.repo};
             const sections = [];
-            for (const workflow_id of ['docly-desktop-verification.yml', 'ci.yml']) {
+            for (const workflow_id of ['docly-desktop-verification.yml', 'docly-format.yml', 'ci.yml']) {
               const runs = await github.rest.actions.listWorkflowRuns({...repo, workflow_id, branch: context.ref.replace('refs/heads/', ''), per_page: 4});
               for (const [index, run] of runs.data.workflow_runs.entries()) {
                 sections.push(`- ${workflow_id}: ${run.status}/${run.conclusion || 'pending'}, commit ${run.head_sha}, ${run.html_url}`);
