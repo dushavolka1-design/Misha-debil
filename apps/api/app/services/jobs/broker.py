@@ -12,6 +12,13 @@ from sqlalchemy.orm import Session
 from app.models import JobQueueItem
 
 
+def _decode_payload(raw: str | bytes | bytearray) -> dict[str, Any]:
+    payload: object = json.loads(raw)
+    if not isinstance(payload, dict):
+        raise ValueError("Job payload must be a JSON object")
+    return {str(key): value for key, value in payload.items()}
+
+
 class JobBroker(Protocol):
     async def ping(self) -> bool: ...
 
@@ -46,7 +53,7 @@ class RedisJobBroker:
         if item is None:
             return None
         _, raw = item
-        return json.loads(raw)
+        return _decode_payload(raw)
 
     async def requeue_with_retry(
         self,
@@ -102,9 +109,18 @@ class SqliteJobBroker:
                     .limit(1)
                 )
                 if row is not None:
-                    session.execute(update(JobQueueItem).where(JobQueueItem.id == row.id).values(status="processing"))
+                    payload = _decode_payload(row.payload_json)
+                    # Competing consumers can select the same row. Only the
+                    # consumer that atomically changes pending -> processing owns it.
+                    claimed = session.scalar(
+                        update(JobQueueItem)
+                        .where(JobQueueItem.id == row.id, JobQueueItem.status == "pending")
+                        .values(status="processing")
+                        .returning(JobQueueItem.id)
+                    )
                     session.commit()
-                    return json.loads(row.payload_json)
+                    if claimed is not None:
+                        return payload
             if time.monotonic() >= deadline:
                 return None
             import asyncio
