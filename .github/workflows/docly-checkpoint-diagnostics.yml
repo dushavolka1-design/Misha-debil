@@ -1,0 +1,63 @@
+name: Docly checkpoint diagnostics (not acceptance)
+
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths: ['.github/workflows/docly-checkpoint-diagnostics.yml']
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+
+jobs:
+  diagnostics:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const fs = require('fs');
+            fs.mkdirSync('diagnostics', {recursive: true});
+            const sections = ['## Checkpoint diagnostics — NOT acceptance', 'Source checkpoint: e6a7edfb59f8bdf6e7fd8edc608df054ed16118f'];
+            const targets = [34051210578, 34051208515, 34050510092];
+            let failed = false;
+            for (const run_id of targets) {
+              try {
+                const {data: run} = await github.rest.actions.getWorkflowRun({...context.repo, run_id});
+                const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id, per_page: 100});
+                const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {...context.repo, run_id, per_page: 100});
+                fs.writeFileSync(`diagnostics/${run_id}.json`, JSON.stringify({run, jobs, artifacts}, null, 2));
+                sections.push(`${run.html_url}: ${run.status}/${run.conclusion}; source ${run.head_sha}`);
+                for (const artifact of artifacts) sections.push(`Artifact ${artifact.name}: ${run.html_url}/artifacts/${artifact.id}; expired=${artifact.expired}`);
+                for (const job of jobs) {
+                  sections.push(`${job.name}: ${job.status}/${job.conclusion}; ${job.html_url}`);
+                  if (job.conclusion !== 'failure') continue;
+                  const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+                  const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                  fs.writeFileSync(`diagnostics/${job.id}.log`, text);
+                  const lines = text.split('\n');
+                  const errors = lines.map((line, i) => /Traceback|##\[error\]|Error:|FAILED|PermissionError|OperationalError/.test(line) ? i : -1).filter(i => i >= 0);
+                  const selected = new Set();
+                  for (const i of errors) for (let k = Math.max(0, i - 8); k < Math.min(lines.length, i + 16); k++) selected.add(k);
+                  const excerpt = [...selected].sort((a, b) => a - b).map(i => lines[i]).join('\n').slice(-12000);
+                  sections.push('```text\n' + excerpt.replaceAll('```', "'''") + '\n```');
+                }
+              } catch (error) {
+                failed = true;
+                sections.push(`Retrieval failed for ${run_id}: ${error.message}`);
+              }
+            }
+            sections.push('Diagnostic completion does not turn failed, skipped, missing or cancelled checks into successful acceptance.');
+            const body = sections.join('\n\n');
+            fs.writeFileSync('diagnostics/report.md', body);
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: body.slice(0, 59000)});
+            if (failed) core.setFailed('Some requested diagnostics could not be retrieved');
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: checkpoint-diagnostics-NOT-ACCEPTANCE
+          path: diagnostics/
+          if-no-files-found: error

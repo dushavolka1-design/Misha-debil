@@ -1,0 +1,98 @@
+{
+  "package_id": "dar.legal.pack.v1",
+  "locale": "ru-RU",
+  "status": "draft",
+  "note": "ЧЕРНОВИКИ для проверки юристом и privacy officer. Не для production без заполнения placeholders и approve.",
+  "approvals": {
+    "lawyer": { "status": "pending", "reviewer_id": null, "reviewed_at": null },
+    "privacy_officer": { "status": "pending", "reviewer_id": null, "reviewed_at": null }
+  },
+  "required_placeholders": [
+    "OWNER_LEGAL_FORM",
+    "OWNER_NAME",
+    "INN",
+    "OGRN_OR_OGRNIP",
+    "ADDRESS",
+    "SUPPORT_EMAIL",
+    "PRIVACY_EMAIL",
+    "PAYMENT_PROVIDER",
+    "TARIFFS",
+    "TRIAL",
+    "RENEWAL",
+    "REFUNDS",
+    "RETENTION",
+    "PROCESSORS",
+    "DATA_LOCATIONS"
+  ],
+  "documents": [
+    {
+      "consent_id": "offer",
+      "path": "consents/offer/2026.08.11.2.ru-RU.md",
+      "kind": "offer",
+      "required_at_registration": true,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    },
+    {
+      "consent_id": "terms_of_use",
+      "path": "consents/terms_of_use/2026.08.28.1.ru-RU.md",
+      "kind": "terms",
+      "required_at_registration": true,
+      "publication_status": "draft",
+      "effective_version": "2026.08.28.1"
+    },
+    {
+      "consent_id": "privacy_policy",
+      "path": "policies/privacy_policy/2026.08.11.2.ru-RU.md",
+      "kind": "policy",
+      "required_at_registration": false,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    },
+    {
+      "consent_id": "personal_data_processing",
+      "path": "consents/personal_data_processing/2026.08.11.2.ru-RU.md",
+      "kind": "consent_ordinary_pd",
+      "required_at_registration": true,
+      "bundled_with": null,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    },
+    {
+      "consent_id": "special_categories.medical",
+      "path": "consents/special_categories.medical/2026.08.11.2.ru-RU.md",
+      "kind": "consent_special",
+      "required_at_registration": false,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2",
+      "mechanism_note": "FINAL_CONSENT_MECHANISM_NEEDS_LEGAL_REVIEW — не утверждаем, что одной checkbox всегда достаточно"
+    },
+    {
+      "consent_id": "cookies_notice",
+      "path": "consents/cookies_notice/2026.08.11.2.ru-RU.md",
+      "kind": "cookies",
+      "required_at_registration": false,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    },
+    {
+      "consent_id": "marketing",
+      "path": "consents/marketing/2026.08.11.2.ru-RU.md",
+      "kind": "consent_marketing",
+      "required_at_registration": false,
+      "optional": true,
+      "default_checked": false,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    },
+    {
+      "consent_id": "payment_recurring",
+      "path": "consents/payment_recurring/2026.08.11.2.ru-RU.md",
+      "kind": "consent_payment",
+      "required_at_registration": false,
+      "required_in_payment_flow": true,
+      "publication_status": "draft",
+      "effective_version": "2026.08.11.2"
+    }
+  ]
+}

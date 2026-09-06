@@ -1,0 +1,153 @@
+name: Docly Windows installer verification
+
+on:
+  push:
+    branches: [main, fix/docly-desktop-upgrade-safety]
+    paths:
+      - '.github/workflows/docly-desktop-verification.yml'
+      - 'apps/**'
+      - 'packages/**'
+      - 'scripts/windows/**'
+      - 'pnpm-*'
+      - 'package.json'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  desktop:
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: read
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+      - name: Real SQLite backup regressions on Windows
+        shell: pwsh
+        run: |
+          $env:PYTHONPATH = Join-Path $pwd 'apps/api'
+          python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v 2>&1 | Tee-Object -FilePath sqlite-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Prepare production desktop from clean checkout
+        shell: pwsh
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup-desktop.ps1 *>&1 | Tee-Object -FilePath desktop-setup.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          if (-not (Test-Path apps/web/.next/BUILD_ID)) { throw 'Production web build missing' }
+      - name: Real desktop launcher acceptance
+        shell: pwsh
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-launcher.ps1 *>&1 | Tee-Object -FilePath desktop-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Build original-source and updated installers
+        shell: pwsh
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.0 -SourceRef 7ab48303efa92b2e52702256dcdd360c9540d273 *>&1 | Tee-Object -FilePath installer-build-old.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.2 *>&1 | Tee-Object -FilePath installer-build.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Limited installer lifecycle verification (not release acceptance)
+        id: installer-tests
+        shell: pwsh
+        env:
+          EXPECTED_SOURCE_COMMIT: ${{ github.sha }}
+        run: |
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer.ps1 -OldInstaller "$pwd/artifacts/installer/Docly-0.2.0-windows-x64-setup.exe" -NewInstaller "$pwd/artifacts/installer/Docly-0.2.2-windows-x64-setup.exe" -NewSourceCommit $env:EXPECTED_SOURCE_COMMIT *>&1 | Tee-Object -FilePath installer-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload limited-test candidate (NOT RELEASE)
+        id: installer-artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: Docly-0.2.2-windows-x64-candidate-NOT-RELEASE
+          path: |
+            artifacts/installer/Docly-0.2.2-windows-x64-setup.exe
+            artifacts/installer/Docly-0.2.2-windows-x64-setup.exe.sha256
+          if-no-files-found: error
+          compression-level: 0
+      - name: Upload diagnostic logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: desktop-verification-logs
+          path: |
+            sqlite-tests.log
+            desktop-setup.log
+            desktop-tests.log
+            installer-build-old.log
+            installer-build.log
+            installer-tests.log
+          if-no-files-found: warn
+      - name: Report actual verification outcome
+        if: always()
+        uses: actions/github-script@v7
+        env:
+          JOB_STATUS: ${{ job.status }}
+          INSTALLER_TEST_STATUS: ${{ steps.installer-tests.outcome }}
+          INSTALLER_ARTIFACT: ${{ steps.installer-artifact.outputs.artifact-url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const readLog = path => {
+              const raw = fs.readFileSync(path);
+              return raw.toString(raw[0] === 0xff && raw[1] === 0xfe ? 'utf16le' : 'utf8');
+            };
+            const logs = ['sqlite-tests.log', 'desktop-setup.log', 'desktop-tests.log', 'installer-build-old.log', 'installer-build.log', 'installer-tests.log']
+              .filter(path => fs.existsSync(path))
+              .map(path => `### ${path}\n\n\`\`\`text\n${readLog(path).slice(-4000)}\n\`\`\``)
+              .join('\n\n');
+            await github.rest.issues.createComment({
+              owner: context.repo.owner, repo: context.repo.repo, issue_number: 1,
+              body: `## Windows verification: ${process.env.JOB_STATUS}\n\nCommit: ${context.sha}\n\nLimited installer lifecycle: ${process.env.INSTALLER_TEST_STATUS || 'not run'}\n\nCandidate artifact (NOT RELEASE): ${process.env.INSTALLER_ARTIFACT || 'not available'}\n\nRelease readiness: NO-GO. Transactional rollback, PostgreSQL migration and official-form acceptance are not covered by this job.\n\n${logs}`
+            });
+
+  diagnostics:
+    needs: desktop
+    if: always()
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@v7
+        with:
+          script: |
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const runs = await github.rest.actions.listWorkflowRuns({
+              ...repo, workflow_id: 'ci.yml', per_page: 5
+            });
+            const ids = [context.runId, ...runs.data.workflow_runs.filter(r => r.head_sha === context.sha).map(r => r.id)];
+            const sections = [];
+            for (const run_id of [...new Set(ids)]) {
+              const jobs = await github.rest.actions.listJobsForWorkflowRun({...repo, run_id, per_page: 100});
+              for (const job of jobs.data.jobs.filter(j => j.conclusion === 'failure')) {
+                try {
+                  const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...repo, job_id: job.id});
+                  const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                  const lines = text.split('\n');
+                  const index = lines.findIndex(line => line.includes('##[error]'));
+                  const excerpt = (index >= 0 ? lines.slice(Math.max(0, index - 35), index + 8).join('\n') : text.slice(-5000)).slice(-6000);
+                  sections.push(`### ${job.name}\n${job.html_url}\n\n\`\`\`text\n${excerpt}\n\`\`\``);
+                } catch (error) {
+                  sections.push(`### ${job.name}\n${job.html_url}\nLog retrieval failed: ${error.message}`);
+                }
+              }
+            }
+            if (sections.length) await github.rest.issues.createComment({
+              ...repo, issue_number: 1,
+              body: `## Failed-check diagnostics\n\nCommit: ${context.sha}\n\n${sections.join('\n\n')}`
+            });

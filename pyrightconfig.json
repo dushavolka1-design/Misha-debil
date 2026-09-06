@@ -1,0 +1,9 @@
+{
+  "include": ["apps/api/app", "packages/py_dar/src"],
+  "exclude": ["**/node_modules", "**/.venv", "**/dist"],
+  "pythonVersion": "3.12",
+  "typeCheckingMode": "basic",
+  "reportMissingImports": true,
+  "venvPath": "apps/api",
+  "venv": ".venv"
+}

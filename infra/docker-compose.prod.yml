@@ -1,0 +1,30 @@
+services:
+  # Production-like profile intentionally omits fake-friendly defaults.
+  # Starting this file requires real secrets via environment; compose will fail
+  # closed if APP_ENV=production with ALLOW_FAKE_PROVIDERS or SQLite.
+  api:
+    build:
+      context: ..
+      dockerfile: apps/api/Dockerfile
+    environment:
+      APP_ENV: production
+      ALLOW_FAKE_PROVIDERS: "false"
+      DATABASE_URL: ${DATABASE_URL:?DATABASE_URL required}
+      REDIS_URL: ${REDIS_URL:?REDIS_URL required}
+      SESSION_SECRET: ${SESSION_SECRET:?SESSION_SECRET required}
+      S3_ENDPOINT_URL: ${S3_ENDPOINT_URL:?S3_ENDPOINT_URL required}
+      S3_ACCESS_KEY: ${S3_ACCESS_KEY:?S3_ACCESS_KEY required}
+      S3_SECRET_KEY: ${S3_SECRET_KEY:?S3_SECRET_KEY required}
+      S3_BUCKET_ORIGINALS: ${S3_BUCKET_ORIGINALS:?required}
+      S3_BUCKET_DERIVED: ${S3_BUCKET_DERIVED:?required}
+      S3_BUCKET_REPORTS: ${S3_BUCKET_REPORTS:?required}
+      OCR_PROVIDER: ${OCR_PROVIDER:?non-fake OCR_PROVIDER required}
+      LLM_PROVIDER: ${LLM_PROVIDER:?non-fake LLM_PROVIDER required}
+      OBJECT_STORAGE_PROVIDER: s3
+      MALWARE_SCANNER_PROVIDER: ${MALWARE_SCANNER_PROVIDER:?required}
+      PAYMENT_PROVIDER: ${PAYMENT_PROVIDER:?required}
+      EMAIL_PROVIDER: ${EMAIL_PROVIDER:?required}
+      KMS_PROVIDER: ${KMS_PROVIDER:?required}
+      LEGAL_ROOT: /app/legal
+    ports:
+      - "8000:8000"

@@ -1,0 +1,139 @@
+name: Docly code formatting
+on:
+  workflow_dispatch:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths: ['.github/workflows/docly-format.yml']
+permissions:
+  contents: write
+  pull-requests: write
+concurrency:
+  group: docly-format-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  format:
+    if: github.ref_type == 'branch' && github.ref_name != 'main' && github.ref_name != 'master'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.ref_name }}
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.9
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: pnpm
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pnpm install --frozen-lockfile
+      - run: python -m pip install -e packages/py_dar -r apps/api/requirements.txt -e 'apps/api[dev]'
+      - name: Format tracked frontend files
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          pnpm format
+          pnpm format:check
+          git add -u
+          if ! git diff --cached --quiet; then
+            git diff --cached --stat
+            git commit -m 'style(web): apply the repository Prettier configuration'
+          fi
+      - name: Format Python without changing its syntax tree
+        run: |
+          python - <<'PY'
+          import ast
+          import subprocess
+          from pathlib import Path
+          roots = ['apps/api/app', 'apps/api/tests', 'packages/py_dar/src']
+          files = [p for root in roots for p in Path(root).rglob('*.py')]
+          original = {p: ast.dump(ast.parse(p.read_text(encoding='utf-8'))) for p in files}
+          subprocess.run(['python', '-m', 'ruff', 'format', *roots], check=True)
+          for path, tree in original.items():
+              assert ast.dump(ast.parse(path.read_text(encoding='utf-8'))) == tree, f'AST changed: {path}'
+          PY
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git diff --cached --stat
+            git commit -m 'style(python): format code with unchanged syntax trees'
+          fi
+      - name: Place misplaced module documentation before future imports
+        run: |
+          python - <<'PY'
+          import ast
+          from pathlib import Path
+          roots = ['apps/api/app', 'apps/api/tests', 'packages/py_dar/src']
+          for root in roots:
+              for path in Path(root).rglob('*.py'):
+                  text = path.read_text(encoding='utf-8')
+                  tree = ast.parse(text)
+                  if len(tree.body) < 2:
+                      continue
+                  first, doc = tree.body[:2]
+                  if not (isinstance(first, ast.ImportFrom) and first.module == '__future__'):
+                      continue
+                  if not (isinstance(doc, ast.Expr) and isinstance(doc.value, ast.Constant) and isinstance(doc.value.value, str)):
+                      continue
+                  lines = text.splitlines(keepends=True)
+                  replacement = ''.join(lines[:first.lineno-1] + lines[doc.lineno-1:doc.end_lineno] + lines[first.end_lineno:doc.lineno-1] + lines[first.lineno-1:first.end_lineno] + lines[doc.end_lineno:])
+                  expected = ast.Module(body=[doc, first, *tree.body[2:]], type_ignores=tree.type_ignores)
+                  assert ast.dump(ast.parse(replacement)) == ast.dump(expected), path
+                  path.write_text(replacement, encoding='utf-8')
+          PY
+          python -m ruff format apps/api/app apps/api/tests packages/py_dar/src
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(python): place module documentation before future imports'
+          fi
+      - name: Use supported Python 3.12 annotation and UTC spellings
+        run: |
+          python -m ruff check --select UP035,UP017,UP012,F401 --fix apps/api/app apps/api/tests packages/py_dar/src
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git commit -m 'style(python): modernize annotations and remove unused imports'
+          fi
+      - name: Sort Python imports with the configured linter
+        run: |
+          python -m ruff check --select I --fix apps/api/app apps/api/tests packages/py_dar/src
+          git add -u -- apps/api/app apps/api/tests packages/py_dar/src
+          if ! git diff --cached --quiet; then
+            git diff --cached --stat
+            git commit -m 'style(python): normalize import ordering'
+          fi
+      - name: Verify SQLite regressions and publish reviewable commits
+        run: |
+          PYTHONPATH=apps/api python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v
+          PYTHONPATH=apps/api python -m pytest apps/api/tests/test_desktop*.py apps/api/tests/test_csrf_referer_origin.py -q
+          git push origin HEAD
+      - name: Report remaining lint findings without hiding failure
+        id: lint
+        run: python -m ruff check apps/api/app apps/api/tests packages/py_dar/src --output-format json > "$RUNNER_TEMP/docly-ruff.json"
+      - name: Upload complete lint findings
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docly-remaining-lint
+          path: ${{ runner.temp }}/docly-ruff.json
+          if-no-files-found: warn
+      - name: Report results to the branch pull request
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const prs = await github.rest.pulls.list({...repo, head: `${repo.owner}:${context.ref.replace('refs/heads/', '')}`, state: 'open'});
+            if (!prs.data.length) return;
+            const path = `${process.env.RUNNER_TEMP}/docly-ruff.json`;
+            const findings = fs.existsSync(path) ? JSON.parse(fs.readFileSync(path, 'utf8')) : null;
+            const groups = {};
+            for (const f of findings || []) groups[f.code] = (groups[f.code] || 0) + 1;
+            const sample = (findings || []).slice(0, 60).map(f => {
+              const lines = fs.readFileSync(f.filename, 'utf8').split('\n');
+              return `${f.filename.replace(process.env.GITHUB_WORKSPACE + '/', '')}:${f.location.row}:${f.location.column} ${f.code} ${f.message}\n${lines.slice(Math.max(0, f.location.row - 2), f.location.row + 1).join('\n')}`;
+            }).join('\n\n');
+            const body = `## Formatting and remaining quality gates\n\nRun: ${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}\n\nRemaining Ruff findings: ${findings?.length ?? 'unavailable'}\n\n${JSON.stringify(groups)}\n\n\`\`\`text\n${sample}\n\`\`\`\n\nFormatting is not a substitute for full CI. Bot pushes do not automatically rerun workflows; a new verification run is required before merge.`;
+            await github.rest.issues.createComment({...repo, issue_number: prs.data[0].number, body});

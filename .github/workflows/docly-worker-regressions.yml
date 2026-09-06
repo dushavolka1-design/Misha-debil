@@ -1,0 +1,53 @@
+name: Docly worker shutdown regressions
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths: ['apps/worker/**', '.github/workflows/docly-worker-regressions.yml']
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  worker-shutdown:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+      - uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065
+        with:
+          python-version: '3.12'
+      - name: Verify real SIGTERM and lifespan cleanup
+        shell: bash
+        run: |
+          set -euo pipefail
+          python -m unittest discover -s apps/worker/tests -p test_worker_shutdown.py -v 2>&1 | tee worker-shutdown.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: worker-shutdown-evidence
+          path: worker-shutdown.log
+          if-no-files-found: error
+  previous-failure-diagnostics:
+    if: github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        with:
+          script: |
+            const sections = [];
+            for (const run_id of [34038857987, 34038861385]) {
+              const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id, per_page: 100});
+              for (const job of jobs.filter(j => j.conclusion === 'failure' && ['cleanup', 'js'].includes(j.name))) {
+                const result = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+                const text = typeof result.data === 'string' ? result.data : Buffer.from(result.data).toString('utf8');
+                const lines = text.split('\n');
+                const idx = lines.findIndex(line => line.includes('##[error]'));
+                const excerpt = lines.slice(Math.max(0, idx - 110), idx + 8).join('\n');
+                sections.push(`${job.name}: ${job.html_url}\n\n\`\`\`text\n${excerpt}\n\`\`\``);
+              }
+            }
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: ('## Detailed previous failure diagnostics\n\n' + sections.join('\n\n')).slice(0, 60000)});

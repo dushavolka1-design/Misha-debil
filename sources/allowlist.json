@@ -1,0 +1,108 @@
+{
+  "version": "official-allowlist.v1",
+  "policy": "docs/product/official-source-policy.md",
+  "default": "deny",
+  "https_only": true,
+  "allowed_ports": [443],
+  "max_redirects": 3,
+  "max_bytes": 5242880,
+  "allowed_content_types": [
+    "text/html",
+    "text/plain",
+    "application/pdf",
+    "application/xml",
+    "text/xml",
+    "application/xhtml+xml"
+  ],
+  "hosts": [
+    {
+      "host": "pravo.gov.ru",
+      "include_subdomains": true,
+      "organ": "Официальный интернет-портал правовой информации",
+      "criticality": "high",
+      "fetch_interval_hours": 24,
+      "notes": "Official legal publication portal — metadata only seed"
+    },
+    {
+      "host": "publication.pravo.gov.ru",
+      "include_subdomains": false,
+      "organ": "Официальный интернет-портал правовой информации (publication)",
+      "criticality": "high",
+      "fetch_interval_hours": 24,
+      "notes": "Publication subdomain"
+    },
+    {
+      "host": "regulation.gov.ru",
+      "include_subdomains": true,
+      "organ": "Федеральный портал проектов нормативных правовых актов",
+      "criticality": "medium",
+      "fetch_interval_hours": 72,
+      "notes": "Draft NPA portal — metadata only"
+    },
+    {
+      "host": "government.ru",
+      "include_subdomains": true,
+      "organ": "Правительство Российской Федерации",
+      "criticality": "medium",
+      "fetch_interval_hours": 72,
+      "notes": "Government site — metadata only"
+    },
+    {
+      "host": "cbr.ru",
+      "include_subdomains": true,
+      "organ": "Банк России",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "Central Bank — metadata only"
+    },
+    {
+      "host": "nalog.gov.ru",
+      "include_subdomains": true,
+      "organ": "ФНС России",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "Tax authority — metadata only"
+    },
+    {
+      "host": "mintrud.gov.ru",
+      "include_subdomains": true,
+      "organ": "Минтруд России",
+      "criticality": "medium",
+      "fetch_interval_hours": 72,
+      "notes": "Labour ministry — metadata only"
+    },
+    {
+      "host": "mid.ru",
+      "include_subdomains": true,
+      "organ": "МИД России",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "Foreign affairs — metadata only; no entry deadlines invented"
+    },
+    {
+      "host": "xn--b1aew.xn--p1ai",
+      "include_subdomains": true,
+      "organ": "МВД России (портал мвд.рф и территориальные сайты)",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "IDN мвд.рф — территориальные бланки; акт и редакция подтверждаются на publication.pravo.gov.ru"
+    },
+    {
+      "host": "minzdrav.gov.ru",
+      "include_subdomains": true,
+      "organ": "Минздрав России",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "Health ministry — medical section approved sources only"
+    },
+    {
+      "host": "rospotrebnadzor.gov.ru",
+      "include_subdomains": true,
+      "organ": "Роспотребнадзор",
+      "criticality": "high",
+      "fetch_interval_hours": 48,
+      "notes": "Consumer/health surveillance — medical section"
+    }
+  ],
+  "denied_examples": ["consultant.ru", "garant.ru", "wikipedia.org", "localhost", "127.0.0.1"]
+}

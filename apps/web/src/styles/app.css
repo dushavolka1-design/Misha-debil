@@ -1,0 +1,1058 @@
+/* Docly app chrome and screens — premium legal-tech, light theme. */
+
+.dar-skip-link {
+  position: absolute;
+  left: var(--dar-space-4);
+  top: -100px;
+  z-index: 80;
+  padding: var(--dar-space-2) var(--dar-space-4);
+  background: var(--dar-color-accent);
+  color: var(--dar-color-accent-fg);
+  border-radius: var(--dar-radius-sm);
+  font-weight: 600;
+}
+
+.dar-skip-link:focus {
+  top: var(--dar-space-3);
+}
+
+.dar-brand-lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dar-space-3);
+  text-decoration: none;
+  color: var(--dar-color-text);
+  min-height: var(--dar-target);
+}
+
+.dar-brand-mark {
+  width: 40px;
+  height: 40px;
+  border-radius: 12px;
+  object-fit: cover;
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-brand-text {
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.dar-topbar {
+  position: sticky;
+  top: 0;
+  z-index: 30;
+  height: var(--dar-topbar-height);
+  background: color-mix(in srgb, #ffffff 92%, transparent);
+  backdrop-filter: blur(12px);
+  border-bottom: 1px solid var(--dar-color-border);
+  transition: box-shadow var(--dar-duration) var(--dar-ease);
+}
+
+.dar-topbar--scrolled {
+  box-shadow: var(--dar-shadow-header);
+}
+
+.dar-topbar__inner {
+  height: 100%;
+  width: min(100% - 2 * var(--dar-space-4), var(--dar-shell-max));
+  margin-inline: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dar-space-4);
+}
+
+.dar-topbar__inner--app {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
+}
+
+.dar-topbar__inner--app .dar-main-nav {
+  justify-self: center;
+}
+
+.dar-topbar__inner--app .dar-user-menu {
+  justify-self: end;
+}
+
+.dar-topbar__link {
+  min-height: var(--dar-target);
+  display: inline-flex;
+  align-items: center;
+  padding: 0 var(--dar-space-3);
+  color: var(--dar-color-text-secondary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.dar-topbar__link:hover {
+  color: var(--dar-color-text);
+}
+
+.dar-main-nav {
+  display: none;
+  align-items: center;
+  gap: var(--dar-space-1);
+  padding: 4px;
+  border: 1px solid var(--dar-color-border);
+  border-radius: 16px;
+  background: var(--dar-color-bg-muted);
+}
+
+.dar-main-nav__link {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--dar-space-2);
+  min-height: 48px;
+  min-width: 148px;
+  padding: 0 var(--dar-space-6);
+  border-radius: 12px;
+  color: var(--dar-color-text-secondary);
+  text-decoration: none;
+  font-size: 1rem;
+  font-weight: 650;
+  transition:
+    background var(--dar-duration) var(--dar-ease),
+    color var(--dar-duration) var(--dar-ease),
+    box-shadow var(--dar-duration) var(--dar-ease);
+}
+
+.dar-main-nav__link:hover {
+  color: var(--dar-color-text);
+  background: color-mix(in srgb, #ffffff 70%, transparent);
+}
+
+.dar-main-nav__link--active {
+  color: var(--dar-color-accent);
+  background: #ffffff;
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-user-menu {
+  position: relative;
+}
+
+.dar-user-menu__trigger {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  padding: 0;
+  border: 1px solid var(--dar-color-border);
+  border-radius: 50%;
+  background: var(--dar-color-bg-elevated);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 16px;
+  font-weight: 500;
+}
+
+.dar-user-menu__trigger:hover {
+  border-color: var(--dar-color-border-strong);
+}
+
+.dar-user-menu__avatar {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--dar-color-accent-subtle);
+  color: var(--dar-color-accent);
+  font-weight: 700;
+}
+
+.dar-user-menu__avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+}
+
+.dar-avatar-preview {
+  width: 96px;
+  height: 96px;
+  border-radius: 50%;
+  object-fit: cover;
+  display: block;
+  background: var(--dar-color-accent-subtle);
+}
+
+.dar-user-menu__dropdown {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 8px);
+  min-width: 240px;
+  margin: 0;
+  padding: var(--dar-space-2);
+  list-style: none;
+  background: var(--dar-color-bg-elevated);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-md);
+  box-shadow: var(--dar-shadow-md);
+}
+
+.dar-user-menu__item {
+  display: flex;
+  width: 100%;
+  min-height: var(--dar-target);
+  align-items: center;
+  padding: 0 var(--dar-space-3);
+  border: 0;
+  border-radius: var(--dar-radius-sm);
+  background: transparent;
+  color: var(--dar-color-text);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+  text-align: left;
+  cursor: pointer;
+}
+
+.dar-user-menu__item:hover,
+.dar-user-menu__item:focus-visible {
+  background: var(--dar-color-bg-muted);
+}
+
+.dar-app-body {
+  min-height: calc(100vh - var(--dar-topbar-height) - 64px);
+}
+
+.dar-main-wrap {
+  width: min(100%, var(--dar-shell-max));
+  margin-inline: auto;
+}
+
+.dar-main {
+  padding: 20px 16px 96px;
+}
+
+.dar-main--wide {
+  width: min(100% - 0px, var(--dar-content-max));
+  margin-inline: auto;
+}
+
+.dar-mobile-nav {
+  position: sticky;
+  bottom: 0;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #ffffff;
+  border-top: 1px solid var(--dar-color-border);
+  z-index: 20;
+}
+
+.dar-mobile-nav a {
+  min-height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 650;
+  color: var(--dar-color-text-secondary);
+  text-decoration: none;
+}
+
+.dar-mobile-nav a:hover,
+.dar-mobile-nav a:focus-visible,
+.dar-mobile-nav a[aria-current='page'] {
+  color: var(--dar-color-accent);
+  background: var(--dar-color-accent-subtle);
+}
+
+.dar-marketing-header {
+  border-bottom: 1px solid var(--dar-color-border);
+  background: #ffffff;
+}
+
+.dar-marketing-header__inner {
+  min-height: 72px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--dar-space-4);
+}
+
+.dar-section-tabs__panel {
+  padding-top: var(--dar-space-6);
+}
+
+.dar-segmented {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--dar-color-border);
+  border-radius: 16px;
+  background: var(--dar-color-bg-muted);
+}
+
+.dar-segmented__item {
+  flex: 1 1 140px;
+  min-height: 44px;
+  border: 0;
+  border-radius: 12px;
+  background: transparent;
+  color: var(--dar-color-text-secondary);
+  font: inherit;
+  font-size: var(--dar-text-sm);
+  font-weight: 650;
+  cursor: pointer;
+}
+
+.dar-segmented__item[aria-selected='true'] {
+  background: #ffffff;
+  color: var(--dar-color-accent);
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-disclaimer-compact {
+  margin-top: var(--dar-space-8);
+  color: var(--dar-color-text-muted);
+  font-size: var(--dar-text-sm);
+  font-weight: 500;
+}
+
+.dar-disclaimer-compact a {
+  color: var(--dar-color-accent);
+}
+
+.dar-page-title {
+  margin: 0 0 var(--dar-space-2);
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.dar-page-lead {
+  margin: 0 0 var(--dar-space-4);
+  max-width: 52ch;
+  color: var(--dar-color-text-secondary);
+  font-size: 1rem;
+  font-weight: 500;
+}
+
+.dar-toast {
+  position: fixed;
+  right: var(--dar-space-4);
+  bottom: var(--dar-space-8);
+  z-index: 60;
+  min-width: min(100% - 32px, 320px);
+  padding: var(--dar-space-4);
+  border-radius: var(--dar-radius-md);
+  border: 1px solid var(--dar-color-border);
+  background: #ffffff;
+  box-shadow: var(--dar-shadow-md);
+  font-weight: 600;
+}
+
+.dar-toast--success {
+  border-color: color-mix(in srgb, var(--dar-color-success) 30%, white);
+  background: var(--dar-color-success-bg);
+}
+
+.dar-toast--danger {
+  border-color: color-mix(in srgb, var(--dar-color-danger) 30%, white);
+  background: var(--dar-color-danger-bg);
+}
+
+.dar-muted {
+  color: var(--dar-color-text-muted);
+  font-size: var(--dar-text-sm);
+}
+
+.dar-form-note {
+  margin: 0;
+  padding: var(--dar-space-3) var(--dar-space-4);
+  border-radius: var(--dar-radius-md);
+  background: var(--dar-color-bg-muted);
+  color: var(--dar-color-text-secondary);
+  font-size: var(--dar-text-sm);
+}
+
+.dar-subheading {
+  margin: 0;
+  font-size: 1.25rem;
+  line-height: 1.625rem;
+  font-weight: 650;
+}
+
+.dar-demo-note {
+  margin: 0 0 var(--dar-space-4);
+  padding: var(--dar-space-3) var(--dar-space-4);
+  border-radius: var(--dar-radius-md);
+  background: var(--dar-color-info-bg);
+  border: 1px solid color-mix(in srgb, var(--dar-color-info) 22%, white);
+}
+
+.dar-doc-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--dar-space-4);
+  grid-template-columns: 1fr;
+}
+
+.dar-doc-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dar-space-3);
+}
+
+.dar-doc-card__meta {
+  margin: 0;
+  color: var(--dar-color-text-muted);
+  font-size: var(--dar-text-sm);
+}
+
+.dar-compare-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--dar-space-3);
+}
+
+.dar-form-grid {
+  display: grid;
+  gap: var(--dar-space-4);
+}
+
+.dar-back-link {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--dar-space-2);
+  min-height: var(--dar-target);
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--dar-color-accent);
+  font: inherit;
+  font-weight: 650;
+  cursor: pointer;
+  text-decoration: none;
+}
+
+.dar-panel {
+  background: var(--dar-color-bg-elevated);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-lg);
+  padding: var(--dar-space-6);
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-panel--hero {
+  background: var(--dar-color-bg-hero);
+  box-shadow: var(--dar-shadow-md);
+}
+
+.dar-panel--inset {
+  background: var(--dar-color-bg-muted);
+  box-shadow: none;
+}
+
+.dar-split {
+  display: grid;
+  gap: var(--dar-space-4);
+}
+
+.dar-workspace {
+  display: grid;
+  gap: var(--dar-space-4);
+}
+
+.dar-doc-canvas {
+  position: relative;
+  min-height: 360px;
+  padding: var(--dar-space-6);
+  border-radius: var(--dar-radius-md);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  border: 1px solid var(--dar-color-border);
+  box-shadow: inset 0 1px 0 #fff;
+}
+
+.dar-doc-page {
+  position: relative;
+  min-height: 280px;
+  padding: var(--dar-space-6);
+  background: #fff;
+  border: 1px solid var(--dar-color-border);
+  border-radius: 4px;
+  box-shadow: var(--dar-shadow-md);
+}
+
+.dar-doc-line {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 500;
+  color: var(--dar-color-text);
+  line-height: 1.55;
+}
+
+.dar-bbox {
+  position: absolute;
+  border: 2px solid var(--dar-color-accent);
+  background: color-mix(in srgb, var(--dar-color-accent) 14%, transparent);
+  pointer-events: none;
+}
+
+.dar-filter-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--dar-space-3);
+}
+
+.dar-filter-row .dar-field {
+  min-width: 160px;
+  flex: 1;
+}
+
+.dar-recent-grid {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: var(--dar-space-3);
+  grid-template-columns: 1fr;
+}
+
+.dar-recent-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--dar-space-2);
+  padding: var(--dar-space-4);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-md);
+  background: #ffffff;
+  text-align: left;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+  transition:
+    border-color var(--dar-duration) var(--dar-ease),
+    box-shadow var(--dar-duration) var(--dar-ease);
+}
+
+.dar-recent-card:hover {
+  border-color: var(--dar-color-accent);
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-landing {
+  display: grid;
+  gap: 0;
+}
+
+.dar-landing-hero {
+  padding: 28px 0 24px;
+  background:
+    radial-gradient(1200px 420px at 80% -10%, #ddd6fe 0%, transparent 55%),
+    linear-gradient(180deg, #eef2ff 0%, var(--dar-color-bg) 100%);
+}
+
+.dar-landing-hero__grid {
+  display: grid;
+  gap: var(--dar-space-8);
+  align-items: center;
+}
+
+.dar-landing-eyebrow {
+  margin: 0 0 var(--dar-space-3);
+  color: var(--dar-color-accent);
+  font-size: var(--dar-text-sm);
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.dar-landing-hero__title {
+  margin: 0 0 var(--dar-space-4);
+  max-width: 16ch;
+  font-size: 1.875rem;
+  line-height: 2.25rem;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+}
+
+.dar-landing-hero__lead {
+  margin: 0 0 var(--dar-space-6);
+  max-width: 42ch;
+  color: var(--dar-color-text-secondary);
+}
+
+.dar-landing-hero__cta {
+  gap: var(--dar-space-3);
+}
+
+.dar-landing-illustration {
+  min-height: 280px;
+  padding: var(--dar-space-6);
+  border-radius: var(--dar-radius-lg);
+  background: #ffffff;
+  border: 1px solid var(--dar-color-border);
+  box-shadow: var(--dar-shadow-lg);
+}
+
+.dar-landing-illustration svg {
+  width: 100%;
+  height: auto;
+}
+
+.dar-landing-cards {
+  display: grid;
+  gap: var(--dar-space-4);
+  grid-template-columns: 1fr;
+  margin-top: var(--dar-space-8);
+}
+
+.dar-product-card {
+  display: grid;
+  gap: var(--dar-space-3);
+  padding: var(--dar-space-6);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-lg);
+  background: #ffffff;
+  text-decoration: none;
+  color: inherit;
+  box-shadow: var(--dar-shadow-sm);
+  transition:
+    transform var(--dar-duration) var(--dar-ease),
+    box-shadow var(--dar-duration) var(--dar-ease),
+    border-color var(--dar-duration) var(--dar-ease);
+}
+
+.dar-product-card:hover,
+.dar-product-card:focus-visible {
+  transform: translateY(-3px);
+  box-shadow: var(--dar-shadow-md);
+  border-color: color-mix(in srgb, var(--dar-color-accent) 40%, var(--dar-color-border));
+}
+
+.dar-product-card__icon {
+  display: inline-flex;
+  width: 48px;
+  height: 48px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 14px;
+  background: var(--dar-color-accent-subtle);
+  color: var(--dar-color-accent);
+}
+
+.dar-product-card__title {
+  font-size: 1.125rem;
+  font-weight: 700;
+}
+
+.dar-product-card__text {
+  color: var(--dar-color-text-secondary);
+}
+
+.dar-product-card__benefits {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--dar-color-text-secondary);
+  font-size: var(--dar-text-sm);
+}
+
+.dar-product-card__action {
+  color: var(--dar-color-accent);
+  font-weight: 650;
+}
+
+.dar-trust {
+  display: grid;
+  gap: var(--dar-space-3);
+  padding: var(--dar-space-4) 0;
+  border-block: 1px solid var(--dar-color-border);
+  background: #ffffff;
+}
+
+.dar-trust__inner {
+  display: grid;
+  gap: var(--dar-space-3);
+  grid-template-columns: 1fr;
+}
+
+.dar-trust__item {
+  display: flex;
+  align-items: center;
+  gap: var(--dar-space-3);
+  min-height: 44px;
+  color: var(--dar-color-text-secondary);
+  font-weight: 600;
+  font-size: var(--dar-text-sm);
+}
+
+.dar-landing-section {
+  padding: var(--dar-space-8) 0;
+}
+
+.dar-landing-section__title {
+  margin: 0 0 var(--dar-space-6);
+  font-size: 1.75rem;
+  line-height: 2.125rem;
+  font-weight: 700;
+}
+
+.dar-steps {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--dar-space-4);
+}
+
+.dar-step,
+.dar-step-card {
+  display: grid;
+  gap: var(--dar-space-3);
+  padding: var(--dar-space-6);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-lg);
+  background: #ffffff;
+  box-shadow: var(--dar-shadow-sm);
+}
+
+.dar-step__num {
+  display: inline-flex;
+  width: 44px;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  background: var(--dar-color-accent-subtle);
+  color: var(--dar-color-accent);
+  font-weight: 700;
+}
+
+.dar-step p,
+.dar-step-card p {
+  margin: var(--dar-space-2) 0 0;
+  color: var(--dar-color-text-secondary);
+}
+
+.dar-security-block {
+  display: grid;
+  gap: var(--dar-space-4);
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 48%);
+}
+
+.dar-security-badges {
+  display: grid;
+  gap: var(--dar-space-3);
+  grid-template-columns: 1fr;
+}
+
+.dar-security-badge {
+  display: grid;
+  gap: var(--dar-space-2);
+  padding: var(--dar-space-4);
+  border-radius: var(--dar-radius-md);
+  background: #ffffff;
+  border: 1px solid var(--dar-color-border);
+}
+
+.dar-security-badge strong {
+  display: flex;
+  align-items: center;
+  gap: var(--dar-space-2);
+}
+
+.dar-security-list {
+  margin: 0;
+  padding-left: 1.2rem;
+  color: var(--dar-color-text-secondary);
+}
+
+.dar-landing-cta-block {
+  text-align: center;
+  padding: var(--dar-space-12) var(--dar-space-6);
+  border-radius: var(--dar-radius-lg);
+  background: var(--dar-color-accent);
+  color: #fff;
+  box-shadow: var(--dar-shadow-lg);
+}
+
+.dar-landing-cta-block .dar-landing-section__title,
+.dar-landing-cta-block__lead {
+  color: #fff;
+}
+
+.dar-landing-cta-block__lead {
+  margin: 0 auto var(--dar-space-6);
+  max-width: 42ch;
+}
+
+.dar-landing-cta-block .dar-btn--primary {
+  background: #ffffff;
+  color: var(--dar-color-accent);
+}
+
+.dar-landing-disclaimer {
+  padding-bottom: var(--dar-space-8);
+}
+
+.dar-auth-card {
+  padding-block: var(--dar-space-12);
+  max-width: 480px;
+}
+
+.dar-auth-card--wide {
+  max-width: 560px;
+}
+
+.dar-fieldset {
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-md);
+  padding: var(--dar-space-4);
+}
+
+.dar-fieldset legend {
+  font-weight: 700;
+  padding: 0 var(--dar-space-2);
+}
+
+.dar-plain-list {
+  margin: 0;
+  padding-left: 1.2rem;
+}
+
+.dar-plain-list--flush {
+  list-style: none;
+  padding: 0;
+  display: grid;
+  gap: var(--dar-space-2);
+}
+
+.dar-iframe-preview {
+  width: 100%;
+  min-height: 240px;
+  height: min(42vh, 420px);
+  border: 1px solid var(--dar-color-border);
+  border-radius: var(--dar-radius-md);
+  background: #fff;
+}
+
+.dar-textarea {
+  min-height: 6.5rem;
+  resize: vertical;
+  line-height: 1.45;
+}
+
+@media (min-width: 768px) {
+  .dar-main-nav {
+    display: inline-flex;
+  }
+
+  .dar-main {
+    padding: 28px 24px 48px;
+  }
+
+  .dar-mobile-nav {
+    display: none;
+  }
+
+  .dar-app-body {
+    min-height: calc(100vh - var(--dar-topbar-height));
+  }
+
+  .dar-page-title {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+  }
+
+  .dar-landing-hero {
+    padding: 40px 0 32px;
+  }
+
+  .dar-landing-hero__grid {
+    grid-template-columns: minmax(0, 1fr) minmax(280px, 460px);
+    gap: var(--dar-space-8);
+  }
+
+  .dar-landing-hero__title {
+    font-size: 2.5rem;
+    line-height: 2.75rem;
+    max-width: none;
+  }
+
+  .dar-landing-cards {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .dar-trust__inner {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dar-split,
+  .dar-workspace {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1.05fr);
+    align-items: start;
+  }
+
+  .dar-steps {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .dar-security-badges {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .dar-doc-grid,
+  .dar-recent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1024px) {
+  .dar-brand-text {
+    max-width: none;
+  }
+
+  .dar-doc-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1440px) {
+  .dar-main {
+    padding-inline: 32px;
+  }
+}
+
+@keyframes dar-from-top {
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dar-from-bottom {
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dar-from-left {
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dar-from-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes dar-from-edges {
+  from {
+    clip-path: inset(10% 18% 10% 18%);
+    opacity: 0;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@keyframes dar-shell-from-edges {
+  from {
+    clip-path: inset(0 46% 0 46%);
+    opacity: 0.2;
+  }
+  to {
+    clip-path: inset(0 0 0 0);
+    opacity: 1;
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  html.dar-enter,
+  html.dar-enter body {
+    overflow: hidden;
+  }
+
+  html.dar-enter .dar-app-shell,
+  html.dar-enter .dar-marketing {
+    animation: dar-shell-from-edges 0.9s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dar-enter .dar-topbar,
+  html.dar-enter .dar-marketing-header {
+    animation: dar-from-top 0.75s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dar-enter .dar-app-body,
+  html.dar-enter .dar-landing-hero__copy,
+  html.dar-enter .dar-auth-card {
+    animation: dar-from-left 0.8s 0.06s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dar-enter .dar-landing-hero__grid > *:last-child,
+  html.dar-enter .dar-user-menu {
+    animation: dar-from-right 0.8s 0.08s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dar-enter .dar-main,
+  html.dar-enter .dar-landing {
+    animation: dar-from-edges 0.9s 0.04s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  html.dar-enter .dar-mobile-nav,
+  html.dar-enter .dar-disclaimer-compact {
+    animation: dar-from-bottom 0.7s 0.1s cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .dar-product-card,
+  .dar-recent-card,
+  .dar-main-nav__link,
+  .dar-topbar {
+    transition: none;
+  }
+
+  .dar-product-card:hover,
+  .dar-product-card:focus-visible {
+    transform: none;
+  }
+
+  html.dar-enter .dar-topbar,
+  html.dar-enter .dar-marketing-header,
+  html.dar-enter .dar-app-body,
+  html.dar-enter .dar-main,
+  html.dar-enter .dar-landing,
+  html.dar-enter .dar-mobile-nav,
+  html.dar-enter .dar-app-shell,
+  html.dar-enter .dar-marketing {
+    animation: none;
+  }
+}

@@ -1,0 +1,49 @@
+name: Docly security regressions
+on:
+  push:
+    branches: [main, fix/docly-desktop-upgrade-safety]
+    paths:
+      - '.github/workflows/docly-security-regressions.yml'
+      - 'apps/api/app/security/**'
+      - 'apps/api/tests/test_csrf_referer_origin.py'
+  workflow_dispatch:
+permissions:
+  contents: read
+  pull-requests: write
+jobs:
+  csrf:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install API test dependencies
+        run: |
+          python -m pip install -e packages/py_dar -r apps/api/requirements.txt -e 'apps/api[dev]'
+      - name: Exercise real HTTP middleware
+        env:
+          PYTHONPATH: apps/api
+        run: python -m pytest apps/api/tests/test_csrf_referer_origin.py -v 2>&1 | tee csrf-regressions.log
+      - name: Upload HTTP regression evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: csrf-regression-evidence
+          path: csrf-regressions.log
+          if-no-files-found: warn
+      - name: Report HTTP test outcome
+        if: always()
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const repo = {owner: context.repo.owner, repo: context.repo.repo};
+            const prs = await github.rest.pulls.list({...repo, head: `${repo.owner}:${context.ref.replace('refs/heads/', '')}`, state: 'open'});
+            if (!prs.data.length) return;
+            const log = fs.existsSync('csrf-regressions.log') ? fs.readFileSync('csrf-regressions.log', 'utf8').slice(-6000) : 'Test output unavailable; inspect setup logs.';
+            await github.rest.issues.createComment({...repo, issue_number: prs.data[0].number, body: `## CSRF regression evidence\n\nCommit: ${context.sha}\nRun: ${context.serverUrl}/${repo.owner}/${repo.repo}/actions/runs/${context.runId}\n\n\`\`\`text\n${log}\n\`\`\``});

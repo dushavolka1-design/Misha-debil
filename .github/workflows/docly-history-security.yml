@@ -1,0 +1,70 @@
+name: Docly complete history secret scan
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  history-security:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          fetch-depth: 0
+      - name: Fetch every branch and tag without pruning
+        run: git fetch origin '+refs/heads/*:refs/remotes/origin/*' --tags
+      - name: Install checksum-verified scanner
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/gitleaks" artifacts/history-security
+          gh release download v8.24.3 --repo gitleaks/gitleaks --pattern '*linux_x64.tar.gz' --pattern '*checksums.txt' --dir "$RUNNER_TEMP/gitleaks"
+          cd "$RUNNER_TEMP/gitleaks"
+          sha256sum --check --ignore-missing *checksums.txt
+          tar -xzf *linux_x64.tar.gz gitleaks
+      - name: Require actual scanner detections for both roots and merge-only content
+        run: |
+          set -euo pipefail
+          python scripts/verify_history_scan.py --gitleaks "$RUNNER_TEMP/gitleaks/gitleaks" --output artifacts/history-security 2>&1 | tee artifacts/history-security/fixture.log
+      - name: Scan actual repository history with default secret rules
+        run: |
+          set -euo pipefail
+          git for-each-ref --format='%(refname) %(objectname)' > artifacts/history-security/refs.txt
+          git rev-list --all --max-parents=0 > artifacts/history-security/roots.txt
+          "$RUNNER_TEMP/gitleaks/gitleaks" git --redact --exit-code 1 --log-opts='--all --full-history --root -m' --report-format sarif --report-path artifacts/history-security/repository.sarif . 2>&1 | tee artifacts/history-security/repository.log
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        if: always()
+        with:
+          name: complete-history-security-${{ github.event_name }}
+          path: artifacts/history-security/
+          if-no-files-found: error
+  report:
+    needs: history-security
+    if: always() && github.event_name == 'push'
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    permissions:
+      actions: read
+      pull-requests: write
+    steps:
+      - uses: actions/github-script@60a0d83039c74a4aee543508d2ffcb1c3799cdea
+        env:
+          RESULT: ${{ needs.history-security.result }}
+        with:
+          script: |
+            const run = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            const jobs = await github.paginate(github.rest.actions.listJobsForWorkflowRun, {...context.repo, run_id: context.runId});
+            const artifacts = await github.paginate(github.rest.actions.listWorkflowRunArtifacts, {...context.repo, run_id: context.runId});
+            const lines = [`## Complete-history secret scan: ${process.env.RESULT}`, `Commit: ${context.sha}`, run];
+            for (const artifact of artifacts) lines.push(`${artifact.name}: ${run}/artifacts/${artifact.id}`);
+            for (const job of jobs.filter(j => j.name === 'history-security')) {
+              const response = await github.rest.actions.downloadJobLogsForWorkflowRun({...context.repo, job_id: job.id});
+              const text = typeof response.data === 'string' ? response.data : Buffer.from(response.data).toString('utf8');
+              lines.push(`\n\`\`\`text\n${text.slice(-16000)}\n\`\`\``);
+            }
+            lines.push('Coverage fixture uses synthetic markers only; actual repository scan uses default secret rules. This does not establish dependency, installer or release acceptance.');
+            await github.rest.issues.createComment({...context.repo, issue_number: 1, body: lines.join('\n')});
