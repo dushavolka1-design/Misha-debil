@@ -69,7 +69,8 @@ def as_bytes(value: Any) -> bytes | None:
     if isinstance(value, bytes):
         return value
     if isinstance(value, dict) and set(value.keys()) == {"__bytes__"}:
-        return persistence_loads(persistence_dumps(value))
+        restored = persistence_loads(persistence_dumps(value))
+        return restored if isinstance(restored, bytes) else None
     if isinstance(value, str):
         restored = persistence_loads(persistence_dumps({"__bytes__": value}))
         return restored if isinstance(restored, bytes) else None

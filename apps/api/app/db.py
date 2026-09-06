@@ -26,7 +26,7 @@ def _async_database_url(url: str) -> str:
 @lru_cache
 def get_engine() -> AsyncEngine:
     settings = get_settings()
-    connect_args: dict = {}
+    connect_args: dict[str, bool] = {}
     url = _async_database_url(settings.database_url)
     if url.startswith("sqlite"):
         connect_args = {"check_same_thread": False}
