@@ -290,17 +290,17 @@ class AnalysisPipelineService:
 
                         valid, policy_dropped = filter_displayable_findings(valid)
                         run.rejected_llm.extend(policy_dropped)
-                        for f in valid:
+                        for llm_finding in valid:
                             finding_records.append(
                                 FindingRecord(
                                     id=uuid4(),
-                                    kind=f["kind"],
-                                    entity_type=f["entity_type"],
-                                    raw_text=f["raw_text"],
-                                    normalized_value=f.get("normalized_value"),
-                                    confidence=float(f["confidence"]),
-                                    uncertainty_state=f["uncertainty_state"],
-                                    citation=f["citation"],
+                                    kind=llm_finding["kind"],
+                                    entity_type=llm_finding["entity_type"],
+                                    raw_text=llm_finding["raw_text"],
+                                    normalized_value=llm_finding.get("normalized_value"),
+                                    confidence=float(llm_finding["confidence"]),
+                                    uncertainty_state=llm_finding["uncertainty_state"],
+                                    citation=llm_finding["citation"],
                                 ),
                             )
                         run.llm_available = True
