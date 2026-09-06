@@ -1,0 +1,78 @@
+name: Docly source evidence diagnostics (NOT acceptance)
+
+on:
+  push:
+    branches: [fix/docly-desktop-upgrade-safety]
+    paths:
+      - '.github/workflows/docly-source-evidence-diagnostics.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  inspect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    permissions:
+      contents: read
+      actions: read
+      issues: write
+    steps:
+      - name: Inspect the original acquisition run without executing repository code
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+        run: |
+          set -euo pipefail
+          mkdir -p evidence
+          gh api "repos/$REPO/actions/runs/34050510092" > evidence/run.json
+          gh api "repos/$REPO/actions/runs/34050510092/jobs?per_page=100" > evidence/jobs.json
+          gh api "repos/$REPO/actions/runs/34050510092/artifacts?per_page=100" > evidence/artifacts.json
+          gh run view 34050510092 --repo "$REPO" --log > evidence/run.log
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          root = Path('evidence')
+          run = json.loads((root / 'run.json').read_text())
+          jobs = json.loads((root / 'jobs.json').read_text())['jobs']
+          artifacts = json.loads((root / 'artifacts.json').read_text())['artifacts']
+          lines = [
+              '## Original official-source run diagnostics — NOT acceptance',
+              f"Source commit: `{run['head_sha']}`",
+              f"Run: {run['html_url']}",
+              f"Status: {run['status']}; conclusion: {run['conclusion']}",
+              '',
+          ]
+          for job in jobs:
+              lines.append(f"- {job['name']}: {job['status']} / {job['conclusion']} — {job['html_url']}")
+              for step in job['steps']:
+                  if step.get('conclusion') not in (None, 'success', 'skipped'):
+                      lines.append(f"  - {step['name']}: {step['conclusion']}")
+          lines.append('')
+          if artifacts:
+              for artifact in artifacts:
+                  lines.append(f"Artifact: {artifact['name']}; expired={artifact['expired']}; id={artifact['id']}")
+          else:
+              lines.append('No artifacts were returned. No source PDF hash is accepted.')
+          log_lines = (root / 'run.log').read_text(errors='replace').splitlines()
+          relevant = [line for line in log_lines if any(term in line.lower() for term in (
+              'error', 'failed', 'curl:', 'timed out', 'certificate', 'resource not accessible',
+              'source_snapshot_only_not_accepted', 'sha256', 'pages:',
+          ))]
+          snippet = '\n'.join(relevant[-50:])[-14000:]
+          fence = '`' * max(4, max((len(part) for part in snippet.split() if set(part) == {'`'}), default=0) + 1)
+          lines.extend(['', fence + 'text', snippet, fence, '',
+                        'Diagnostic success is not source acquisition success. Legal revision, all-annex review, '
+                        'official-vs-Docly pixel comparison and release remain UNVERIFIED / NO-GO.'])
+          (root / 'report.md').write_text('\n'.join(lines) + '\n')
+          PY
+          gh api --method POST "repos/$REPO/issues/1/comments" -F body=@evidence/report.md
+      - name: Preserve read-only diagnostics
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: original-official-source-run-diagnostics-NOT-ACCEPTANCE
+          path: evidence/
+          if-no-files-found: error
+          retention-days: 90
