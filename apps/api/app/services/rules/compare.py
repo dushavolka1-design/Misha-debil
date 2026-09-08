@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Document comparison with ownership isolation and dual citations."""
+
+from __future__ import annotations
 
 import hashlib
 import re
@@ -81,7 +81,10 @@ def compare_documents(left: CompareDoc, right: CompareDoc) -> CompareResult:
             )
 
     # Bind context fingerprints so comparator never mixes foreign docs
-    _ = (_fingerprint(left.user_id, left.tenant_id, left.document_id), _fingerprint(right.user_id, right.tenant_id, right.document_id))
+    _ = (
+        _fingerprint(left.user_id, left.tenant_id, left.document_id),
+        _fingerprint(right.user_id, right.tenant_id, right.document_id),
+    )
 
     result = CompareResult(
         left_document_id=left.document_id,

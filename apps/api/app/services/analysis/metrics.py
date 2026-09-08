@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Field/bbox metrics — not subjective answer quality."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any

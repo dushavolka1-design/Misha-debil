@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from typing import TypedDict
 from uuid import UUID, uuid4
 
 from app.services.forms.catalog import FormCatalogService, FormRecord, utcnow
@@ -13,7 +14,21 @@ CATEGORIES = {
     "medical": "Медицинские памятки",
 }
 
-PROMPT6_CARDS: list[dict] = [
+
+class CatalogSeedCard(TypedDict):
+    slug: str
+    title: str
+    organ: str
+    purpose: str
+    region: str
+    category: str
+    form_kind: str
+    fill_ready: bool
+    status: str
+    warning: str
+
+
+PROMPT6_CARDS: list[CatalogSeedCard] = [
     {
         "slug": "mvd.arrival_notice.app4",
         "title": "Уведомление о прибытии иностранного гражданина",
@@ -124,7 +139,7 @@ def ensure_prompt6_catalog(catalog: FormCatalogService) -> None:
                 catalog.forms.pop(existing, None)
                 _insert_card(catalog, spec)
                 continue
-            updates: dict = {
+            updates: dict[str, str | bool] = {
                 "category": spec["category"],
                 "form_kind": spec["form_kind"],
                 "warning": spec["warning"],
@@ -134,7 +149,9 @@ def ensure_prompt6_catalog(catalog: FormCatalogService) -> None:
                 updates["fill_ready"] = False
             if spec["status"] == "published" and rec.status == "needs_review" and spec["form_kind"] == "medical_memo":
                 updates["status"] = "published"
-                updates["edition_note"] = rec.edition_note if rec.edition_note and rec.edition_note != "Fill v1.0.0" else "Собственный шаблон"
+                updates["edition_note"] = (
+                    rec.edition_note if rec.edition_note and rec.edition_note != "Fill v1.0.0" else "Собственный шаблон"
+                )
             if rec.edition_note == "Fill v1.0.0":
                 updates["edition_note"] = "Собственный шаблон"
             catalog.update_fields(rec.id, **updates)
@@ -149,7 +166,7 @@ def seed_prompt6_catalog(catalog: FormCatalogService) -> None:
         _insert_card(catalog, spec)
 
 
-def _insert_card(catalog: FormCatalogService, spec: dict) -> None:
+def _insert_card(catalog: FormCatalogService, spec: CatalogSeedCard) -> None:
     rec = FormRecord(
         id=uuid4(),
         slug=spec["slug"],

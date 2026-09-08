@@ -57,13 +57,13 @@ def test_rate_limiter_blocks() -> None:
 def test_idor_document_access() -> None:
     from dar.providers.fake import FakeKMSProvider, FakeMalwareScanner, InMemoryObjectStorage
 
+    from app.services.upload.fsm import DocumentState
     from app.services.upload.lifecycle import (
         DocumentLifecycleService,
         DocumentRecord,
         DocumentStore,
         UploadError,
     )
-    from app.services.upload.fsm import DocumentState
     from app.services.upload.retention import RetentionPolicy
 
     owner = uuid4()
@@ -110,7 +110,13 @@ def test_csrf_origin_rejected_with_session(client: TestClient, store: AuthConsen
         )
     r = client.post(
         "/auth/register",
-        json={"email": "csrf@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": "csrf@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     assert r.status_code == 200
     token = r.json()["verification_token_dev"]

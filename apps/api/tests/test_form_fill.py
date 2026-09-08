@@ -12,7 +12,6 @@ from app.services.forms.fill.service import FormFillService
 from app.services.forms.fill.underlay import build_demo_a4_underlay
 from app.services.forms.fill.validate import validate_inputs
 
-
 ARTIFACT_DIR = Path(__file__).resolve().parents[3] / "artifacts" / "pixel-diff"
 
 

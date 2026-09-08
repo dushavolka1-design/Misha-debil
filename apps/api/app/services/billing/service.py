@@ -1,16 +1,14 @@
-from __future__ import annotations
-
 """Server-side subscription/billing — price table never trusted from client."""
 
+from __future__ import annotations
+
 import hashlib
-import hmac
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
 from dar.providers.ports import PaymentProvider
-
 
 BILLING_ENGINE_VERSION = "billing.engine.v1"
 MAX_DUNNING_ATTEMPTS = 3
@@ -19,7 +17,7 @@ TRIAL_NOTICE_DAYS_BEFORE = 3
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class BillingError(Exception):
@@ -183,7 +181,9 @@ class BillingService:
         if client_amount_minor is not None and client_amount_minor != price.amount_minor:
             raise BillingError("price_tamper", "Client amount does not match server price table", http_status=400)
         if enable_recurring and not accepted_payment_recurring:
-            raise BillingError("recurring_consent_required", "Separate payment_recurring consent required", http_status=403)
+            raise BillingError(
+                "recurring_consent_required", "Separate payment_recurring consent required", http_status=403
+            )
         if price.amount_minor > 0 and enable_recurring and not accepted_payment_recurring:
             raise BillingError("recurring_consent_required", "Recurring consent required", http_status=403)
 
@@ -236,7 +236,9 @@ class BillingService:
         return sub, attempt, checkout
 
     async def _create_attempt(self, sub: SubscriptionRecord, *, reason: str) -> tuple[PaymentAttempt, dict[str, Any]]:
-        idem = hashlib.sha256(f"{sub.id}:{sub.price_version}:{reason}:{sub.current_period_end.isoformat()}".encode()).hexdigest()
+        idem = hashlib.sha256(
+            f"{sub.id}:{sub.price_version}:{reason}:{sub.current_period_end.isoformat()}".encode()
+        ).hexdigest()
         if idem in self.attempts_by_idem:
             existing = self.attempts[self.attempts_by_idem[idem]]
             return existing, {"idempotent_replay": True, "provider_ref": existing.provider_payment_ref}
@@ -373,7 +375,7 @@ class BillingService:
         occurred = None
         if verification.occurred_at:
             try:
-                occurred = datetime.fromtimestamp(float(verification.occurred_at), tz=timezone.utc)
+                occurred = datetime.fromtimestamp(float(verification.occurred_at), tz=UTC)
             except Exception:  # noqa: BLE001
                 try:
                     occurred = datetime.fromisoformat(verification.occurred_at.replace("Z", "+00:00"))
@@ -463,7 +465,9 @@ class BillingService:
                 sub.dunning_attempts += 1
                 sub.status = "past_due" if sub.dunning_attempts < MAX_DUNNING_ATTEMPTS else "expired"
                 sub.updated_at = utcnow()
-            self._audit("webhook", "payment_failed", event_id=raw.event_id, attempts=sub.dunning_attempts if sub else None)
+            self._audit(
+                "webhook", "payment_failed", event_id=raw.event_id, attempts=sub.dunning_attempts if sub else None
+            )
 
         elif etype == "subscription.cancelled":
             if sub:
@@ -517,7 +521,9 @@ class BillingService:
                     results.append({"subscription_id": str(sub.id), "action": "dunning_exhausted"})
                     continue
                 attempt, _ = await self._create_attempt(sub, reason=f"renewal-{sub.dunning_attempts}")
-                results.append({"subscription_id": str(sub.id), "action": "renewal_attempt", "attempt": str(attempt.id)})
+                results.append(
+                    {"subscription_id": str(sub.id), "action": "renewal_attempt", "attempt": str(attempt.id)}
+                )
         return results
 
     async def _send_trial_notice(self, sub: SubscriptionRecord) -> None:
@@ -574,7 +580,9 @@ class BillingService:
         sub.amount_minor = price.amount_minor
         sub.currency = price.currency
         sub.updated_at = utcnow()
-        self._audit(str(user_id), "price_change", from_plan=old, to_plan=new_plan_code, price_version=price.price_version)
+        self._audit(
+            str(user_id), "price_change", from_plan=old, to_plan=new_plan_code, price_version=price.price_version
+        )
         return sub
 
     def admin_reconciliation(self) -> dict[str, Any]:

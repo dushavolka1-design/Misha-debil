@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import time
 from pathlib import Path
 from uuid import uuid4
 
@@ -16,9 +17,9 @@ from app.services.auth_consent import (
     seed_demo_legal,
 )
 from app.services.upload.filename import sanitize_display_filename
-from app.services.upload.fsm import DocumentState, transition
+from app.services.upload.fsm import DocumentState, InvalidTransition, transition
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore, UploadError
-from app.services.upload.validation import harden_by_type, validate_upload, DetectedType
+from app.services.upload.validation import DetectedType, harden_by_type, validate_upload
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"
@@ -84,12 +85,12 @@ def _register(auth: AuthConsentService, store: AuthConsentStore, email: str):
 
 
 @pytest.fixture()
-def client(auth_store: AuthConsentStore, doc_service: DocumentLifecycleService):
+def client(auth_store: AuthConsentStore):
     app = create_app()
     with TestClient(app) as c:
         c.app.state.auth_store = auth_store
-        c.app.state.doc_store = doc_service.store
-        c.app.state.doc_service = doc_service
+        # Keep lifespan-owned services: the real queue consumer holds their
+        # references. Replacing only HTTP state sends jobs to another store.
         yield c
 
 
@@ -102,7 +103,7 @@ def test_sanitize_bidi_and_controls() -> None:
 
 
 def test_fsm_blocks_process_before_clean() -> None:
-    with pytest.raises(Exception):
+    with pytest.raises(InvalidTransition, match="QUARANTINED -> PROCESSING not allowed"):
         transition(DocumentState.QUARANTINED, DocumentState.PROCESSING)
 
 
@@ -373,8 +374,19 @@ def test_api_happy_path_and_idor(
     upload_url = body["upload_url"]
     put = client.put(upload_url, content=data, headers={"Content-Type": "application/pdf"})
     assert put.status_code == 200
-    assert put.json()["state"] == "READY"
     doc_id = body["document_id"]
+    # PUT enqueues work; readiness is an asynchronous API contract.
+    deadline = time.monotonic() + 30.0
+    while True:
+        status = client.get(f"/documents/{doc_id}")
+        assert status.status_code == 200, status.text
+        state = status.json()["state"]
+        if state == "READY":
+            break
+        assert state in {"QUARANTINED", "SCANNING", "CLEAN", "PROCESSING"}, status.text
+        assert time.monotonic() < deadline, "Upload did not become READY within 30 seconds"
+        time.sleep(0.05)
+    assert client.get(f"/documents/{doc_id}/download").status_code == 200
 
     # IDOR: other user
     client.cookies.clear()

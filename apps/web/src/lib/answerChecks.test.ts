@@ -29,7 +29,9 @@ test('normalize fixes passport typo immediately and petition on blur', () => {
   const whileTyping = normalizeField('mvd.patent.application', 'petition', 'хочу патент');
   assert.equal(whileTyping.value, 'хочу патент');
 
-  const onBlur = normalizeField('mvd.patent.application', 'petition', 'хочу патент', { onBlur: true });
+  const onBlur = normalizeField('mvd.patent.application', 'petition', 'хочу патент', {
+    onBlur: true,
+  });
   assert.equal(onBlur.value, PETITION_PATENT);
 });
 

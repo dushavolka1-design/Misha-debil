@@ -1,12 +1,6 @@
 export { Button } from './Button';
 export type { ButtonProps } from './Button';
-export {
-  Input,
-  Select,
-  Checkbox,
-  Radio,
-  FormErrorSummary,
-} from './FormControls';
+export { Input, Select, Checkbox, Radio, FormErrorSummary } from './FormControls';
 export type { InputProps, SelectProps } from './FormControls';
 export { Dialog, Drawer } from './Overlay';
 export { Tabs, Tooltip, Badge, Alert, Progress, Skeleton } from './Feedback';
@@ -26,3 +20,7 @@ export { Icon } from './Icon';
 export type { FindingKind } from './Domain';
 export { ScreenStateView, parseScreenState } from './ScreenState';
 export type { ScreenState } from './ScreenState';
+export { PasswordInput } from './PasswordInput';
+export type { PasswordInputProps } from './PasswordInput';
+export { Stepper } from './Stepper';
+export type { StepperProps } from './Stepper';

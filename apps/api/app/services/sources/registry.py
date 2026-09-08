@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import hashlib
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from enum import StrEnum
-from typing import Any, Callable
+from typing import Any
 from uuid import UUID, uuid4
 
 from app.services.sources.url_policy import (
@@ -18,7 +19,7 @@ from app.services.sources.url_policy import (
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class SourceState(StrEnum):
@@ -157,7 +158,9 @@ class SourceRegistry:
         self.norms_status: dict[str, str] = {}  # norm_id -> approved|review
         self.forms_status: dict[str, str] = {}
 
-    def _audit(self, actor: str, action: str, *, source_id: UUID | None = None, snapshot_id: UUID | None = None, **detail: Any) -> None:
+    def _audit(
+        self, actor: str, action: str, *, source_id: UUID | None = None, snapshot_id: UUID | None = None, **detail: Any
+    ) -> None:
         self.audit.append(
             AuditEvent(
                 id=uuid4(),
@@ -195,7 +198,9 @@ class SourceRegistry:
             created.append(src)
         return created
 
-    def discover(self, *, slug: str, title: str, official_url: str, organ: str, actor: str = "editor") -> SourceRecordMem:
+    def discover(
+        self, *, slug: str, title: str, official_url: str, organ: str, actor: str = "editor"
+    ) -> SourceRecordMem:
         try:
             canonical = validate_url(official_url, cfg=self.cfg)
         except UrlPolicyError as exc:
@@ -239,7 +244,10 @@ class SourceRegistry:
             src.state = SourceState.DISCOVERED
             raise SourceError(exc.code, exc.message) from exc
 
-        headers: dict[str, str] = {"User-Agent": "DAR-OfficialFetcher/1.0", "Accept": "text/html,application/pdf,text/plain"}
+        headers: dict[str, str] = {
+            "User-Agent": "DAR-OfficialFetcher/1.0",
+            "Accept": "text/html,application/pdf,text/plain",
+        }
         prev = self.latest_snapshot(source_id)
         if conditional and prev:
             if prev.etag:
@@ -289,7 +297,12 @@ class SourceRegistry:
         if len(result.body) > self.cfg.max_bytes:
             raise SourceError("too_large", "Response exceeds max size")
 
-        ctype = (result.headers.get("content-type") or result.headers.get("Content-Type") or "").split(";")[0].strip().lower()
+        ctype = (
+            (result.headers.get("content-type") or result.headers.get("Content-Type") or "")
+            .split(";")[0]
+            .strip()
+            .lower()
+        )
         if self.cfg.allowed_content_types and ctype and ctype not in self.cfg.allowed_content_types:
             raise SourceError("content_type_denied", f"Content-Type not allowed: {ctype}")
 
@@ -337,7 +350,9 @@ class SourceRegistry:
                 self.norms_status[nid] = "review"
             for fid in src.dependent_form_ids:
                 self.forms_status[fid] = "review"
-            self._audit(actor, "hash_change_review_task", source_id=source_id, snapshot_id=snap.id, task_id=str(task.id))
+            self._audit(
+                actor, "hash_change_review_task", source_id=source_id, snapshot_id=snap.id, task_id=str(task.id)
+            )
 
         self._audit(actor, "fetched_parsed", source_id=source_id, snapshot_id=snap.id, content_hash=digest)
         return snap
@@ -381,8 +396,16 @@ class SourceRegistry:
             "new_fetched_at": new.fetched_at.isoformat(),
             "old_final_url": old.final_url,
             "new_final_url": new.final_url,
-            "old_act": {"title": old.act_title, "number": old.act_number, "date": old.act_date.isoformat() if old.act_date else None},
-            "new_act": {"title": new.act_title, "number": new.act_number, "date": new.act_date.isoformat() if new.act_date else None},
+            "old_act": {
+                "title": old.act_title,
+                "number": old.act_number,
+                "date": old.act_date.isoformat() if old.act_date else None,
+            },
+            "new_act": {
+                "title": new.act_title,
+                "number": new.act_number,
+                "date": new.act_date.isoformat() if new.act_date else None,
+            },
             "text_preview_old": old.extracted_text[:240],
             "text_preview_new": new.extracted_text[:240],
         }

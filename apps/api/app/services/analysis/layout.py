@@ -41,7 +41,7 @@ def detect_layout(page: OcrPageResult) -> list[LayoutRegion]:
             regions.append(LayoutRegion("annex", t, page.page_number, bbox, {}))
         elif _SIGNATURE.search(t):
             # Presence of signature block only — never treat as identity confirmation
-            meta = {"identity_asserted": False}
+            meta: dict[str, bool | str] = {"identity_asserted": False}
             if _HANDWRITTEN_HINT.search(t):
                 meta["handwritten_detected"] = True
                 meta["note"] = "Handwritten mark is not identity verification"

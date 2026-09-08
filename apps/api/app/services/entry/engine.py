@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from app.services.entry.deadlines import DeadlineResult, calculate_deadline
+from app.services.entry.deadlines import calculate_deadline
 from app.services.entry.pack import (
     APPROVED_VISA_REGIMES,
     DECISION_RULES,
@@ -15,7 +15,6 @@ from app.services.entry.pack import (
 )
 from app.services.sources.registry import SourceRegistry, SourceState
 
-
 DISCLAIMER = (
     "Информационный чеклист по утверждённым правилам. "
     "Сервис не обещает допуск через границу и не гарантирует принятие заявления. "
@@ -24,7 +23,7 @@ DISCLAIMER = (
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class EntryError(Exception):
@@ -388,8 +387,12 @@ class EntryWizardService:
             latest_id = latest.get("id") if isinstance(latest, dict) else getattr(latest, "id", None)
             approved_id = approved.get("id") if isinstance(approved, dict) else getattr(approved, "id", None)
             latest_state = latest.get("state") if isinstance(latest, dict) else getattr(latest, "state", None)
-            latest_hash = latest.get("content_hash") if isinstance(latest, dict) else getattr(latest, "content_hash", None)
-            approved_hash = approved.get("content_hash") if isinstance(approved, dict) else getattr(approved, "content_hash", None)
+            latest_hash = (
+                latest.get("content_hash") if isinstance(latest, dict) else getattr(latest, "content_hash", None)
+            )
+            approved_hash = (
+                approved.get("content_hash") if isinstance(approved, dict) else getattr(approved, "content_hash", None)
+            )
             if (
                 approved
                 and latest
@@ -413,7 +416,9 @@ class EntryWizardService:
             visa_regime_id=qdict.get("visa_regime_id"),
             purpose=qdict.get("purpose") or "tourism",
             planned_stay_days=qdict.get("planned_stay_days"),
-            planned_entry_date=date.fromisoformat(qdict["planned_entry_date"]) if qdict.get("planned_entry_date") else None,
+            planned_entry_date=date.fromisoformat(qdict["planned_entry_date"])
+            if qdict.get("planned_entry_date")
+            else None,
             eaeu_member=bool(qdict.get("eaeu_member")),
             invitation=bool(qdict.get("invitation")),
             host_type=qdict.get("host_type"),

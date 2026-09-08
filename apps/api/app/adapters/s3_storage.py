@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import asyncio
-from typing import Any
 
 import boto3
 from botocore.client import Config
@@ -36,21 +35,29 @@ class S3ObjectStorage(ObjectStorage):
         data: bytes,
         content_type: str,
     ) -> StoredObject:
-        def _put() -> dict[str, Any]:
-            return self._client.put_object(
+        def _put() -> str | None:
+            response = self._client.put_object(
                 Bucket=bucket,
                 Key=key,
                 Body=data,
                 ContentType=content_type,
             )
+            return response.get("ETag")
 
-        resp = await asyncio.to_thread(_put)
-        return StoredObject(bucket=bucket, key=key, etag=resp.get("ETag"))
+        etag = await asyncio.to_thread(_put)
+        return StoredObject(bucket=bucket, key=key, etag=etag)
 
     async def get_bytes(self, *, bucket: str, key: str) -> bytes:
         def _get() -> bytes:
             obj = self._client.get_object(Bucket=bucket, Key=key)
-            return obj["Body"].read()
+            body = obj["Body"]
+            try:
+                data = body.read()
+                if not isinstance(data, bytes):
+                    raise TypeError("S3 object body must contain bytes")
+                return data
+            finally:
+                body.close()
 
         return await asyncio.to_thread(_get)
 

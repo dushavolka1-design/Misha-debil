@@ -13,7 +13,9 @@ export default async function DashboardPage({
   return (
     <div>
       <h1 className="dar-page-title">Обзор</h1>
-      <p className="dar-page-lead">Перейдите в раздел «Анализатор» для загрузки и просмотра документов.</p>
+      <p className="dar-page-lead">
+        Перейдите в раздел «Анализатор» для загрузки и просмотра документов.
+      </p>
       <ScreenStateView
         state={state}
         emptyTitle="Документов пока нет"

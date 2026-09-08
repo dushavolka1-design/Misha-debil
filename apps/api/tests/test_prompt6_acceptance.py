@@ -16,6 +16,7 @@ from typing import Any
 from uuid import UUID, uuid4
 
 import pytest
+from docly_auth_test_support import assert_desktop_email_is_verified
 from fastapi.testclient import TestClient
 
 from app.db import get_engine, get_session_factory
@@ -24,14 +25,14 @@ from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
 from app.security.rate_limit import rate_limiter
 from app.services.auth_consent import REQUIRED_AT_REGISTRATION
 from app.services.forms.catalog import FormRecord
+from app.services.forms.fill.engine import extract_static_text, fill_pdf, page_geometry
 from app.services.forms.fill.fonts import ASSETS, MANIFEST, bundled_font_status
 from app.services.forms.fill.generation_gates import SYNTHETIC_MARKER, pdf_is_synthetic_underlay
 from app.services.forms.fill.pixel_diff import TECHNICAL_TOLERANCE, compare_underlay_vs_output
-from app.services.forms.fill.engine import extract_static_text, fill_pdf, page_geometry
 from app.services.forms.fill.service import FormVersionRecord, GeneratedFormRecord
 from app.services.forms.pdf_memo import FORBIDDEN_MEDICAL_ARTIFACTS
-from app.settings import get_settings
 from app.services.upload.validation import validate_upload
+from app.settings import get_settings
 
 ROOT = Path(__file__).resolve().parents[3]
 ARTIFACTS = ROOT / "artifacts" / "prompt6"
@@ -86,12 +87,18 @@ def _register_login(client: TestClient, email: str = USER_EMAIL, password: str =
         return
     registered = client.post(
         "/auth/register",
-        json={"email": email, "password": password, "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": _accepts(client)},
+        json={
+            "email": email,
+            "password": password,
+            "display_name": "Владелец Тестов" if email == USER_EMAIL else "Другой Тестов",
+            "locale": "ru-RU",
+            "accepts": _accepts(client),
+        },
     )
     assert registered.status_code == 200, registered.text
     token = registered.json().get("verification_token_dev")
     assert token
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
     login = client.post("/auth/login", json={"email": email, "password": password})
     assert login.status_code == 200, login.text
 
@@ -547,7 +554,11 @@ def test_p6_37_csrf(tmp_path: Path) -> None:
         bad = client.post("/billing/cancel", headers={"Origin": "https://evil.example"})
         assert bad.status_code == 403
         body = bad.json()
-        assert body.get("code") == "csrf_origin_rejected" or (body.get("detail") or {}).get("code") == "csrf_origin_rejected" or "csrf" in json.dumps(body)
+        assert (
+            body.get("code") == "csrf_origin_rejected"
+            or (body.get("detail") or {}).get("code") == "csrf_origin_rejected"
+            or "csrf" in json.dumps(body)
+        )
 
 
 def test_p6_38_upload_mime_magic() -> None:

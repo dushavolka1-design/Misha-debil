@@ -41,9 +41,7 @@ test('keyboard can reach primary CTA on landing', async ({ page }) => {
 test('axe critical/serious on landing and analyzer', async ({ page }) => {
   for (const route of ['/', '/app/analyzer']) {
     await page.goto(route);
-    const results = await new AxeBuilder({ page })
-      .withTags(['wcag2a', 'wcag2aa'])
-      .analyze();
+    const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
     const serious = results.violations.filter((v) =>
       ['serious', 'critical'].includes(v.impact || ''),
     );
@@ -54,7 +52,10 @@ test('axe critical/serious on landing and analyzer', async ({ page }) => {
 test('visual snapshots key screens', async ({ page }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.goto('/');
-  await expect(page).toHaveScreenshot('landing-1440.png', { fullPage: true, maxDiffPixelRatio: 0.03 });
+  await expect(page).toHaveScreenshot('landing-1440.png', {
+    fullPage: true,
+    maxDiffPixelRatio: 0.03,
+  });
   await page.setViewportSize({ width: 768, height: 900 });
   await page.goto('/app/analyzer');
   await expect(page).toHaveScreenshot('analyzer-768.png', {

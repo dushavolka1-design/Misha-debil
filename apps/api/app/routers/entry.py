@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import asdict
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Request
@@ -8,8 +9,9 @@ from fastapi.responses import Response
 
 from app.routers.auth import current_user
 from app.schemas_entry import DraftResponse, EvaluateResponse, QuestionnaireIn, VisaRegimeOut
+from app.services.auth_consent import UserRecord
 from app.services.entry.checklist_pdf import render_checklist_pdf
-from app.services.entry.engine import EntryError, EntryWizardService, Questionnaire, StepResult
+from app.services.entry.engine import EntryError, EntryWizardService, EvaluationSnapshot, Questionnaire, StepResult
 from app.services.entry.form_recommendations import recommend_catalog_forms
 from app.services.forms.catalog import FormCatalogService
 
@@ -17,7 +19,10 @@ router = APIRouter(prefix="/entry", tags=["entry-wizard"])
 
 
 def get_entry(request: Request) -> EntryWizardService:
-    return request.app.state.entry_wizard
+    service = request.app.state.entry_wizard
+    if not isinstance(service, EntryWizardService):
+        raise RuntimeError("Entry wizard service is not initialized")
+    return service
 
 
 def _http(exc: EntryError) -> None:
@@ -48,11 +53,14 @@ def _q(body: QuestionnaireIn) -> Questionnaire:
 
 
 def get_catalog(request: Request) -> FormCatalogService:
-    return request.app.state.form_catalog
+    service = request.app.state.form_catalog
+    if not isinstance(service, FormCatalogService):
+        raise RuntimeError("Form catalog service is not initialized")
+    return service
 
 
-def _stages(stages: dict[str, list[StepResult]]) -> dict[str, list[dict]]:
-    out: dict[str, list[dict]] = {}
+def _stages(stages: dict[str, list[StepResult]]) -> dict[str, list[dict[str, Any]]]:
+    out: dict[str, list[dict[str, Any]]] = {}
     for k, steps in stages.items():
         out[k] = []
         for s in steps:
@@ -61,7 +69,7 @@ def _stages(stages: dict[str, list[StepResult]]) -> dict[str, list[dict]]:
     return out
 
 
-def _evaluate_response(snap, catalog: FormCatalogService, q: Questionnaire) -> EvaluateResponse:
+def _evaluate_response(snap: EvaluationSnapshot, catalog: FormCatalogService, q: Questionnaire) -> EvaluateResponse:
     reviewed_at = None
     for steps in snap.stages.values():
         for step in steps:
@@ -86,7 +94,7 @@ def _evaluate_response(snap, catalog: FormCatalogService, q: Questionnaire) -> E
     )
 
 
-def _checklist_payload(snap) -> dict[str, list[str] | str]:
+def _checklist_payload(snap: EvaluationSnapshot) -> dict[str, list[str] | str]:
     steps: list[str] = []
     documents: list[str] = []
     sources: list[str] = []
@@ -115,7 +123,7 @@ def _checklist_payload(snap) -> dict[str, list[str] | str]:
     }
 
 
-def _questionnaire_from_snap(snap) -> Questionnaire:
+def _questionnaire_from_snap(snap: EvaluationSnapshot) -> Questionnaire:
     qdict = snap.questionnaire
     from datetime import date
 
@@ -148,7 +156,7 @@ async def visa_regimes(service: EntryWizardService = Depends(get_entry)) -> list
 async def save_draft(
     body: QuestionnaireIn,
     service: EntryWizardService = Depends(get_entry),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> DraftResponse:
     try:
         rec = service.save_draft(_q(body), user_id=getattr(user, "id", None))

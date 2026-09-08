@@ -87,7 +87,9 @@ function UserMenu() {
   }, []);
 
   async function logout() {
-    await fetch(`${getApiBase()}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(() => undefined);
+    await fetch(`${getApiBase()}/auth/logout`, { method: 'POST', credentials: 'include' }).catch(
+      () => undefined,
+    );
     router.push('/auth/login');
   }
 
@@ -109,22 +111,42 @@ function UserMenu() {
       {open ? (
         <ul id={menuId} className="dar-user-menu__dropdown" role="menu">
           <li role="none">
-            <Link href="/app/sources" className="dar-user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+            <Link
+              href="/app/sources"
+              className="dar-user-menu__item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
               Источники норм
             </Link>
           </li>
           <li role="none">
-            <Link href="/app/profile" className="dar-user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+            <Link
+              href="/app/profile"
+              className="dar-user-menu__item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
               Профиль и согласия
             </Link>
           </li>
           <li role="none">
-            <Link href="/app/billing" className="dar-user-menu__item" role="menuitem" onClick={() => setOpen(false)}>
+            <Link
+              href="/app/billing"
+              className="dar-user-menu__item"
+              role="menuitem"
+              onClick={() => setOpen(false)}
+            >
               Подписка
             </Link>
           </li>
           <li role="none">
-            <button type="button" className="dar-user-menu__item" role="menuitem" onClick={() => void logout()}>
+            <button
+              type="button"
+              className="dar-user-menu__item"
+              role="menuitem"
+              onClick={() => void logout()}
+            >
               Выйти
             </button>
           </li>
@@ -173,54 +195,61 @@ export function AppShell({ children }: { children: ReactNode }) {
     <ToastProvider>
       <EnterMotion />
       <div className="dar-app-shell">
-      <a className="dar-skip-link" href="#main">
-        Перейти к содержимому
-      </a>
-      <header className={`dar-topbar${scrolled ? ' dar-topbar--scrolled' : ''}`}>
-        <div className="dar-topbar__inner dar-topbar__inner--app">
-          <Link href="/app/analyzer" className="dar-brand-lockup" aria-label="Docly — кабинет">
-            <img src="/docly-logo.png" alt="" className="dar-brand-mark" width={40} height={40} aria-hidden="true" />
-            <span className="dar-brand-text">Docly</span>
+        <a className="dar-skip-link" href="#main">
+          Перейти к содержимому
+        </a>
+        <header className={`dar-topbar${scrolled ? ' dar-topbar--scrolled' : ''}`}>
+          <div className="dar-topbar__inner dar-topbar__inner--app">
+            <Link href="/app/analyzer" className="dar-brand-lockup" aria-label="Docly — кабинет">
+              <img
+                src="/docly-logo.png"
+                alt=""
+                className="dar-brand-mark"
+                width={40}
+                height={40}
+                aria-hidden="true"
+              />
+              <span className="dar-brand-text">Docly</span>
+            </Link>
+
+            <nav className="dar-main-nav" aria-label="Основные разделы">
+              <MainNavLink
+                href="/app/analyzer"
+                label="Анализатор"
+                active={section === 'analyzer'}
+                icon={<FileSearch size={18} aria-hidden="true" />}
+              />
+              <MainNavLink
+                href="/app/generator"
+                label="Генерация"
+                active={section === 'generator'}
+                icon={<FilePenLine size={18} aria-hidden="true" />}
+              />
+            </nav>
+
+            <UserMenu />
+          </div>
+        </header>
+
+        <div className="dar-app-body">
+          <div className="dar-main-wrap">
+            <main id="main" className="dar-main dar-main--wide" tabIndex={-1}>
+              <DemoModeBanner />
+              {children}
+              <CompactDisclaimer />
+            </main>
+          </div>
+        </div>
+
+        <nav className="dar-mobile-nav" aria-label="Мобильная навигация">
+          <Link href="/app/analyzer" aria-current={section === 'analyzer' ? 'page' : undefined}>
+            Анализатор
           </Link>
-
-          <nav className="dar-main-nav" aria-label="Основные разделы">
-            <MainNavLink
-              href="/app/analyzer"
-              label="Анализатор"
-              active={section === 'analyzer'}
-              icon={<FileSearch size={18} aria-hidden="true" />}
-            />
-            <MainNavLink
-              href="/app/generator"
-              label="Генерация"
-              active={section === 'generator'}
-              icon={<FilePenLine size={18} aria-hidden="true" />}
-            />
-          </nav>
-
-          <UserMenu />
-        </div>
-      </header>
-
-      <div className="dar-app-body">
-        <div className="dar-main-wrap">
-          <main id="main" className="dar-main dar-main--wide" tabIndex={-1}>
-            <DemoModeBanner />
-            {children}
-            <CompactDisclaimer />
-          </main>
-        </div>
+          <Link href="/app/generator" aria-current={section === 'generator' ? 'page' : undefined}>
+            Генерация
+          </Link>
+        </nav>
       </div>
-
-      <nav className="dar-mobile-nav" aria-label="Мобильная навигация">
-        <Link href="/app/analyzer" aria-current={section === 'analyzer' ? 'page' : undefined}>
-          Анализатор
-        </Link>
-        <Link href="/app/generator" aria-current={section === 'generator' ? 'page' : undefined}>
-          Генерация
-        </Link>
-      </nav>
-    </div>
     </ToastProvider>
   );
 }
@@ -235,7 +264,14 @@ export function MarketingShell({ children }: { children: ReactNode }) {
       <header className="dar-marketing-header">
         <div className="dar-content dar-marketing-header__inner">
           <Link href="/" className="dar-brand-lockup" aria-label="Docly">
-            <img src="/docly-logo.png" alt="" className="dar-brand-mark" width={40} height={40} aria-hidden="true" />
+            <img
+              src="/docly-logo.png"
+              alt=""
+              className="dar-brand-mark"
+              width={40}
+              height={40}
+              aria-hidden="true"
+            />
             <span className="dar-brand-text">Docly</span>
           </Link>
           <div className="dar-row">

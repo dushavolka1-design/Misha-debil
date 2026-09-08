@@ -1,298 +1,178 @@
+# Docly — объединённая Windows-версия
+
+## Основная сборка этой ветки
+
+Рабочая ветка: `release/docly-all-branches-20260908`, база PR: `master` (не `main`).
+Объединены снимки всех запрошенных веток; точный состав и доказательство включения: [installer/INTEGRATION.md](installer/INTEGRATION.md).
+Статус новой сборки: [installer/INTEGRATED-CI.md](installer/INTEGRATED-CI.md). Старый CI-RESULT.md относится к предыдущему EXE.
+
+```powershell
+git switch release/docly-all-branches-20260908
+pnpm installer:windows
+```
+
+Результат: `release/Docly-Setup-x64.exe`. Сборка требует Windows x64 и Inno Setup 6.3+.
+Этот быстрый установщик НЕ включает Node/Python и готовые зависимости: нужен интернет при первом запуске.
+Используются существующий launcher, SQLite и файловое хранилище; PostgreSQL/Redis/Docker не нужны.
+Установка для пользователя: `%LOCALAPPDATA%\Programs\Docly`. Проверки Node/Python, ярлыки и штатное удаление описаны в [installer/README.md](installer/README.md).
+Пользовательские данные сохраняются. Не путайте этот EXE с альтернативным offline-установщиком из `scripts/windows` ниже.
+
+Документация desktop-safety сохранена далее; её утверждения о встроенных runtime и offline-установке относятся ТОЛЬКО к альтернативной команде `scripts/windows/build-installer.ps1`, а не к `pnpm installer:windows`.
+Ручная приёмка Windows 10/11 и production-ready статус не заявляются.
+
+---
+
 # Docly
 
-Monorepo (pnpm + Turborepo + FastAPI). Реализованы каркас, UI shell и безопасная регистрация с versioned legal / consent audit.
+Docly — монорепозиторий: Next.js, FastAPI, общие TypeScript/Python-пакеты и Windows desktop launcher.
 
-## Требования
+> **Статус: кандидат, не подтверждённый production-релиз.** Успешная сборка интерфейса не равна проверенной установке. Готовность конкретного установщика подтверждается только журналом `Real installer lifecycle acceptance` для его исходного коммита. Открытые ограничения production перечислены в [staging-go-no-go.md](docs/ops/staging-go-no-go.md): юридические согласования, реальные провайдеры, security/privacy gates. Не используйте тестовые провайдеры для реальных платежей или чувствительных документов.
 
-- Node.js ≥ 20, pnpm 9.15.9 (`corepack enable` или `npx pnpm`)
-- Python **3.12** (для API/worker; в Docker-образах зафиксирован 3.12)
-- Docker + Docker Compose (Postgres, Redis, MinIO, ClamAV)
+## Ветки и история
 
-## Clean clone → локальный стенд
+- Историческая целевая ветка desktop-safety: `main`; для текущего объединения база PR — `master`.
+- Интеграция: `fix/docly-desktop-upgrade-safety`, [PR №1](https://github.com/dushavolka1-design/Misha-debil/pull/1).
+- `backup-before-merge` сохраняет исходную `main` на `d4e6da60507efb3f6aed78a1dd8ccd294e453386`.
+- Код `master`, `astra/docly-full-audit-20260906` и `astra/docly-windows-installer-20260906` имел общий коммит `7ab4830`. Ветка редизайна `astra/docly-modern-redesign-20260906` добавила три коммита поверх него.
+- Независимые истории соединены merge-коммитом `25496b9`; исходный README из `main` сохранён в [docs/integration/legacy-main-README.md](docs/integration/legacy-main-README.md). История не переписывалась, старые ветки не удалялись.
+
+## Альтернативная offline-сборка desktop-safety из чистого клона
+
+Среда сборки: Windows x64, **Python 3.12 x64**, Node.js 20, **pnpm 9.15.9**, Git, Windows PowerShell 5.1 и **Inno Setup 6.5+**. Интернет нужен машине сборки для получения зависимостей. Не копируйте готовую `.venv` с другого компьютера: она содержит абсолютные пути.
+
+```powershell
+git clone https://github.com/dushavolka1-design/Misha-debil.git
+cd Misha-debil
+git switch fix/docly-desktop-upgrade-safety
+# Это альтернативная offline-сборка исходной desktop-safety ветки.
+corepack enable
+corepack prepare pnpm@9.15.9 --activate
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup-desktop.ps1
+if ($LASTEXITCODE -ne 0) { throw 'Source setup failed' }
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.1
+if ($LASTEXITCODE -ne 0) { throw 'Installer build failed' }
+```
+
+Сборщик берёт **закоммиченный HEAD** через `git archive`: незакоммиченные правки в установщик не попадут. Он использует отдельную staging-папку, hoisted layout зависимостей только в дистрибутиве, компилирует Next-конфигурацию и упаковывает Node, CPython, production JS-зависимости и Python wheelhouse. Виртуальное окружение создаётся на машине установки офлайн, а не переносится с CI.
+
+Пути результата **после успешной сборки**:
+
+```text
+artifacts/installer/Docly-0.2.1-windows-x64-setup.exe
+artifacts/installer/Docly-0.2.1-windows-x64-setup.exe.sha256
+```
+
+Проверка SHA-256:
+
+```powershell
+Get-FileHash artifacts/installer/Docly-0.2.1-windows-x64-setup.exe -Algorithm SHA256
+Get-Content artifacts/installer/Docly-0.2.1-windows-x64-setup.exe.sha256
+```
+
+Папки `artifacts`, `.venv`, `node_modules`, wheelhouse и runtime из staging не коммитятся. Не добавляйте в Git реальные `.env`, пароли, токены, пользовательские базы или логи с персональными данными.
+
+## Установка и запуск
+
+Целевая платформа установщика — Windows 10/11 x64. GitHub Actions `windows-latest` проверяет Windows runner; это не отдельная сертификация каждой редакции Windows.
+
+1. Используйте только кандидат с успешной проверкой installer lifecycle и совпадающим SHA-256.
+2. Запустите `Docly-0.2.1-windows-x64-setup.exe` обычным пользователем. По умолчанию файлы программы находятся в `%LOCALAPPDATA%\Programs\Docly`.
+3. Дождитесь завершения офлайн-установки Python-зависимостей. Ошибка этой операции считается ошибкой установки.
+4. Запустите ярлык **Docly**. Он использует включённые в дистрибутив Node/Python; системные Python, Node, PostgreSQL, Redis и Docker для этого профиля не требуются.
+
+Подпись Authenticode пока не настроена: установщик не следует представлять как подписанный или обходить предупреждения безопасности без проверки происхождения и хеша.
+
+Пример тихой установки для тестового ПК:
+
+```powershell
+.\Docly-0.2.1-windows-x64-setup.exe /VERYSILENT /SUPPRESSMSGBOXES /NORESTART /LOG="docly-install.log"
+```
+
+## Обновление и пользовательские данные
+
+Desktop-профиль использует **SQLite и файловое хранилище**, а не portable PostgreSQL/Redis:
+
+- база: `%LOCALAPPDATA%\Docly\data\docly.db`;
+- каталог данных: `%LOCALAPPDATA%\Docly\data`, либо явно заданный `DOCLY_DATA_DIR`;
+- runtime-маркеры: `%LOCALAPPDATA%\Docly\runtime`, либо `DOCLY_RUNTIME_DIR`;
+- логи запуска: `artifacts\local-run` внутри каталога программы.
+
+Перед обновлением завершите Docly и сохраните отдельную копию каталога данных и своих настроек окружения. Затем запускайте новый установщик поверх **того же каталога программы**; удалять старые данные не нужно. Не размещайте пользовательские данные внутри `.venv`, `node_modules` или каталога программы. Установщик не переносит произвольные внешние настройки окружения между учётными записями Windows.
+
+При необходимости поддерживаемого изменения SQLite-схемы создаётся проверенный снимок в `data\backups\docly-before-schema-*.db`. SQLite backup API учитывает committed WAL-страницы. Если проверка или копирование не удались, миграция не начинается. Снимок базы не является полной резервной копией документов: сохраняйте весь каталог данных отдельно. Старые снимки автоматически не удаляются; контролируйте свободное место.
+
+Исторические `setup-portable-db.ps1` / `start-dar.ps1` сохранены в репозитории, но не описывают текущий SQLite-профиль. Автоматическая миграция старой PostgreSQL-базы в SQLite **не реализована** — не заменяйте такую установку, рассчитывая на автоматический перенос.
+
+## Удаление
+
+Используйте штатное удаление Docly в настройках Windows либо `unins000.exe` из каталога установки. Перед удалением завершите приложение. Удаляются файлы программы и сгенерированное Python-окружение; `%LOCALAPPDATA%\Docly` и внешний `DOCLY_DATA_DIR` намеренно сохраняются. Полное удаление пользовательских данных — отдельное осознанное действие владельца, не часть обновления или стандартного uninstall.
+
+## Проверки
+
+Независимые регрессионные тесты резервирования SQLite:
+
+```powershell
+$env:PYTHONPATH = "$pwd\apps\api"
+python -m unittest discover -s apps/api/tests -p test_desktop_backup.py -v
+```
+
+Проверка исходной desktop-сборки:
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-launcher.ps1
+```
+
+Проверка настоящих установщиков (на отдельной тестовой Windows-машине):
+
+```powershell
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.0 -SourceRef 7ab48303efa92b2e52702256dcdd360c9540d273
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/build-installer.ps1 -Version 0.2.1
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer.ps1 -OldInstaller "$pwd\artifacts\installer\Docly-0.2.0-windows-x64-setup.exe" -NewInstaller "$pwd\artifacts\installer\Docly-0.2.1-windows-x64-setup.exe"
+```
+
+`0.2.0` здесь — контрольный установщик, заново собранный из первоначального кода, **не найденный старый опубликованный релиз**. Проверка охватывает установку, запуск через установленный launcher без системных Node/Python в PATH, HTTP readiness, обновление, целостность реальной SQLite-базы и сохранение тестовых файлов настроек/документов, uninstall и установку новой версии с чистым профилем. Это не доказывает перенос любой исторической версии или всех production-настроек.
+
+Windows workflow: [.github/workflows/docly-desktop-verification.yml](.github/workflows/docly-desktop-verification.yml). Кандидат загружается в артефакты только после успешного installer lifecycle. Не подменяйте ошибки `continue-on-error`, фиктивными ответами сервисов или отключением проверок.
+
+## Разработка серверного профиля
+
+Для PostgreSQL/Redis/MinIO/ClamAV нужен Docker Compose. Этот профиль отличается от desktop.
 
 ```bash
 cp .env.example .env
-pnpm install
+# Заполните локальные параметры; не коммитьте .env.
+pnpm install --frozen-lockfile
 docker compose -f infra/docker-compose.yml up -d postgres redis minio minio-init clamav
-
-# Python API
 cd apps/api
 python3.12 -m venv .venv
-# Windows: py -3.12 -m venv .venv
 source .venv/bin/activate  # Windows: .venv\Scripts\activate
 python -m pip install -e ../../packages/py_dar
 python -m pip install -r requirements.txt
 python -m pip install -e ".[dev]"
 alembic upgrade head
-# rollback check:
-alembic downgrade -1 && alembic upgrade head
 uvicorn app.main:app --reload --port 8000
-
-# Web (другой терминал, из корня)
+# В другом терминале, из корня:
 pnpm --filter @dar/web dev
 ```
 
-Документированные детали миграций: [infra/README.md](infra/README.md).
+Основные проверки из корня: `pnpm format:check`, `pnpm lint`, `pnpm typecheck`, `pnpm contracts:check`, `pnpm test:unit`, `pnpm test:e2e`. Экспорт OpenAPI: `pnpm contracts:export`; генерация TypeScript: `pnpm contracts:generate`. Storybook: `pnpm storybook`.
 
-## Desktop launcher (Windows) — Docly, без Docker
+## Структура и документация
 
-Ярлык **Docly** на рабочем столе. **Docker не нужен** — база и Redis встроены в папку проекта.
-
-Переустановка ярлыка:
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/create-desktop-shortcut.ps1
-```
-
-### Что нужно на любом ПК / моноблоке
-
-- **Python 3.12+** (в PATH)
-- **Node.js 20+** (в PATH)
-- **Интернет только при первом запуске** (~300 MB: PostgreSQL + Redis скачиваются в `infra/portable/`)
-
-Папку проекта можно копировать на флешку или другой компьютер — пути относительные, Docker не требуется.
-
-### Первый запуск
-
-1. Двойной клик **Docly** (или `scripts/windows/start-dar.ps1`)
-2. Автоматически: venv + pip, скачивание PostgreSQL/Redis, миграции, API :8000, Web :3000
-3. Откроется браузер на `http://127.0.0.1:3000/app/analyzer`
-
-Логи: `artifacts/local-run/`. Данные БД: `infra/.data/`.
-
-### Ручная установка БД (если нужно)
-
-```powershell
-powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/setup-portable-db.ps1
-```
-3. Выполняет `alembic upgrade head`
-4. Запускает API и ждёт **GET /live** и **GET /ready**
-5. Запускает Next.js и ждёт HTTP 200
-6. Открывает браузер только после готовности обоих сервисов
-
-Логи: `artifacts/local-run/` (`launcher.log`, `launcher-diagnostic.txt`, `api.err.log`, `web.err.log`).
-
-Проверка скрипта launcher: `powershell -File scripts/windows/test-launcher.ps1`
-
-### Локальное хранение (не production)
-
-В режиме launcher включены **fake-провайдеры** (`ALLOW_FAKE_PROVIDERS=true`): OCR/LLM/оплата/почта — заглушки для разработки.
-**Основное состояние** (пользователи, документы, анализ, формы, billing) сохраняется в **PostgreSQL** через Alembic-схему.
-Файлы документов — в fake object storage (in-memory); для полного S3 используйте Docker MinIO из compose.
-
-Это **dev/local storage**, не production-ready конфигурация.
-
-## Структура
-
-| Путь | Назначение |
-|------|------------|
+| Каталог | Назначение |
+|---|---|
 | `apps/web` | Next.js UI |
-| `apps/api` | FastAPI + Alembic |
-| `apps/worker` | Очередь jobs |
-| `packages/contracts` | OpenAPI → TypeScript |
-| `packages/ui` | Shared UI |
-| `packages/py_dar` | Provider ports + fake adapters |
-| `infra` | Compose / CI helpers |
-| `legal`, `sources` | Согласия и реестр источников |
-| `docs` | Этап 1 (ТЗ, ADR, threat model) |
+| `apps/api` | FastAPI, модели, миграции, desktop boot |
+| `apps/worker` | Обработка очереди |
+| `packages/contracts`, `packages/ui`, `packages/py_dar` | Общие контракты, UI и Python-код |
+| `scripts/windows` | Launcher, сборка установщика и проверки |
+| `legal`, `sources` | Юридические документы и реестр источников |
+| `infra` | Серверная инфраструктура |
 
-## Контракты
+- [Требования](docs/product/requirements.md), [ADR](docs/adr), [quality gates](docs/quality/quality-gates.md), [traceability](docs/quality/traceability.md).
+- [Регистрация и согласия](docs/product/legal-and-consent-spec.md), [загрузка документов](docs/product/upload-lifecycle-spec.md), [анализ](docs/product/analysis-pipeline-spec.md).
+- [Правила и отчёты](docs/product/rules-and-report-spec.md), [официальные источники](docs/product/official-source-policy.md), [мастер въезда](docs/product/entry-wizard-spec.md).
+- [Формы](docs/product/forms-and-medical-spec.md), [заполнение PDF](docs/product/form-fill-pixel-spec.md), [подписки](docs/product/billing-spec.md).
+- [Миграции серверной БД](infra/README.md), [runbooks](docs/ops/runbooks/), [clean-clone CI](scripts/ci-from-clean-clone.md).
 
-```bash
-pnpm contracts:export    # FastAPI → packages/contracts/openapi/openapi.json
-pnpm contracts:generate  # openapi-typescript
-pnpm contracts:check     # fail on drift
-```
-
-Web вызывает API через единый клиент `apps/web/src/lib/apiClient.ts` (timeout, retry, типизированные ошибки).
-
-## UI / UX (этап 3)
-
-```bash
-pnpm --filter @dar/web dev
-pnpm storybook
-pnpm test:e2e   # Playwright + axe + visual snapshots (нужен браузер Playwright)
-```
-
-Состояния экранов: `?state=loading|empty|error|forbidden|expired|offline`.
-
-Порог a11y (черновик DL-014): Lighthouse Accessibility ≥ 90; axe без critical/serious.
-
-Дизайн: нейтральный светлый UI, один сине-фиолетовый accent, без государственной символики.
-
-## Auth / согласия (этап 4)
-
-Спека: [docs/product/legal-and-consent-spec.md](docs/product/legal-and-consent-spec.md). Демо-тексты: `legal/consents/`.
-
-- Регистрация `/auth/register`: обязательные terms + offer + ordinary PD (отдельно), marketing optional unchecked; medical — только перед upload.
-- Сессии: Argon2id, email verify, rate limit, anti-enumeration, ротация/отзыв, cookie `httpOnly` + `SameSite=Lax` (+ `Secure` в production).
-- Legal: immutable published versions + SHA-256; `ConsentEvent` append-only.
-- Privacy dashboard: `/app/profile` — активные согласия, отзыв, export/delete (доступны даже без re-accept новой оферты).
-
-```bash
-cd apps/api && pytest tests/test_auth_consent.py tests/test_logging_redaction.py -q
-pnpm --filter @dar/web test:e2e -- e2e/auth-consent.spec.ts
-```
-
-## Upload / lifecycle (этап 5)
-
-Спека: [docs/product/upload-lifecycle-spec.md](docs/product/upload-lifecycle-spec.md).
-
-FSM: `CREATED → UPLOADING → QUARANTINED → SCANNING → CLEAN → PROCESSING → READY` (+ `REJECTED/INFECTED/FAILED/EXPIRED/DELETING/DELETED`).
-
-- Intent только для авторизованных с лимитами плана; short-lived single-purpose upload URL.
-- Post-upload: size/extension/MIME/magic/checksum; quarantine не отдаётся; обработка только после CLEAN.
-- Envelope encryption + opaque keys; retention/purge/tombstone; export без секретов/чужих данных.
-- Fixtures: `tests/fixtures/upload/` (без реального malware).
-
-```bash
-cd apps/api && pytest tests/test_upload_lifecycle.py -q
-```
-
-## Analysis / OCR / facts (этап 6)
-
-Спека: [docs/product/analysis-pipeline-spec.md](docs/product/analysis-pipeline-spec.md).
-
-- Нормализация страниц (width/height/rotation) без изменения original.
-- OCR words/lines/blocks + bbox; layout (heading/table/signature/annex); facts только с citation.
-- JSON Schema reject extra fields; deterministic normalizers (даты/деньги/ИНН/ОГРН/СНИЛС — формат/checksum).
-- Версии pipeline/prompt/schema/adapters; повторный анализ = новый run.
-- Golden fixtures: `digital_pdf`, `scan`, `rotated_scan`, `table`, `docx`, `poor_quality`, `mixed_script`.
-
-```bash
-cd apps/api && pytest tests/test_analysis_pipeline.py -q
-```
-
-## Rules / compare / report (этап 7)
-
-Спека: [docs/product/rules-and-report-spec.md](docs/product/rules-and-report-spec.md).
-
-- Rule registry + general-purpose checks; severity = приоритет ручной проверки.
-- Разделение `observed_text` / `structural_conflict` / `review_question` / `normative_claim`.
-- Compare с dual citations; запрет cross-user; защита от prompt injection.
-- Export PDF/JSON (версия, disclaimer, источники, unanalyzed pages).
-- Feedback append-only, без авто-изменения результатов.
-
-```bash
-cd apps/api && pytest tests/test_rules_report.py -q
-```
-
-## Official sources (этап 8)
-
-Спека: [docs/product/official-source-policy.md](docs/product/official-source-policy.md). Allowlist: `sources/allowlist.json`.
-
-- Deny-by-default URL validator (HTTPS, IDN, no userinfo/private IP/odd ports, redirect re-check).
-- FSM: discovered → fetched → parsed → awaiting_review → approved → superseded/expired/rejected.
-- Immutable snapshots (raw, headers, hash, text, parser); hash change → review task + dependents to review.
-- Citation API; seed только метаданными официальных доменов.
-
-```bash
-cd apps/api && pytest tests/test_source_registry.py -q
-```
-
-## Entry / stay wizard (этап 9)
-
-Спека: [docs/product/entry-wizard-spec.md](docs/product/entry-wizard-spec.md).
-
-- Rule-driven мастер (не универсальный список «для всех иностранцев»): анкета → decision pack отдельно от UI.
-- Стадии: до поездки / граница / после въезда / работа·учёба / продление / мед·дактилоскопия.
-- Deadline calculator (календарные/рабочие дни, событие, регион, договор, статус) + timezone + explanation.
-- Пошлина только из approved fee catalog + snapshot; иначе «уточните на официальном ресурсе».
-- Snapshot результата + refresh; черновик только с согласием; freshness policy блокирует устаревшие/конфликтные источники.
-- API: `/entry/*`; UI: `/app/entry-wizard`.
-
-```bash
-cd apps/api && pytest tests/test_entry_wizard.py -q
-```
-
-## Forms catalog & medical (этап 10)
-
-Спека: [docs/product/forms-and-medical-spec.md](docs/product/forms-and-medical-spec.md).
-
-- Регистрация формы только с approved source + raw + SHA-256 + акт + valid interval + review.
-- MVP МВД: без верифицированного официального raw → `needs_review`, не published.
-- Медраздел: Минздрав/Роспотребнадзор; PDF только questionnaire/checklist/memo с баннером; запрещённые типы блокируются backend (не только UI).
-- Медицинская загрузка: отдельное согласие, короткий retention, `medical_restricted`.
-- Abuse/outdated: `POST /forms/abuse-reports`.
-- API: `/forms/*`; UI: `/app/forms`.
-
-```bash
-cd apps/api && pytest tests/test_forms_medical.py -q
-```
-
-## Pixel-perfect form fill (этап 11)
-
-Спека: [docs/product/form-fill-pixel-spec.md](docs/product/form-fill-pixel-spec.md).
-
-- Immutable FormVersion: underlay hash, page geometry, coord-map hash, fonts, effective interval, four-eyes publish.
-- Generator clones PDF underlay (no rasterize/reflow); text only in approved bboxes; signature/stamp empty.
-- Preview: length, alphabet, wrap, required, organ/manual fields.
-- GeneratedForm audit hashes + delete; superseded source → `blocked_for_new` (old outputs remain).
-- Pixel-diff report → `artifacts/pixel-diff/` (CI artifact).
-- API: `/forms/fill/*`.
-
-```bash
-cd apps/api && pytest tests/test_form_fill.py -q
-```
-
-## Legal package drafts (этап 12)
-
-Спека: [docs/product/legal-and-consent-spec.md](docs/product/legal-and-consent-spec.md). Артефакты: [legal/](legal/).
-
-- Раздельные черновики: оферта, соглашение, политика ПД, согласие на обычные ПД, спец. категории, cookies, маркетинг, рекуррентные списания.
-- Placeholders без выдуманных реквизитов; `manifest.json` + approvals lawyer/privacy_officer.
-- Production (`LEGAL_ROOT`) падает при draft/placeholders/без approve.
-- Отмена подписки в UI без обязательного обращения в поддержку; disclaimer не снимает обязательную ответственность.
-- Fixtures + `test_legal_package.py` + e2e auth-consent/billing.
-
-```bash
-cd apps/api && pytest tests/test_legal_package.py -q
-```
-
-## Subscription & payments (этап 13)
-
-Спека: [docs/product/billing-spec.md](docs/product/billing-spec.md).
-
-- `PaymentProvider` + `ru_payment_sandbox` (без production API до договора/credentials).
-- Server `PRICE_TABLE`; webhook signature/timestamp/idempotency; dunning ≤3; trial notice; cancel + history in UI.
-- Чеки/возвраты только через provider capabilities после legal/accounting review — фиктивные чеки не генерируются.
-- Admin reconciliation + Alembic `0008_billing`.
-- Production: live provider + `APPROVED_OFFER_VERSION`.
-
-```bash
-cd apps/api && pytest tests/test_billing.py -q
-```
-
-## Quality gates & launch hardening (этап 14)
-
-**Verdict: NO-GO** — см. [docs/ops/staging-go-no-go.md](docs/ops/staging-go-no-go.md). Не объявлять production-ready при открытых critical gates.
-
-- Gates: [docs/quality/quality-gates.md](docs/quality/quality-gates.md)
-- Traceability: [docs/quality/traceability.md](docs/quality/traceability.md)
-- Runbooks: [docs/ops/runbooks/](docs/ops/runbooks/)
-- Clean-clone CI: [scripts/ci-from-clean-clone.md](scripts/ci-from-clean-clone.md)
-- Staging synthetic: `infra/docker-compose.staging.yml` + `infra/staging/synthetic_seed.md`
-- AI eval / drills: `python -m app.scripts.run_ai_eval` (+ privacy/restore drills) → `artifacts/`
-
-```bash
-cd apps/api && pytest tests/test_ai_eval.py tests/test_security_hardening.py tests/test_privacy_drills.py tests/test_reliability.py -q
-```
-
-При `APP_ENV=production` процесс **не стартует**, если:
-
-- включены fake providers / `ALLOW_FAKE_PROVIDERS=true`
-- `DATABASE_URL` содержит SQLite или `change_me`
-- `SESSION_SECRET` локальный/дефолтный
-- не задан `LEGAL_ROOT` или legal package с placeholders / draft / без approve юриста и privacy officer
-
-См. `infra/docker-compose.prod.yml`.
-
-## CI
-
-`.github/workflows/ci.yml`: install (lockfile), format, lint, typecheck, unit, AI eval + privacy/restore drills, migration upgrade/downgrade, gitleaks, trivy, prod-config scan, JS critical audit.
-
-Повторяемость: [scripts/ci-from-clean-clone.md](scripts/ci-from-clean-clone.md).
-
-## Документация продукта
-
-См. [docs/product/requirements.md](docs/product/requirements.md), [docs/quality/quality-gates.md](docs/quality/quality-gates.md) и [docs/adr](docs/adr).
+Production по-прежнему требует реальных провайдеров, безопасных настроек и утверждённого legal package. Сборка `.exe` сама по себе не закрывает эти требования.

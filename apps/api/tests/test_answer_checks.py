@@ -1,6 +1,6 @@
 """User-entered values must be checked — not accepted as-is."""
 
-from app.services.forms.fill.answer_checks import check_answers, normalize_answers, PETITION_PATENT
+from app.services.forms.fill.answer_checks import PETITION_PATENT, check_answers, normalize_answers
 
 
 def test_patent_rejects_rf_citizenship_typo_and_dummy_card() -> None:

@@ -1,0 +1,38 @@
+name: Docly installer checksum regressions
+
+on:
+  push:
+    branches: [main, fix/docly-desktop-upgrade-safety]
+    paths:
+      - 'scripts/windows/**'
+      - '.github/workflows/docly-installer-checksum.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  installer-checksum:
+    runs-on: windows-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262
+        with:
+          persist-credentials: false
+      - name: Parse build script and test actual checksum helpers
+        shell: powershell
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile("$pwd/scripts/windows/build-installer.ps1", [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) { throw "Build script parse errors: $parseErrors" }
+          & powershell -NoProfile -ExecutionPolicy Bypass -File scripts/windows/test-installer-checksum.ps1 *>&1 | Tee-Object -FilePath installer-checksum-tests.log
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+      - name: Upload checksum test evidence
+        if: always()
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: installer-checksum-regressions
+          path: installer-checksum-tests.log
+          if-no-files-found: error

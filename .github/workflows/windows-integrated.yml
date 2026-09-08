@@ -1,0 +1,137 @@
+name: Docly integrated Windows release
+on:
+  push:
+    branches: [release/docly-all-branches-20260908]
+    paths: ['installer/**', '.github/workflows/windows-integrated.yml', 'package.json', 'scripts/windows/**', 'apps/**', 'packages/**', 'pnpm-lock.yaml']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: docly-integrated-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  integrated-windows:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.ref_name }}
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Merge and verify every requested branch snapshot except main
+        id: integrate
+        shell: pwsh
+        run: |
+          python installer/integrate-branches.py
+          if ($LASTEXITCODE -ne 0) { throw 'Integration failed; see installer/INTEGRATION.md' }
+      - name: Validate installer scripts and launcher safety regressions
+        id: regression
+        shell: pwsh
+        env:
+          PYTHONPATH: apps/api
+        run: |
+          New-Item -ItemType Directory -Force release | Out-Null
+          Get-ChildItem installer -Filter *.ps1 | ForEach-Object {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+          foreach ($case in @('test_launcher_safety.py', 'test_launcher_windows.py', 'test_profile_restore.py')) {
+            if (-not (Test-Path "scripts/windows/$case")) { throw "Missing merged regression: $case" }
+            python -m unittest discover -s scripts/windows -p $case -v *> "release/$case.log"
+            $code = $LASTEXITCODE
+            Get-Content "release/$case.log"
+            if ($code -ne 0) { throw "Regression failed: $case" }
+          }
+          python -m unittest discover -s apps/api/tests -p test_desktop_profile_backup.py -v *> release/profile-backup.log
+          $code = $LASTEXITCODE
+          Get-Content release/profile-backup.log
+          if ($code -ne 0) { throw 'Profile backup regression failed' }
+      - name: Build integrated EXE
+        id: build
+        shell: powershell
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+          }
+          & installer/build-installer.ps1 -IsccPath $iscc
+      - name: Install, first launch, repeat launch, reinstall and uninstall
+        id: smoke
+        shell: powershell
+        run: installer/smoke-test.ps1 -SetupExe "$env:GITHUB_WORKSPACE\release\Docly-Setup-x64.exe"
+      - name: Keep evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docly-integrated-${{ github.run_number }}-${{ job.status }}
+          path: |
+            release/
+            installer/INTEGRATION.md
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish only tested integrated prerelease
+        id: publish
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          SOURCE_SHA: ${{ steps.integrate.outputs.sha }}
+        run: |
+          $tag = "docly-integrated-20260908.$env:GITHUB_RUN_NUMBER.$env:GITHUB_RUN_ATTEMPT"
+          $info = Get-Content release/build-info.json -Raw | ConvertFrom-Json
+          if ($info.sourceCommit -ne $env:SOURCE_SHA) { throw 'Source provenance mismatch' }
+          $notes = @"
+          Integrated Windows x64 Docly source installer. All seven requested non-main branch snapshots are ancestors of the source commit; see INTEGRATION.md for exact SHAs and merge results.
+          Source: $env:SOURCE_SHA. Size: $($info.bytes) bytes. SHA256: $($info.sha256).
+          Passed Windows Server 2022 launcher/profile regressions and clean install, first launch, /live, /ready, /app/analyzer, repeat launch, reinstall preservation and uninstall smoke.
+          Internet required at first launch. Node 20+ and Python 3.12+ are not embedded. Existing SQLite desktop profile retained; no Docker/PostgreSQL/Redis required.
+          Unsigned prerelease. Manual Windows 10/11 GUI, missing dependency/winget and full visual redesign acceptance remain unverified. This is not a claim that all monorepo checks pass.
+          "@
+          $notes | Set-Content release/release-notes.txt
+          gh release create $tag release/Docly-Setup-x64.exe release/Docly-Setup-x64.exe.sha256 release/build-info.json release/smoke-results.txt installer/INTEGRATION.md --repo $env:GITHUB_REPOSITORY --target $env:SOURCE_SHA --prerelease --title "Docly integrated Windows $tag" --notes-file release/release-notes.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
+          "url=https://github.com/$env:GITHUB_REPOSITORY/releases/tag/$tag" >> $env:GITHUB_OUTPUT
+      - name: Persist continuation checkpoint and failure evidence
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          INTEGRATE_RESULT: ${{ steps.integrate.outcome }}
+          REGRESSION_RESULT: ${{ steps.regression.outcome }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          RELEASE_RESULT: ${{ steps.publish.outcome }}
+          RELEASE_URL: ${{ steps.publish.outputs.url }}
+          SOURCE_SHA: ${{ steps.integrate.outputs.sha }}
+        run: |
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          $lines = @('# Integrated Docly Windows result', '', "Source: $env:SOURCE_SHA", "Integration: $env:INTEGRATE_RESULT", "Regressions: $env:REGRESSION_RESULT", "Build: $env:BUILD_RESULT", "Smoke: $env:SMOKE_RESULT", "Publication: $env:RELEASE_RESULT", "Run: $url", "Release: $env:RELEASE_URL", '', 'Previous CI-RESULT.md describes the OLD installer release, not this integration.')
+          foreach ($file in @('release/build-info.json', 'release/smoke-results.txt')) {
+            if (Test-Path $file) { $lines += @('', "## $file", '```text', (Get-Content $file -Raw), '```') }
+          }
+          if ($env:REGRESSION_RESULT -eq 'failure' -or $env:SMOKE_RESULT -eq 'failure' -or $env:BUILD_RESULT -eq 'failure') {
+            foreach ($log in (Get-ChildItem release/*.log, release/bootstrap-logs/*.log -ErrorAction SilentlyContinue)) {
+              $tail = (Get-Content $log.FullName -Tail 90) -join "`n"
+              $tail = $tail -replace '(?im)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', '$1=[REDACTED]'
+              $lines += @('', ('## Diagnostic: ' + $log.Name), '```text', $tail, '```')
+            }
+          }
+          $path = 'installer/INTEGRATED-CI.md'
+          $existingText = gh api "repos/$env:GITHUB_REPOSITORY/contents/${path}?ref=$env:GITHUB_REF_NAME" 2>$null
+          $existing = if ($LASTEXITCODE -eq 0) { $existingText | ConvertFrom-Json } else { $null }
+          $body = @{ message = 'docs: persist integrated Windows result [skip ci]'; branch = $env:GITHUB_REF_NAME; content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) }
+          if ($existing.sha) { $body.sha = $existing.sha }
+          $body | ConvertTo-Json | Set-Content "$env:RUNNER_TEMP/docly-integrated-result.json"
+          gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/$path" --input "$env:RUNNER_TEMP/docly-integrated-result.json" --silent
+          if ($LASTEXITCODE -ne 0) { throw 'Could not save continuation checkpoint' }

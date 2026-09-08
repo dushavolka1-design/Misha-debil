@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from uuid import uuid4
 
-from fastapi import APIRouter, Depends, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.schemas_auth import (
     ErrorBody,
@@ -20,6 +20,7 @@ from app.services.auth_consent import (
     AuthConsentError,
     AuthConsentService,
     AuthConsentStore,
+    UserRecord,
 )
 from app.settings import Settings, get_settings
 
@@ -29,7 +30,10 @@ COOKIE_NAME = "dar_session"
 
 
 def get_store(request: Request) -> AuthConsentStore:
-    return request.app.state.auth_store
+    store = request.app.state.auth_store
+    if not isinstance(store, AuthConsentStore):
+        raise RuntimeError("Authentication store is not initialized")
+    return store
 
 
 def get_auth_service(store: AuthConsentStore = Depends(get_store)) -> AuthConsentService:
@@ -62,7 +66,7 @@ def clear_session_cookie(response: Response) -> None:
 def current_user(
     request: Request,
     service: AuthConsentService = Depends(get_auth_service),
-):
+) -> UserRecord | None:
     token = request.cookies.get(COOKIE_NAME)
     if not token:
         return None
@@ -80,7 +84,7 @@ async def register(
     ip, ua, request_id = client_meta(request)
     key = f"register:{ip}"
     if not rate_limiter.hit(key, limit=5, window_seconds=60):
-        raise AuthConsentError("rate_limited", "Too many requests", http_status=429)
+        raise HTTPException(status_code=429, detail={"code": "rate_limited", "detail": "Too many requests"})
     try:
         from app.services.auth_profile import decode_avatar_jpeg
 
@@ -90,17 +94,13 @@ async def register(
             password=body.password,
             display_name=body.display_name,
             avatar_jpeg=avatar,
-            accepts=[
-                AcceptSpec(c.consent_id, c.consent_version, c.content_hash) for c in body.accepts
-            ],
+            accepts=[AcceptSpec(c.consent_id, c.consent_version, c.content_hash) for c in body.accepts],
             locale=body.locale,
             ip=ip,
             user_agent=ua,
             request_id=request_id,
         )
     except AuthConsentError as exc:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=exc.http_status, detail={"code": exc.code, "detail": exc.message}) from exc
 
     # Send email via provider when available
@@ -117,7 +117,9 @@ async def register(
 
     return RegisterResponse(
         message=message,
-        verification_token_dev=verify_token if settings.app_env in {"local", "test", "desktop"} and verify_token else None,
+        verification_token_dev=verify_token
+        if settings.app_env in {"local", "test", "desktop"} and verify_token
+        else None,
     )
 
 
@@ -131,8 +133,6 @@ async def login(
 ) -> MessageResponse:
     ip, ua, _rid = client_meta(request)
     if not rate_limiter.hit(f"login:{ip}", limit=10, window_seconds=60):
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=429, detail={"code": "rate_limited", "detail": "Too many requests"})
     prev = request.cookies.get(COOKIE_NAME)
     result = service.login(
@@ -146,8 +146,6 @@ async def login(
     )
     # Anti-enumeration uniform message
     if not result:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=401,
             detail={"code": "invalid_credentials", "detail": "Неверное имя или пароль"},
@@ -171,19 +169,17 @@ async def logout(
 
 
 @router.post("/verify-email", response_model=MessageResponse)
-async def verify_email(body: VerifyEmailRequest, service: AuthConsentService = Depends(get_auth_service)) -> MessageResponse:
+async def verify_email(
+    body: VerifyEmailRequest, service: AuthConsentService = Depends(get_auth_service)
+) -> MessageResponse:
     ok = service.verify_email(body.token)
     if not ok:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=400, detail={"code": "invalid_token", "detail": "Invalid or expired token"})
     return MessageResponse(message="Email verified")
 
 
 @router.get("/me", response_model=MeResponse)
-async def me(user=Depends(current_user)) -> MeResponse:
-    from fastapi import HTTPException
-
+async def me(user: UserRecord | None = Depends(current_user)) -> MeResponse:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
     return MeResponse(
@@ -200,10 +196,8 @@ async def me(user=Depends(current_user)) -> MeResponse:
 async def update_profile(
     body: ProfileUpdateRequest,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MeResponse:
-    from fastapi import HTTPException
-
     from app.persistence.bootstrap import mark_auth_dirty
     from app.services.auth_profile import decode_avatar_jpeg
 
@@ -231,10 +225,7 @@ async def update_profile(
 
 
 @router.get("/me/avatar")
-async def me_avatar(user=Depends(current_user)):
-    from fastapi import HTTPException
-    from fastapi.responses import Response
-
+async def me_avatar(user: UserRecord | None = Depends(current_user)) -> Response:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
     if not user.avatar_jpeg:
@@ -250,10 +241,8 @@ async def me_avatar(user=Depends(current_user)):
 async def revoke_others(
     request: Request,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> MessageResponse:
-    from fastapi import HTTPException
-
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
     token = request.cookies.get(COOKIE_NAME)

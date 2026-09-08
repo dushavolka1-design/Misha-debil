@@ -3,10 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
-
 from dar.legal_gate import assert_legal_production_ready, validate_legal_package
 from dar.settings_base import BaseAppSettings
-
 
 LEGAL = Path(__file__).resolve().parents[3] / "legal"
 

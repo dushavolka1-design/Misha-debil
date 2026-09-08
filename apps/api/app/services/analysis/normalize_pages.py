@@ -1,9 +1,11 @@
-from __future__ import annotations
-
 """Page normalization metadata — originals are never mutated."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 from hashlib import sha256
+
+from dar.providers.ports import OcrPageResult
 
 
 @dataclass(frozen=True)
@@ -19,7 +21,7 @@ class NormalizedPage:
 def normalize_pages_from_ocr(
     *,
     document_id: str,
-    pages: list,
+    pages: list[OcrPageResult],
 ) -> list[NormalizedPage]:
     out: list[NormalizedPage] = []
     for p in pages:

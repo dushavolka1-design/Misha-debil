@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Official egress fetcher — tests inject FakeFetcher; production uses httpx with same policy."""
+
+from __future__ import annotations
 
 from dataclasses import dataclass
 

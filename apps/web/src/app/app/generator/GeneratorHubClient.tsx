@@ -38,7 +38,8 @@ function GeneratorHubInner() {
     <div>
       <h1 className="dar-page-title">Генерация</h1>
       <p className="dar-page-lead">
-        Выберите шаблон, пройдите мастер или продолжите черновик — готовые файлы сохраняются в истории.
+        Выберите шаблон, пройдите мастер или продолжите черновик — готовые файлы сохраняются в
+        истории.
       </p>
       <OnboardingPanel variant="generator" />
       <UrlSectionTabs

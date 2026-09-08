@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import hashlib
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 from uuid import uuid4
 
@@ -18,7 +18,7 @@ from app.services.auth_consent import (
     AuthConsentStore,
     seed_demo_legal,
 )
-from app.services.forms.catalog import FormCatalogService, FormError, MVP_MVD_CANDIDATE
+from app.services.forms.catalog import MVP_MVD_CANDIDATE, FormCatalogService, FormError
 from app.services.forms.medical import MedicalSectionService
 from app.services.forms.pdf_memo import (
     FORBIDDEN_MEDICAL_ARTIFACTS,
@@ -163,14 +163,14 @@ def test_cannot_register_form_without_approved_source(registry: SourceRegistry) 
             act_title="Приказ",
             valid_from=date(2024, 1, 1),
             valid_to=None,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
             reviewer="editor",
         )
     assert ei.value.code == "source_not_approved"
 
 
 def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> None:
-    _, snap, body = _approve_host(registry, "mvd.gov.ru", act_number="856")
+    _, snap, body = _approve_host(registry, "xn--b1aew.xn--p1ai", act_number="856")
     catalog = FormCatalogService(registry)
     with pytest.raises(FormError) as ei:
         catalog.register_form(
@@ -188,7 +188,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
             act_title="Приказ",
             valid_from=date(2024, 1, 1),
             valid_to=None,
-            reviewed_at=datetime.now(timezone.utc),
+            reviewed_at=datetime.now(UTC),
             reviewer="editor",
         )
     assert ei.value.code == "hash_mismatch"
@@ -208,7 +208,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
         act_title="Приказ МВД N 856",
         valid_from=date(2024, 1, 1),
         valid_to=None,
-        reviewed_at=datetime.now(timezone.utc),
+        reviewed_at=datetime.now(UTC),
         reviewer="editor@test",
     )
     assert rec.status == "published"
@@ -218,7 +218,7 @@ def test_register_requires_hash_match_and_metadata(registry: SourceRegistry) -> 
 
 
 def test_catalog_filters_and_cards(registry: SourceRegistry) -> None:
-    _, snap, body = _approve_host(registry, "mvd.gov.ru")
+    _, snap, body = _approve_host(registry, "xn--b1aew.xn--p1ai")
     catalog = FormCatalogService(registry)
     catalog.register_form(
         slug="mvd.a",
@@ -235,7 +235,7 @@ def test_catalog_filters_and_cards(registry: SourceRegistry) -> None:
         act_title="Act",
         valid_from=date(2024, 1, 1),
         valid_to=date(2030, 6, 1),
-        reviewed_at=datetime.now(timezone.utc),
+        reviewed_at=datetime.now(UTC),
         reviewer="ed",
     )
     assert catalog.list_forms(purpose="migration_registration", status="published", as_of=date(2025, 1, 1))

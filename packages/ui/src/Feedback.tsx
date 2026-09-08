@@ -105,13 +105,7 @@ export function Alert({
   );
 }
 
-export function Progress({
-  value,
-  label,
-}: {
-  value: number;
-  label: string;
-}) {
+export function Progress({ value, label }: { value: number; label: string }) {
   const clamped = Math.max(0, Math.min(100, value));
   return (
     <div className="dar-progress-block">
@@ -143,11 +137,6 @@ export function Skeleton({
   label?: string;
 }) {
   return (
-    <span
-      className="dar-skeleton"
-      style={{ width, height }}
-      role="status"
-      aria-label={label}
-    />
+    <span className="dar-skeleton" style={{ width, height }} role="status" aria-label={label} />
   );
 }

@@ -5,6 +5,7 @@ from __future__ import annotations
 from pathlib import Path
 from uuid import UUID
 
+from docly_auth_test_support import assert_desktop_email_is_verified
 from fastapi.testclient import TestClient
 
 from app.db import get_engine, get_session_factory
@@ -58,12 +59,18 @@ def _login(client: TestClient) -> None:
         )
     registered = client.post(
         "/auth/register",
-        json={"email": USER_EMAIL, "password": USER_PASSWORD, "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": USER_EMAIL,
+            "password": USER_PASSWORD,
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     assert registered.status_code == 200, registered.text
     token = registered.json().get("verification_token_dev")
     assert token
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
     login = client.post("/auth/login", json={"email": USER_EMAIL, "password": USER_PASSWORD})
     assert login.status_code == 200, login.text
 

@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 import pytest
+from docly_auth_test_support import assert_desktop_email_is_verified
 from fastapi.testclient import TestClient
 
 from app.main import create_app
@@ -18,7 +19,6 @@ from app.services.auth_consent import (
     AuthConsentStore,
     seed_demo_legal,
 )
-
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"
@@ -249,7 +249,13 @@ def test_delete_allowed_without_new_offer_reaccept(service: AuthConsentService, 
 def test_api_register_bypass_without_checkboxes_fails(client: TestClient, store: AuthConsentStore) -> None:
     res = client.post(
         "/auth/register",
-        json={"email": "bypass@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": []},
+        json={
+            "email": "bypass@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": [],
+        },
     )
     assert res.status_code == 400
     assert res.json()["detail"]["code"] == "consents_required"
@@ -270,7 +276,7 @@ def test_api_register_and_login_session_cookie(client: TestClient, store: AuthCo
     assert res.status_code == 200
     token = res.json()["verification_token_dev"]
     assert token
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
     login = client.post("/auth/login", json={"email": "ok@example.com", "password": "longpassword1"})
     assert login.status_code == 200
     assert "dar_session" in login.cookies
@@ -283,12 +289,18 @@ def test_medical_upload_gate_blocks(client: TestClient, store: AuthConsentStore)
     accepts = _active_accepts(store)
     client.post(
         "/auth/register",
-        json={"email": "med@example.com", "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": "med@example.com",
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     # verify + login
     # find user token from last register response — re-register won't work; use service path via store
     # Login after manually verifying
-    from app.security.crypto import hash_token, utcnow
+    from app.security.crypto import utcnow
 
     user_id = store.users_by_email["med@example.com"]
     store.users[user_id].email_verified_at = utcnow()
@@ -397,7 +409,9 @@ def test_login_by_username_after_register(client: TestClient, store: AuthConsent
     me = client.get("/auth/me")
     assert me.status_code == 200
     assert me.json()["display_name"] == "Мария Вход"
-    assert client.post("/auth/login", json={"email": "named@example.com", "password": "longpassword1"}).status_code == 200
+    assert (
+        client.post("/auth/login", json={"email": "named@example.com", "password": "longpassword1"}).status_code == 200
+    )
 
 
 def test_profile_name_and_avatar_roundtrip(client: TestClient, store: AuthConsentStore) -> None:
@@ -419,8 +433,10 @@ def test_profile_name_and_avatar_roundtrip(client: TestClient, store: AuthConsen
     )
     assert res.status_code == 200
     token = res.json()["verification_token_dev"]
-    assert client.post("/auth/verify-email", json={"token": token}).status_code == 200
-    assert client.post("/auth/login", json={"email": "avatar@example.com", "password": "longpassword1"}).status_code == 200
+    assert_desktop_email_is_verified(client, token)
+    assert (
+        client.post("/auth/login", json={"email": "avatar@example.com", "password": "longpassword1"}).status_code == 200
+    )
     me = client.get("/auth/me")
     assert me.status_code == 200
     assert me.json()["display_name"] == "Мария Петрова"

@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any
 from uuid import UUID
 
-from dar.providers.ports import LLMProvider, LlmAnalysisResult
+from dar.providers.ports import LlmAnalysisResult, LLMProvider
 
 
 class UnavailableLLMProvider(LLMProvider):

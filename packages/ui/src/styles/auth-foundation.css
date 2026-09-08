@@ -1,0 +1,367 @@
+/* Incremental foundation; legacy screens retain their tokens. */
+.docly-auth {
+  --docly-bg: #f6f7fb;
+  --docly-surface: #ffffff;
+  --docly-intro: #edf2fc;
+  --docly-ink: #172338;
+  --docly-muted: #48566b;
+  --docly-line: #758399;
+  --docly-line-subtle: #d2dbe8;
+  --docly-primary: #2457c5;
+  --docly-hover: #1946a9;
+  --docly-on-primary: #ffffff;
+  --docly-danger: #a82030;
+  --docly-danger-bg: #fff0f1;
+  --docly-focus: #2457c5;
+  --docly-radius: 12px;
+  --docly-panel-radius: 24px;
+  --docly-space-1: 4px;
+  --docly-space-2: 8px;
+  --docly-space-3: 12px;
+  --docly-space-4: 16px;
+  --docly-space-6: 24px;
+  --docly-space-8: 32px;
+  --docly-space-12: 48px;
+  --docly-space-16: 64px;
+  --docly-motion: 160ms;
+  --docly-max: 1120px;
+  --dar-color-bg-elevated: var(--docly-surface);
+  --dar-color-text: var(--docly-ink);
+  --dar-color-text-muted: var(--docly-muted);
+  --dar-color-text-secondary: var(--docly-muted);
+  --dar-color-border: var(--docly-line);
+  --dar-color-accent: var(--docly-primary);
+  --dar-color-accent-hover: var(--docly-hover);
+  --dar-color-accent-fg: var(--docly-on-primary);
+  --dar-color-danger: var(--docly-danger);
+  --dar-color-danger-bg: var(--docly-danger-bg);
+  --dar-radius-md: var(--docly-radius);
+  color-scheme: light;
+  display: grid;
+  grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+  max-width: var(--docly-max);
+  margin: var(--docly-space-12) auto;
+  border: 1px solid var(--docly-line-subtle);
+  border-radius: var(--docly-panel-radius);
+  background: var(--docly-surface);
+  color: var(--docly-ink);
+  font-family: system-ui, 'Segoe UI', sans-serif;
+  font-size: 16px;
+  line-height: 1.6;
+  box-shadow: 0 8px 32px rgb(23 35 56 / 5%);
+  overflow-wrap: anywhere;
+}
+.docly-auth *,
+.docly-auth *::before,
+.docly-auth *::after {
+  box-sizing: border-box;
+}
+.docly-auth p {
+  margin: 0;
+}
+.docly-auth a {
+  color: var(--docly-primary);
+  text-underline-offset: 3px;
+}
+.docly-auth :focus-visible,
+.docly-auth [tabindex='-1']:focus {
+  outline: 3px solid var(--docly-focus);
+  outline-offset: 4px;
+  box-shadow: none;
+}
+.docly-auth__intro {
+  display: flex;
+  flex-direction: column;
+  gap: var(--docly-space-6);
+  padding: var(--docly-space-12);
+  background: var(--docly-intro);
+  border-radius: var(--docly-panel-radius) 0 0 var(--docly-panel-radius);
+  min-width: 0;
+}
+.docly-auth__wordmark {
+  font-size: 32px;
+  font-weight: 750;
+  letter-spacing: -1.5px;
+}
+.docly-auth__wordmark span {
+  color: var(--docly-primary);
+}
+.docly-auth__eyebrow {
+  color: var(--docly-primary);
+  font-weight: 650;
+}
+.docly-auth__intro h2 {
+  font-size: clamp(28px, 3vw, 38px);
+  line-height: 1.18;
+  letter-spacing: -0.035em;
+  margin: 0;
+}
+.docly-auth__intro > p,
+.docly-auth__principles p {
+  color: var(--docly-muted);
+}
+.docly-auth__principles {
+  list-style: none;
+  padding: 0;
+  margin: var(--docly-space-4) 0;
+  display: grid;
+  gap: var(--docly-space-6);
+}
+.docly-auth__principles li {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--docly-space-3);
+}
+.docly-auth__principles li > span {
+  font-variant-numeric: tabular-nums;
+  color: var(--docly-primary);
+  font-weight: 700;
+}
+.docly-auth__principles strong {
+  font-weight: 650;
+}
+.docly-auth__independent {
+  margin-top: auto !important;
+  padding-top: var(--docly-space-6);
+  border-top: 1px solid var(--docly-line-subtle);
+}
+.docly-auth__panel {
+  padding: var(--docly-space-12);
+  min-width: 0;
+}
+.docly-auth__panel h1 {
+  font-size: clamp(26px, 3vw, 34px);
+  line-height: 1.2;
+  margin: var(--docly-space-8) 0 var(--docly-space-3);
+  letter-spacing: -0.03em;
+}
+.docly-auth__lead {
+  color: var(--docly-muted);
+  margin-bottom: var(--docly-space-8) !important;
+}
+.docly-auth__form,
+.docly-auth__complete {
+  display: grid;
+  gap: var(--docly-space-6);
+}
+.docly-auth__form > div:empty {
+  display: none;
+}
+.docly-auth .dar-field {
+  gap: var(--docly-space-2);
+}
+.docly-auth .dar-field__label,
+.docly-auth .dar-btn {
+  font-size: 16px;
+}
+.docly-auth .dar-input {
+  min-height: 48px;
+  padding: var(--docly-space-3);
+}
+.docly-auth .dar-field__hint,
+.docly-auth__session-note {
+  font-size: 14px;
+  color: var(--docly-muted);
+}
+.docly-auth__error {
+  padding: var(--docly-space-4);
+  border: 1px solid var(--docly-danger);
+  color: var(--docly-danger);
+  background: var(--docly-danger-bg);
+  border-radius: var(--docly-radius);
+}
+.docly-auth__error .dar-btn {
+  margin-top: var(--docly-space-4);
+}
+.docly-auth__actions {
+  display: flex;
+  gap: var(--docly-space-3);
+  flex-wrap: wrap;
+}
+.docly-auth__actions > :last-child {
+  flex: 1;
+}
+.docly-auth .dar-btn {
+  min-height: 48px;
+  white-space: normal;
+  padding: var(--docly-space-3) var(--docly-space-6);
+}
+.docly-auth__consents {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+  display: grid;
+  gap: var(--docly-space-4);
+}
+.docly-auth__consents legend {
+  font-weight: 650;
+  margin-bottom: var(--docly-space-4);
+}
+.docly-auth__consent {
+  border-bottom: 1px solid var(--docly-line-subtle);
+  padding-bottom: var(--docly-space-4);
+}
+.docly-auth__consent label,
+.docly-auth__optional label {
+  display: flex;
+  align-items: flex-start;
+  min-height: 44px;
+  gap: var(--docly-space-3);
+  cursor: pointer;
+}
+.docly-auth input[type='checkbox'] {
+  width: 22px;
+  height: 22px;
+  margin: 3px 0 0;
+  flex-shrink: 0;
+  accent-color: var(--docly-primary);
+}
+.docly-auth__consent p {
+  padding-left: 34px;
+  color: var(--docly-muted);
+  font-size: 14px;
+}
+.docly-auth__optional {
+  background: var(--docly-intro);
+  padding: var(--docly-space-4);
+  border-radius: var(--docly-radius);
+  display: grid;
+  gap: var(--docly-space-2);
+}
+.docly-auth__notice,
+.docly-auth__account {
+  padding: var(--docly-space-4);
+  border: 1px solid var(--docly-line-subtle);
+  border-radius: var(--docly-radius);
+}
+.docly-stepper {
+  padding: 0;
+  margin: 0;
+  list-style: none;
+  display: flex;
+  gap: var(--docly-space-4, 16px);
+  flex-wrap: wrap;
+}
+.docly-stepper li {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  font-size: 14px;
+  color: var(--docly-muted, #48566b);
+}
+.docly-stepper__number {
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border: 1px solid currentColor;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.docly-stepper [aria-current='step'] {
+  color: var(--docly-primary, #2457c5);
+  font-weight: 700;
+}
+.docly-stepper [aria-current='step'] .docly-stepper__number {
+  background: var(--docly-primary, #2457c5);
+  color: var(--docly-on-primary, #ffffff);
+}
+.docly-password__control {
+  display: flex;
+  align-items: stretch;
+  gap: 8px;
+  min-width: 0;
+}
+.docly-password__control .dar-input {
+  min-width: 0;
+  flex: 1;
+}
+.docly-password__toggle {
+  min-height: 44px;
+  min-width: 44px;
+  padding: 8px;
+  font: inherit;
+  font-size: 14px;
+  cursor: pointer;
+  background: var(--docly-surface, #ffffff);
+  color: var(--docly-primary, #2457c5);
+  border: 1px solid var(--docly-line, #758399);
+  border-radius: var(--docly-radius, 12px);
+}
+@media (prefers-color-scheme: dark) {
+  .docly-auth {
+    --docly-bg: #111a29;
+    --docly-surface: #172338;
+    --docly-intro: #1d2e49;
+    --docly-ink: #f2f5fa;
+    --docly-muted: #bdc9dc;
+    --docly-line: #8293af;
+    --docly-line-subtle: #445671;
+    --docly-primary: #adc8ff;
+    --docly-hover: #c8dbff;
+    --docly-on-primary: #10264b;
+    --docly-danger: #ffb3bb;
+    --docly-danger-bg: #402632;
+    --docly-focus: #adc8ff;
+    color-scheme: dark;
+  }
+}
+@media (max-width: 800px) {
+  .docly-auth {
+    grid-template-columns: minmax(0, 1fr);
+    margin: 16px 0;
+  }
+  .docly-auth__intro {
+    padding: 24px;
+    border-radius: 24px 24px 0 0;
+    gap: 12px;
+  }
+  .docly-auth__intro h2,
+  .docly-auth__principles,
+  .docly-auth__eyebrow,
+  .docly-auth__intro > p:not(.docly-auth__independent) {
+    display: none;
+  }
+  .docly-auth__independent {
+    padding-top: 12px;
+  }
+  .docly-auth__panel {
+    padding: 24px;
+  }
+}
+@media (max-width: 375px) {
+  .docly-auth__panel,
+  .docly-auth__intro {
+    padding: 16px;
+  }
+  .docly-stepper {
+    gap: 12px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .docly-auth *,
+  .docly-auth *::before,
+  .docly-auth *::after {
+    animation: none !important;
+    transition: none !important;
+    scroll-behavior: auto !important;
+  }
+}
+@media (forced-colors: active) {
+  .docly-auth :focus-visible {
+    outline: 3px solid Highlight;
+  }
+  .docly-auth,
+  .docly-auth__intro,
+  .docly-auth__panel {
+    background: Canvas;
+    color: CanvasText;
+  }
+  .docly-stepper [aria-current='step'] {
+    border-bottom: 3px solid Highlight;
+  }
+}
+.docly-auth a.dar-btn--primary {
+  color: var(--docly-on-primary);
+}

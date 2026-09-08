@@ -3,7 +3,15 @@
 import { useCallback, useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 
-import { Alert, Badge, Button, Checkbox, Disclaimer, ScreenStateView, parseScreenState } from '@dar/ui';
+import {
+  Alert,
+  Badge,
+  Button,
+  Checkbox,
+  Disclaimer,
+  ScreenStateView,
+  parseScreenState,
+} from '@dar/ui';
 import { getApiBase } from '../../../lib/apiBase';
 
 type LegalItem = {
@@ -173,7 +181,10 @@ export default function BillingClient() {
 
   async function cancel() {
     setErr(null);
-    const res = await fetch(`${getApiBase()}/billing/cancel`, { method: 'POST', credentials: 'include' });
+    const res = await fetch(`${getApiBase()}/billing/cancel`, {
+      method: 'POST',
+      credentials: 'include',
+    });
     const data = await res.json().catch(() => ({}));
     if (!res.ok) {
       setErr(data?.detail?.detail || 'Ошибка отмены');
@@ -202,8 +213,8 @@ export default function BillingClient() {
     <div>
       <h1 className="dar-page-title">Подписка и платежи</h1>
       <p className="dar-page-lead">
-        Цены только с сервера. Production-провайдер не подключается без договора и live credentials. Чеки не
-        генерируются фиктивно.
+        Цены только с сервера. Production-провайдер не подключается без договора и live credentials.
+        Чеки не генерируются фиктивно.
       </p>
       <ScreenStateView
         state={state}
@@ -237,8 +248,11 @@ export default function BillingClient() {
                     Доступ до: <strong>{sub.access_until}</strong>
                     {sub.trial_ends_at ? ` · trial до ${sub.trial_ends_at}` : ''}
                   </p>
-                  <p style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)' }}>
-                    Сумма плана (server): {formatRub(sub.amount_minor)} · версия цены {sub.price_version}
+                  <p
+                    style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)' }}
+                  >
+                    Сумма плана (server): {formatRub(sub.amount_minor)} · версия цены{' '}
+                    {sub.price_version}
                   </p>
                 </>
               ) : (
@@ -248,13 +262,18 @@ export default function BillingClient() {
                 <Button variant="secondary" onClick={() => void cancel()} disabled={!sub}>
                   Отменить автопродление
                 </Button>
-                <Button variant="secondary" onClick={() => void removePaymentMethod()} disabled={!sub}>
+                <Button
+                  variant="secondary"
+                  onClick={() => void removePaymentMethod()}
+                  disabled={!sub}
+                >
                   Удалить способ оплаты
                 </Button>
                 <a href="/app/profile">Удаление аккаунта → профиль</a>
               </div>
               <p style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)' }}>
-                Отмена — один поток из профиля/биллинга. Удаление payment method и аккаунта не маскируются.
+                Отмена — один поток из профиля/биллинга. Удаление payment method и аккаунта не
+                маскируются.
               </p>
             </section>
 
@@ -273,7 +292,8 @@ export default function BillingClient() {
                 ))}
               </select>
               <Alert title="Отдельное согласие" tone="info">
-                Рекуррентные списания — отдельное действие: сумма, период, дата следующего списания, путь отмены.
+                Рекуррентные списания — отдельное действие: сумма, период, дата следующего списания,
+                путь отмены.
               </Alert>
               <Checkbox
                 id="pay-recurring"
@@ -282,7 +302,11 @@ export default function BillingClient() {
                 label="Отдельно соглашаюсь на рекуррентные списания (payment_recurring)"
               />
               {paymentDoc ? (
-                <a href={`${getApiBase()}/legal/documents/${paymentDoc.id}/text`} target="_blank" rel="noreferrer">
+                <a
+                  href={`${getApiBase()}/legal/documents/${paymentDoc.id}/text`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   Текст согласия v{paymentDoc.consent_version}
                 </a>
               ) : null}
@@ -303,7 +327,9 @@ export default function BillingClient() {
                   {payments.map((p) => (
                     <li key={p.id}>
                       {p.created_at}: {formatRub(p.amount_minor)} {p.currency} — {p.status}
-                      {p.receipt_ref ? ` · чек ${p.receipt_ref}` : ' · чек не выдан (нет capability/review)'}
+                      {p.receipt_ref
+                        ? ` · чек ${p.receipt_ref}`
+                        : ' · чек не выдан (нет capability/review)'}
                     </li>
                   ))}
                 </ul>

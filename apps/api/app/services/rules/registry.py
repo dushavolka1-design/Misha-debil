@@ -1,13 +1,28 @@
+"""Versioned general-purpose rule registry. Not universal legal advice."""
+
 from __future__ import annotations
 
-"""Versioned general-purpose rule registry. Not universal legal advice."""
+from typing import Any
 
 from app.services.rules.types import ResultKind, RuleDef, RuleTestCase, Severity, Uncertainty
 
-GENERAL = ("contract.other", "contract.lease", "contract.sale_purchase", "contract.services", "contract.nda", "user.doc.general")
+GENERAL = (
+    "contract.other",
+    "contract.lease",
+    "contract.sale_purchase",
+    "contract.services",
+    "contract.nda",
+    "user.doc.general",
+)
 
 
-def _tc(case_id: str, facts: list, expect: bool, unc: Uncertainty | None = None, note: str = "") -> RuleTestCase:
+def _tc(
+    case_id: str,
+    facts: list[dict[str, Any]],
+    expect: bool,
+    unc: Uncertainty | None = None,
+    note: str = "",
+) -> RuleTestCase:
     return RuleTestCase(case_id=case_id, facts=facts, expect_trigger=expect, expect_uncertainty=unc, note=note)
 
 
@@ -25,7 +40,15 @@ RULES: tuple[RuleDef, ...] = (
         result_kind=ResultKind.REVIEW_QUESTION,
         description="Empty/inconsistent party requisites",
         test_cases=(
-            _tc("fp_complete", [{"entity_type": "party.name", "raw_text": "ООО А", "normalized_value": "ООО А"}, {"entity_type": "party.role", "raw_text": "арендодатель"}, {"entity_type": "party.identifier", "raw_text": "ИНН 7707083893"}], False),
+            _tc(
+                "fp_complete",
+                [
+                    {"entity_type": "party.name", "raw_text": "ООО А", "normalized_value": "ООО А"},
+                    {"entity_type": "party.role", "raw_text": "арендодатель"},
+                    {"entity_type": "party.identifier", "raw_text": "ИНН 7707083893"},
+                ],
+                False,
+            ),
             _tc("fn_missing_role", [{"entity_type": "party.name", "raw_text": "ООО А"}], True),
         ),
     ),
@@ -41,8 +64,28 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.STRUCTURAL_CONFLICT,
         test_cases=(
-            _tc("dup_same", [{"entity_type": "party.name", "raw_text": "ООО А"}, {"entity_type": "party.name", "raw_text": "ООО А"}], False),
-            _tc("conflict", [{"entity_type": "party.role", "raw_text": "покупатель", "citation": {"page": 1}}, {"entity_type": "party.role", "raw_text": "продавец", "citation": {"page": 1}, "same_party_hint": "A"}], True, note="contradictory evidence"),
+            _tc(
+                "dup_same",
+                [
+                    {"entity_type": "party.name", "raw_text": "ООО А"},
+                    {"entity_type": "party.name", "raw_text": "ООО А"},
+                ],
+                False,
+            ),
+            _tc(
+                "conflict",
+                [
+                    {"entity_type": "party.role", "raw_text": "покупатель", "citation": {"page": 1}},
+                    {
+                        "entity_type": "party.role",
+                        "raw_text": "продавец",
+                        "citation": {"page": 1},
+                        "same_party_hint": "A",
+                    },
+                ],
+                True,
+                note="contradictory evidence",
+            ),
         ),
     ),
     RuleDef(
@@ -57,8 +100,22 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.STRUCTURAL_CONFLICT,
         test_cases=(
-            _tc("same_amount", [{"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}}, {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}}], False),
-            _tc("currency_conflict", [{"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}}, {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "USD"}}], True),
+            _tc(
+                "same_amount",
+                [
+                    {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}},
+                    {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}},
+                ],
+                False,
+            ),
+            _tc(
+                "currency_conflict",
+                [
+                    {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}},
+                    {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "USD"}},
+                ],
+                True,
+            ),
         ),
     ),
     RuleDef(
@@ -73,9 +130,29 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.STRUCTURAL_CONFLICT,
         test_cases=(
-            _tc("ok_order", [{"entity_type": "doc.date.effective", "normalized_value": "2026-01-01"}, {"entity_type": "doc.date.end", "normalized_value": "2026-12-31"}], False),
-            _tc("bad_order", [{"entity_type": "doc.date.effective", "normalized_value": "2026-12-31"}, {"entity_type": "doc.date.end", "normalized_value": "2026-01-01"}], True),
-            _tc("missing", [{"entity_type": "doc.date.effective", "normalized_value": "2026-01-01"}], False, Uncertainty.INSUFFICIENT_DATA, "missing context"),
+            _tc(
+                "ok_order",
+                [
+                    {"entity_type": "doc.date.effective", "normalized_value": "2026-01-01"},
+                    {"entity_type": "doc.date.end", "normalized_value": "2026-12-31"},
+                ],
+                False,
+            ),
+            _tc(
+                "bad_order",
+                [
+                    {"entity_type": "doc.date.effective", "normalized_value": "2026-12-31"},
+                    {"entity_type": "doc.date.end", "normalized_value": "2026-01-01"},
+                ],
+                True,
+            ),
+            _tc(
+                "missing",
+                [{"entity_type": "doc.date.effective", "normalized_value": "2026-01-01"}],
+                False,
+                Uncertainty.INSUFFICIENT_DATA,
+                "missing context",
+            ),
         ),
     ),
     RuleDef(
@@ -90,7 +167,19 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.STRUCTURAL_CONFLICT,
         test_cases=(
-            _tc("mismatch", [{"entity_type": "amount.value", "raw_text": "1000", "normalized_value": {"amount": "1000", "currency": "RUB"}, "meta": {"words": "две тысячи"}}, {"entity_type": "amount.words", "raw_text": "две тысячи", "normalized_value": "2000"}], True),
+            _tc(
+                "mismatch",
+                [
+                    {
+                        "entity_type": "amount.value",
+                        "raw_text": "1000",
+                        "normalized_value": {"amount": "1000", "currency": "RUB"},
+                        "meta": {"words": "две тысячи"},
+                    },
+                    {"entity_type": "amount.words", "raw_text": "две тысячи", "normalized_value": "2000"},
+                ],
+                True,
+            ),
         ),
     ),
     RuleDef(
@@ -105,8 +194,22 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.REVIEW_QUESTION,
         test_cases=(
-            _tc("missing_annex", [{"entity_type": "reference.ref", "raw_text": "Приложение №2"}, {"entity_type": "annex.ref", "raw_text": "Приложение №1"}], True),
-            _tc("present", [{"entity_type": "reference.ref", "raw_text": "Приложение №1"}, {"entity_type": "annex.ref", "raw_text": "Приложение №1"}], False),
+            _tc(
+                "missing_annex",
+                [
+                    {"entity_type": "reference.ref", "raw_text": "Приложение №2"},
+                    {"entity_type": "annex.ref", "raw_text": "Приложение №1"},
+                ],
+                True,
+            ),
+            _tc(
+                "present",
+                [
+                    {"entity_type": "reference.ref", "raw_text": "Приложение №1"},
+                    {"entity_type": "annex.ref", "raw_text": "Приложение №1"},
+                ],
+                False,
+            ),
         ),
     ),
     RuleDef(
@@ -132,11 +235,24 @@ RULES: tuple[RuleDef, ...] = (
         severity=Severity.MEDIUM,
         severity_rationale="Asymmetry is a review flag, not a legality verdict.",
         official_sources=("SRC.TERMINATION.v1",),
-        message_template="Права расторжения выглядят несимметричными между сторонами — требуется ручная проверка формулировок.",
+        message_template=(
+            "Права расторжения выглядят несимметричными между "
+            "сторонами — требуется ручная проверка формулировок."
+        ),
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.REVIEW_QUESTION,
         test_cases=(
-            _tc("asym", [{"entity_type": "termination.clause_ref", "raw_text": "только Арендодатель вправе расторгнуть", "meta": {"asymmetric": True}}], True),
+            _tc(
+                "asym",
+                [
+                    {
+                        "entity_type": "termination.clause_ref",
+                        "raw_text": "только Арендодатель вправе расторгнуть",
+                        "meta": {"asymmetric": True},
+                    }
+                ],
+                True,
+            ),
         ),
     ),
     RuleDef(
@@ -151,8 +267,28 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.REVIEW_QUESTION,
         test_cases=(
-            _tc("unclear", [{"entity_type": "penalty.clause", "raw_text": "штраф по усмотрению", "meta": {"base": None, "cap": None}}], True),
-            _tc("clear", [{"entity_type": "penalty.clause", "raw_text": "0.1% в день, не более 10%", "meta": {"base": "0.1%/day", "cap": "10%"}}], False),
+            _tc(
+                "unclear",
+                [
+                    {
+                        "entity_type": "penalty.clause",
+                        "raw_text": "штраф по усмотрению",
+                        "meta": {"base": None, "cap": None},
+                    }
+                ],
+                True,
+            ),
+            _tc(
+                "clear",
+                [
+                    {
+                        "entity_type": "penalty.clause",
+                        "raw_text": "0.1% в день, не более 10%",
+                        "meta": {"base": "0.1%/day", "cap": "10%"},
+                    }
+                ],
+                False,
+            ),
         ),
     ),
     RuleDef(
@@ -167,7 +303,11 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.OBSERVED_TEXT,
         test_cases=(
-            _tc("auto", [{"entity_type": "renewal.clause_ref", "raw_text": "автоматически продлевается, отказ за 30 дней"}], True),
+            _tc(
+                "auto",
+                [{"entity_type": "renewal.clause_ref", "raw_text": "автоматически продлевается, отказ за 30 дней"}],
+                True,
+            ),
         ),
     ),
     RuleDef(
@@ -182,7 +322,16 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.REVIEW_QUESTION,
         test_cases=(
-            _tc("uni", [{"entity_type": "right.summary", "raw_text": "Исполнитель вправе в одностороннем порядке изменять тарифы"}], True),
+            _tc(
+                "uni",
+                [
+                    {
+                        "entity_type": "right.summary",
+                        "raw_text": "Исполнитель вправе в одностороннем порядке изменять тарифы",
+                    }
+                ],
+                True,
+            ),
         ),
     ),
     RuleDef(
@@ -196,9 +345,7 @@ RULES: tuple[RuleDef, ...] = (
         message_template="Обнаружена передача ПД / третьим лицам — сверьте с согласиями и политикой.",
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.NORMATIVE_CLAIM,
-        test_cases=(
-            _tc("pd", [{"entity_type": "personal_data.clause", "raw_text": "передача третьим лицам"}], True),
-        ),
+        test_cases=(_tc("pd", [{"entity_type": "personal_data.clause", "raw_text": "передача третьим лицам"}], True),),
     ),
     RuleDef(
         rule_id="dispute.jurisdiction_governing_law",
@@ -211,9 +358,7 @@ RULES: tuple[RuleDef, ...] = (
         message_template="Указаны подсудность/применимое право: «{text}».",
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.OBSERVED_TEXT,
-        test_cases=(
-            _tc("msk", [{"entity_type": "dispute.jurisdiction", "raw_text": "г. Москва"}], True),
-        ),
+        test_cases=(_tc("msk", [{"entity_type": "dispute.jurisdiction", "raw_text": "г. Москва"}], True),),
     ),
     RuleDef(
         rule_id="multifile.version_conflict",
@@ -227,7 +372,14 @@ RULES: tuple[RuleDef, ...] = (
         reviewer="rules_reviewer_demo",
         result_kind=ResultKind.STRUCTURAL_CONFLICT,
         test_cases=(
-            _tc("conflict_files", [{"entity_type": "doc.title", "raw_text": "v1", "meta": {"file_id": "a", "version_key": "contract"}}, {"entity_type": "doc.title", "raw_text": "v2", "meta": {"file_id": "b", "version_key": "contract"}}], True),
+            _tc(
+                "conflict_files",
+                [
+                    {"entity_type": "doc.title", "raw_text": "v1", "meta": {"file_id": "a", "version_key": "contract"}},
+                    {"entity_type": "doc.title", "raw_text": "v2", "meta": {"file_id": "b", "version_key": "contract"}},
+                ],
+                True,
+            ),
         ),
     ),
 )

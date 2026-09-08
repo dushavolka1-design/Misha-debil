@@ -30,7 +30,9 @@ export default function CreatedDocumentsPanel() {
     setLoading(true);
     setError(null);
     try {
-      const data = await apiFetch<{ drafts?: HistoryItem[]; generated?: HistoryItem[] }>('/forms/fill/generated');
+      const data = await apiFetch<{ drafts?: HistoryItem[]; generated?: HistoryItem[] }>(
+        '/forms/fill/generated',
+      );
       setDrafts(Array.isArray(data.drafts) ? data.drafts : []);
       setGenerated(Array.isArray(data.generated) ? data.generated : []);
     } catch (err) {
@@ -40,7 +42,9 @@ export default function CreatedDocumentsPanel() {
         setGenerated([]);
         return;
       }
-      setError(err instanceof ApiError ? err.detail || err.message : 'Не удалось загрузить историю');
+      setError(
+        err instanceof ApiError ? err.detail || err.message : 'Не удалось загрузить историю',
+      );
     } finally {
       setLoading(false);
     }
@@ -66,7 +70,9 @@ export default function CreatedDocumentsPanel() {
       toast.showSuccess('Копия создана');
       void load();
     } catch (err) {
-      toast.showError(err instanceof ApiError ? err.detail || err.message : 'Не удалось создать копию');
+      toast.showError(
+        err instanceof ApiError ? err.detail || err.message : 'Не удалось создать копию',
+      );
     }
   }
 
@@ -75,7 +81,9 @@ export default function CreatedDocumentsPanel() {
       const { blob, filename } = await downloadGeneratedPdf(id);
       downloadBlob(blob, filename);
     } catch (err) {
-      toast.showError(err instanceof ApiError ? err.detail || err.message : 'Не удалось скачать PDF');
+      toast.showError(
+        err instanceof ApiError ? err.detail || err.message : 'Не удалось скачать PDF',
+      );
     }
   }
 
@@ -117,7 +125,10 @@ export default function CreatedDocumentsPanel() {
                 </p>
               </div>
               {d.catalog_form_id ? (
-                <Link href={`/app/forms/${d.catalog_form_id}`} className="dar-btn dar-btn--secondary dar-btn--sm">
+                <Link
+                  href={`/app/forms/${d.catalog_form_id}`}
+                  className="dar-btn dar-btn--secondary dar-btn--sm"
+                >
                   Продолжить
                 </Link>
               ) : null}
@@ -132,9 +143,7 @@ export default function CreatedDocumentsPanel() {
             <article key={g.id} className="dar-panel dar-stack">
               <div className="dar-row dar-row--between">
                 <strong>{g.catalog_title || 'Документ'}</strong>
-                <Badge tone={g.preview_ok ? 'success' : 'warning'}>
-                  v{g.form_version || '?'}
-                </Badge>
+                <Badge tone={g.preview_ok ? 'success' : 'warning'}>v{g.form_version || '?'}</Badge>
               </div>
               <p className="dar-doc-card__meta">
                 Создан {g.created_at ? new Date(g.created_at).toLocaleString('ru-RU') : '—'}

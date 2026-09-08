@@ -1,7 +1,8 @@
-from __future__ import annotations
-
 """Preview validation for form fill — length, alphabet, required, reserved fields."""
 
+from __future__ import annotations
+
+import re
 from dataclasses import dataclass, field
 from typing import Any
 
@@ -13,7 +14,6 @@ from app.services.forms.fill.coord_map import (
     ValueSource,
     format_value,
 )
-import re
 
 
 @dataclass
@@ -104,7 +104,9 @@ def validate_inputs(
 
         if not f.user_editable and f.value_source == ValueSource.ORGAN:
             issues.append(
-                FieldIssue(f.field_id, "organ_only", "Поле заполняется органом — не редактируется пользователем", "warning"),
+                FieldIssue(
+                    f.field_id, "organ_only", "Поле заполняется органом — не редактируется пользователем", "warning"
+                ),
             )
 
         formatted = format_value(raw, f.formatter)

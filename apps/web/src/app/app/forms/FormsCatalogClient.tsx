@@ -52,32 +52,35 @@ export default function FormsCatalogClient({ embedded = false }: { embedded?: bo
   const [loadError, setLoadError] = useState<string | null>(null);
   const [capabilities, setCapabilities] = useState<GenerationCapabilities | null>(null);
 
-  const loadForms = useCallback(async (signal?: AbortSignal) => {
-    setConnectionError(null);
-    setLoadError(null);
-    try {
-      const q = new URLSearchParams();
-      if (category) q.set('category', category);
-      if (search.trim()) q.set('search', search.trim());
-      const [data, caps] = await Promise.all([
-        fetchForms(`${q.toString() ? `?${q}` : ''}`, signal),
-        fetchGenerationCapabilities().catch(() => null),
-      ]);
-      setForms(data);
-      if (caps) setCapabilities(caps);
-    } catch (err) {
-      if (signal?.aborted || (err instanceof ApiError && err.code === 'aborted')) {
-        return;
+  const loadForms = useCallback(
+    async (signal?: AbortSignal) => {
+      setConnectionError(null);
+      setLoadError(null);
+      try {
+        const q = new URLSearchParams();
+        if (category) q.set('category', category);
+        if (search.trim()) q.set('search', search.trim());
+        const [data, caps] = await Promise.all([
+          fetchForms(`${q.toString() ? `?${q}` : ''}`, signal),
+          fetchGenerationCapabilities().catch(() => null),
+        ]);
+        setForms(data);
+        if (caps) setCapabilities(caps);
+      } catch (err) {
+        if (signal?.aborted || (err instanceof ApiError && err.code === 'aborted')) {
+          return;
+        }
+        if (err instanceof ApiError && err.isConnectionError) {
+          setConnectionError(err);
+          return;
+        }
+        setLoadError(formatApiError(err, 'Не удалось загрузить каталог шаблонов'));
+      } finally {
+        if (!signal?.aborted) setLoading(false);
       }
-      if (err instanceof ApiError && err.isConnectionError) {
-        setConnectionError(err);
-        return;
-      }
-      setLoadError(formatApiError(err, 'Не удалось загрузить каталог шаблонов'));
-    } finally {
-      if (!signal?.aborted) setLoading(false);
-    }
-  }, [category, search]);
+    },
+    [category, search],
+  );
 
   useEffect(() => {
     const controller = new AbortController();
@@ -166,7 +169,13 @@ export default function FormsCatalogClient({ embedded = false }: { embedded?: bo
                 title="Шаблоны не найдены"
                 description="Измените поиск или категорию. Если каталог пуст — попробуйте позже."
                 action={
-                  <Button variant="secondary" onClick={() => { setSearch(''); setCategory(''); }}>
+                  <Button
+                    variant="secondary"
+                    onClick={() => {
+                      setSearch('');
+                      setCategory('');
+                    }}
+                  >
                     Сбросить фильтры
                   </Button>
                 }
@@ -185,29 +194,47 @@ export default function FormsCatalogClient({ embedded = false }: { embedded?: bo
                       category={form.category}
                       categoryLabel={form.category_label}
                       action={
-                        form.fill_ready && !form.unavailable_reason && capabilities?.generation_ready ? (
+                        form.fill_ready &&
+                        !form.unavailable_reason &&
+                        capabilities?.generation_ready ? (
                           <Link href={`/app/forms/${form.id}`} className="dar-btn dar-btn--primary">
                             Заполнить
                           </Link>
-                        ) : form.worksheet_ready && (capabilities?.font_ready !== false) ? (
+                        ) : form.worksheet_ready && capabilities?.font_ready !== false ? (
                           <>
-                            <Link href={`/app/forms/${form.id}`} className="dar-btn dar-btn--primary">
+                            <Link
+                              href={`/app/forms/${form.id}`}
+                              className="dar-btn dar-btn--primary"
+                            >
                               Подготовить сведения
                             </Link>
                             <p className="dar-muted">
-                              {form.unavailable_reason || 'Соберите сведения и сверьте их с документами.'}
+                              {form.unavailable_reason ||
+                                'Соберите сведения и сверьте их с документами.'}
                             </p>
                             {form.official_url ? (
-                              <a href={form.official_url} className="dar-link" target="_blank" rel="noreferrer">
+                              <a
+                                href={form.official_url}
+                                className="dar-link"
+                                target="_blank"
+                                rel="noreferrer"
+                              >
                                 Официальный источник
                               </a>
                             ) : null}
                           </>
                         ) : (
                           <>
-                            <span className="dar-badge dar-badge--warning">Заполнение недоступно</span>
-                            {form.unavailable_reason ? <p className="dar-muted">{form.unavailable_reason}</p> : null}
-                            <Link href="/app/generator?tab=wizard" className="dar-btn dar-btn--secondary">
+                            <span className="dar-badge dar-badge--warning">
+                              Заполнение недоступно
+                            </span>
+                            {form.unavailable_reason ? (
+                              <p className="dar-muted">{form.unavailable_reason}</p>
+                            ) : null}
+                            <Link
+                              href="/app/generator?tab=wizard"
+                              className="dar-btn dar-btn--secondary"
+                            >
                               Чеклист в мастере
                             </Link>
                           </>

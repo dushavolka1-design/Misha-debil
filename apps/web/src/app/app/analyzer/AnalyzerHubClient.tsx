@@ -110,7 +110,11 @@ function AnalyzerHubInner() {
             label: 'Новый анализ',
             panel: (
               <Suspense fallback={<Skeleton height={240} />}>
-                <UploadClient embedded onOpenDocument={openDocument} initialRunId={searchParams.get('run')} />
+                <UploadClient
+                  embedded
+                  onOpenDocument={openDocument}
+                  initialRunId={searchParams.get('run')}
+                />
               </Suspense>
             ),
           },

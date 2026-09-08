@@ -1,8 +1,9 @@
 from __future__ import annotations
 
+from typing import NoReturn
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, Request
+from fastapi import APIRouter, Depends, HTTPException, Request
 from fastapi.responses import Response as RawResponse
 
 from app.routers.auth import current_user, get_auth_service
@@ -19,8 +20,8 @@ from app.schemas_documents import (
     UploadLimitsResponse,
 )
 from app.services.analysis.pipeline import AnalysisPipelineService
+from app.services.auth_consent import AuthConsentError, AuthConsentService, UserRecord
 from app.services.jobs.queue import enqueue_job
-from app.services.auth_consent import AuthConsentError, AuthConsentService
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentLifecycleService, DocumentStore, UploadError
 from app.services.upload.safe_logging import safe_error_payload
@@ -29,38 +30,53 @@ router = APIRouter(prefix="/documents", tags=["documents"])
 
 
 def get_doc_store(request: Request) -> DocumentStore:
-    return request.app.state.doc_store
+    store = request.app.state.doc_store
+    if not isinstance(store, DocumentStore):
+        raise RuntimeError("Document store is not initialized")
+    return store
 
 
 def get_doc_service(request: Request) -> DocumentLifecycleService:
-    return request.app.state.doc_service
+    service = request.app.state.doc_service
+    if not isinstance(service, DocumentLifecycleService):
+        raise RuntimeError("Document lifecycle service is not initialized")
+    return service
 
 
 def get_analysis_service(request: Request) -> AnalysisPipelineService:
-    return request.app.state.analysis_service
+    service = request.app.state.analysis_service
+    if not isinstance(service, AnalysisPipelineService):
+        raise RuntimeError("Analysis service is not initialized")
+    return service
 
 
-def _http(exc: UploadError) -> None:
-    from fastapi import HTTPException
-
+def _http(exc: UploadError) -> NoReturn:
     with safe_error_payload({"code": exc.code, "detail": exc.message}) as body:
         raise HTTPException(status_code=exc.http_status, detail=body)
 
 
-def _require_user(user: object) -> None:
-    if not user:
-        from fastapi import HTTPException
-
+def _require_user(user: UserRecord | None) -> UserRecord:
+    if user is None:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
+    return user
+
+
+def _require_admin(user: UserRecord | None = Depends(current_user)) -> UserRecord:
+    principal = _require_user(user)
+    # Never trust client headers or a job ID as maintenance authorization.
+    # An account without an explicitly provisioned server-side admin role fails closed.
+    if getattr(principal, "role", "user") != "admin":
+        raise HTTPException(status_code=403, detail={"code": "forbidden", "detail": "Admin only"})
+    return principal
 
 
 @router.get("", response_model=list[DocumentListItem])
 async def list_documents(
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     store: DocumentStore = Depends(get_doc_store),
     analysis: AnalysisPipelineService = Depends(get_analysis_service),
 ) -> list[DocumentListItem]:
-    _require_user(user)
+    user = _require_user(user)
     items: list[DocumentListItem] = []
     for doc in store.documents.values():
         if doc.user_id != user.id or doc.tombstone_at is not None:
@@ -100,17 +116,15 @@ async def upload_limits(request: Request) -> UploadLimitsResponse:
 @router.post("/upload-intent", response_model=PresignResponse)
 async def upload_intent(
     body: UploadIntentRequest,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     auth: AuthConsentService = Depends(get_auth_service),
     service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> PresignResponse:
-    _require_user(user)
+    user = _require_user(user)
     try:
         feature = "document_medical" if body.potentially_medical else "document_ordinary"
         auth.assert_feature_allowed(user, feature)
     except AuthConsentError as exc:
-        from fastapi import HTTPException
-
         raise HTTPException(
             status_code=exc.http_status,
             detail={"code": exc.code, "detail": exc.message},
@@ -130,7 +144,6 @@ async def upload_intent(
         )
     except UploadError as exc:
         _http(exc)
-        raise
     return PresignResponse(
         document_id=doc.id,
         state=doc.state.value,
@@ -165,7 +178,6 @@ async def upload_put(
         )
     except UploadError as exc:
         _http(exc)
-        raise
     if doc.state == DocumentState.QUARANTINED:
         settings = request.app.state.providers.settings
         await enqueue_job(
@@ -188,11 +200,11 @@ async def upload_put(
 @router.post("/bulk-delete", response_model=BulkDeleteResponse)
 async def bulk_delete(
     body: BulkDeleteRequest,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
     analysis: AnalysisPipelineService = Depends(get_analysis_service),
 ) -> BulkDeleteResponse:
-    _require_user(user)
+    user = _require_user(user)
     deleted = await service.bulk_delete(user_id=user.id, document_ids=body.document_ids)
     for document_id in deleted:
         analysis.purge_for_document(document_id, user.id)
@@ -201,15 +213,15 @@ async def bulk_delete(
 
 @router.get("/export/me", response_model=ExportResponse)
 async def export_me(
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> ExportResponse:
-    _require_user(user)
+    user = _require_user(user)
     return ExportResponse(**service.export_user_data(user_id=user.id))
 
 
-@router.post("/admin/purge-expired")
-async def purge_expired(service: DocumentLifecycleService = Depends(get_doc_service)) -> dict:
+@router.post("/admin/purge-expired", dependencies=[Depends(_require_admin)])
+async def purge_expired(service: DocumentLifecycleService = Depends(get_doc_service)) -> dict[str, int]:
     n = await service.purge_expired()
     return {"purged": n}
 
@@ -217,15 +229,14 @@ async def purge_expired(service: DocumentLifecycleService = Depends(get_doc_serv
 @router.get("/{document_id}", response_model=DocumentStatusResponse)
 async def get_document(
     document_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> DocumentStatusResponse:
-    _require_user(user)
+    user = _require_user(user)
     try:
         doc = service.get_owned(document_id, user.id)
     except UploadError as exc:
         _http(exc)
-        raise
     return DocumentStatusResponse(
         id=doc.id,
         state=doc.state.value,
@@ -239,16 +250,15 @@ async def get_document(
 @router.get("/{document_id}/download")
 async def download(
     document_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> RawResponse:
-    _require_user(user)
+    user = _require_user(user)
     try:
         data = await service.download_derived(document_id=document_id, user_id=user.id)
         doc = service.get_owned(document_id, user.id)
     except UploadError as exc:
         _http(exc)
-        raise
     return RawResponse(
         content=data,
         media_type="application/octet-stream",
@@ -259,16 +269,15 @@ async def download(
 @router.delete("/{document_id}", response_model=DocumentStatusResponse)
 async def delete_one(
     document_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
     analysis: AnalysisPipelineService = Depends(get_analysis_service),
 ) -> DocumentStatusResponse:
-    _require_user(user)
+    user = _require_user(user)
     try:
         doc = await service.delete_document(document_id=document_id, user_id=user.id)
     except UploadError as exc:
         _http(exc)
-        raise
     analysis.purge_for_document(document_id, user.id)
     return DocumentStatusResponse(
         id=doc.id,
@@ -283,19 +292,21 @@ async def delete_one(
 @router.get("/{document_id}/erasure-proof", response_model=ErasureProofResponse)
 async def erasure_proof(
     document_id: UUID,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     service: DocumentLifecycleService = Depends(get_doc_service),
 ) -> ErasureProofResponse:
-    _require_user(user)
+    user = _require_user(user)
     doc = service.store.documents.get(document_id)
     if not doc or doc.user_id != user.id:
-        from fastapi import HTTPException
-
         raise HTTPException(status_code=404, detail={"code": "not_found", "detail": "Not found"})
     return ErasureProofResponse(**service.verify_erasure(document_id))
 
 
-@router.post("/{document_id}/jobs/{job_type}", response_model=JobAckResponse)
+@router.post(
+    "/{document_id}/jobs/{job_type}",
+    response_model=JobAckResponse,
+    dependencies=[Depends(_require_admin)],
+)
 async def run_job(
     document_id: UUID,
     job_type: str,
@@ -314,12 +325,9 @@ async def run_job(
             await service.purge_expired()
             doc = service._require(document_id)
         else:
-            from fastapi import HTTPException
-
             raise HTTPException(status_code=400, detail={"code": "unknown_job", "detail": "Unknown job"})
     except UploadError as exc:
         _http(exc)
-        raise
     return JobAckResponse(
         document_id=doc.id,
         state=doc.state.value,

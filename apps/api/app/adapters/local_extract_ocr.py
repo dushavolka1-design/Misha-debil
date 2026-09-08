@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from dar.providers.ports import OCRProvider, OcrDocumentResult, StoredObject
+from dar.providers.ports import OcrDocumentResult, OCRProvider, StoredObject
 
 from app.services.analysis.document_extract import extract_document_pages
 
@@ -19,7 +19,7 @@ class LocalExtractOCRProvider(OCRProvider):
         *,
         object_ref: StoredObject,
         content_type: str,
-        page_bytes: bytes | None,
+        page_bytes: bytes | None = None,
         fixture_id: str | None = None,
     ) -> OcrDocumentResult:
         _ = (object_ref, fixture_id)

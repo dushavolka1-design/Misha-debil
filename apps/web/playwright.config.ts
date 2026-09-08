@@ -9,14 +9,10 @@ export default defineConfig({
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
   timeout: 60_000,
-  reporter: jsonReport
-    ? [
-        ['line'],
-        ['json', { outputFile: jsonReport }],
-      ]
-    : [['list']],
+  reporter: jsonReport ? [['line'], ['json', { outputFile: jsonReport }]] : [['list']],
   use: {
-    baseURL: process.env.PLAYWRIGHT_BASE_URL || process.env.E2E_WEB_BASE_URL || 'http://localhost:3000',
+    baseURL:
+      process.env.PLAYWRIGHT_BASE_URL || process.env.E2E_WEB_BASE_URL || 'http://localhost:3000',
     trace: 'on-first-retry',
     navigationTimeout: 60_000,
   },
@@ -28,9 +24,7 @@ export default defineConfig({
         reuseExistingServer: true,
         timeout: 120_000,
       },
-  projects: [
-    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
-  ],
+  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
   expect: {
     toHaveScreenshot: { animations: 'disabled' },
   },

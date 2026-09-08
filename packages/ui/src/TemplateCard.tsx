@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 
-export type TemplateCardStatusTone = 'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
+export type TemplateCardStatusTone =
+  'neutral' | 'accent' | 'success' | 'warning' | 'danger' | 'info';
 export type TemplateCategory = 'entry_stay' | 'work' | 'rvp_vnz' | 'medical' | string;
 
 export function TemplateCard({
@@ -26,7 +27,9 @@ export function TemplateCard({
 }) {
   return (
     <article className="dar-template-card">
-      <span className={`dar-template-card__cat dar-template-card__cat--${category}`}>{categoryLabel}</span>
+      <span className={`dar-template-card__cat dar-template-card__cat--${category}`}>
+        {categoryLabel}
+      </span>
       <h3 className="dar-template-card__title">{title}</h3>
       <p className="dar-template-card__meta">{purpose}</p>
       <p className="dar-template-card__meta">Орган: {organ}</p>

@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 
-import { Alert, Button, Checkbox, Dialog, FileDropzone, ScreenStateView, parseScreenState } from '@dar/ui';
+import {
+  Alert,
+  Button,
+  Checkbox,
+  Dialog,
+  FileDropzone,
+  ScreenStateView,
+  parseScreenState,
+} from '@dar/ui';
 import { useSearchParams } from 'next/navigation';
 
 import { AnalysisProgressCard } from '../../../components/AnalysisProgressCard';
@@ -38,7 +46,8 @@ function fileTypeLabel(file: File): string {
   if (file.type) return file.type;
   const ext = file.name.split('.').pop()?.toLowerCase();
   if (ext === 'pdf') return 'application/pdf';
-  if (ext === 'docx') return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
+  if (ext === 'docx')
+    return 'application/vnd.openxmlformats-officedocument.wordprocessingml.document';
   if (ext === 'png') return 'image/png';
   return 'image/jpeg';
 }
@@ -49,7 +58,11 @@ type Props = {
   onOpenDocument?: (documentId: string, runId?: string | null) => void;
 };
 
-export default function UploadClient({ embedded = false, initialRunId = null, onOpenDocument }: Props) {
+export default function UploadClient({
+  embedded = false,
+  initialRunId = null,
+  onOpenDocument,
+}: Props) {
   const toast = useToast();
   const state = parseScreenState(useSearchParams().get('state'));
   const [medical, setMedical] = useState(false);
@@ -202,58 +215,63 @@ export default function UploadClient({ embedded = false, initialRunId = null, on
       {!embedded ? (
         <>
           <h1 className="dar-page-title">Новый анализ</h1>
-          <p className="dar-page-lead">PDF, DOCX или изображение — результат появится на этой странице.</p>
+          <p className="dar-page-lead">
+            PDF, DOCX или изображение — результат появится на этой странице.
+          </p>
         </>
       ) : null}
       <ScreenStateView
         state={state}
         ready={
           <div className="dar-stack">
-            <section className="dar-panel dar-panel--hero dar-stack" aria-labelledby="upload-hero-title">
+            <section
+              className="dar-panel dar-panel--hero dar-stack"
+              aria-labelledby="upload-hero-title"
+            >
               <h2 id="upload-hero-title" className="dar-subheading">
                 Загрузите документ
               </h2>
-            {limits ? (
-              <p className="dar-form-note" role="note">
-                Форматы: {limits.formats_label}. До {formatBytes(limits.max_bytes)}, не более {limits.max_pages}{' '}
-                страниц. Обычное время обработки — 1–5 минут.
-              </p>
-            ) : limitsError ? (
-              <Alert title="Не удалось загрузить лимиты" tone="warning">
-                {limitsError}
-              </Alert>
-            ) : null}
-
-            <FileDropzone
-              status={busy ? 'scanning' : actionError ? 'error' : file ? 'selected' : 'idle'}
-              fileName={file?.name ?? null}
-              errorText={actionError}
-              onFiles={(files) => {
-                setFile(files.item(0));
-                setActionError(null);
-              }}
-              accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
-            />
-
-            {file ? (
-              <div className="dar-panel dar-panel--inset" role="status">
-                <strong>{file.name}</strong>
-                <p className="dar-doc-card__meta">
-                  {formatBytes(file.size)} · {fileTypeLabel(file)}
+              {limits ? (
+                <p className="dar-form-note" role="note">
+                  Форматы: {limits.formats_label}. До {formatBytes(limits.max_bytes)}, не более{' '}
+                  {limits.max_pages} страниц. Обычное время обработки — 1–5 минут.
                 </p>
-              </div>
-            ) : null}
+              ) : limitsError ? (
+                <Alert title="Не удалось загрузить лимиты" tone="warning">
+                  {limitsError}
+                </Alert>
+              ) : null}
 
-            <Checkbox
-              id="upload-medical"
-              checked={medical}
-              onChange={setMedical}
-              label="Документ может содержать медицинские / данные о здоровье"
-            />
+              <FileDropzone
+                status={busy ? 'scanning' : actionError ? 'error' : file ? 'selected' : 'idle'}
+                fileName={file?.name ?? null}
+                errorText={actionError}
+                onFiles={(files) => {
+                  setFile(files.item(0));
+                  setActionError(null);
+                }}
+                accept=".pdf,.docx,.jpg,.jpeg,.png,application/pdf,image/jpeg,image/png"
+              />
 
-            <Button disabled={!file || busy} loading={busy} onClick={() => void runAnalyze()}>
-              {busy ? 'Загрузка…' : 'Проанализировать'}
-            </Button>
+              {file ? (
+                <div className="dar-panel dar-panel--inset" role="status">
+                  <strong>{file.name}</strong>
+                  <p className="dar-doc-card__meta">
+                    {formatBytes(file.size)} · {fileTypeLabel(file)}
+                  </p>
+                </div>
+              ) : null}
+
+              <Checkbox
+                id="upload-medical"
+                checked={medical}
+                onChange={setMedical}
+                label="Документ может содержать медицинские / данные о здоровье"
+              />
+
+              <Button disabled={!file || busy} loading={busy} onClick={() => void runAnalyze()}>
+                {busy ? 'Загрузка…' : 'Проанализировать'}
+              </Button>
             </section>
 
             {actionError ? (
@@ -323,7 +341,8 @@ export default function UploadClient({ embedded = false, initialRunId = null, on
                       >
                         <strong>{doc.display_name}</strong>
                         <span className="dar-doc-card__meta">
-                          {formatDocumentState(doc.state)} · {new Date(doc.updated_at).toLocaleString('ru-RU')}
+                          {formatDocumentState(doc.state)} ·{' '}
+                          {new Date(doc.updated_at).toLocaleString('ru-RU')}
                         </span>
                       </button>
                     </li>
@@ -332,11 +351,19 @@ export default function UploadClient({ embedded = false, initialRunId = null, on
               </section>
             ) : null}
 
-            <Dialog open={medicalOpen} title="Согласие на специальные категории" onClose={() => setMedicalOpen(false)}>
+            <Dialog
+              open={medicalOpen}
+              title="Согласие на специальные категории"
+              onClose={() => setMedicalOpen(false)}
+            >
               <p>
                 Для продолжения примите{' '}
                 {medicalDoc ? (
-                  <a href={`${getApiBase()}/legal/documents/${medicalDoc.id}/text`} target="_blank" rel="noreferrer">
+                  <a
+                    href={`${getApiBase()}/legal/documents/${medicalDoc.id}/text`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     {medicalDoc.consent_version}
                   </a>
                 ) : (

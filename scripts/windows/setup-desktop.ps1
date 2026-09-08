@@ -1,90 +1,96 @@
 #Requires -Version 5.1
-# Prepare desktop profile. Visible. Does not download PostgreSQL/Redis.
+# Build the source-based desktop profile. This is not a binary installer.
 $ErrorActionPreference = "Stop"
 $Root = Split-Path (Split-Path $PSScriptRoot -Parent) -Parent
-$LogDir = Join-Path $Root "artifacts\local-run"
-New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 
-function Step([string]$Name, [scriptblock]$Body) {
-  Write-Host "==> $Name"
-  & $Body
-  if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) { throw "Step failed: $Name" }
+function Invoke-Checked {
+  param([string]$File, [string[]]$Arguments)
+  & $File @Arguments
+  if ($LASTEXITCODE -ne 0) {
+    throw "Command failed (exit $LASTEXITCODE): $File"
+  }
 }
 
-$venvPy = Join-Path $Root "apps\api\.venv\Scripts\python.exe"
+# Probe the actual interpreter, not just whether the Windows py launcher exists.
 $pyLauncher = $null
-foreach ($c in @(
+foreach ($candidate in @(
     @{ File = "py"; Args = @("-3.12") },
     @{ File = "py"; Args = @("-3.13") },
     @{ File = "python"; Args = @() }
   )) {
-  if (Get-Command $c.File -ErrorAction SilentlyContinue) {
-    $pyLauncher = $c
-    break
+  if (-not (Get-Command $candidate.File -ErrorAction SilentlyContinue)) { continue }
+  $previousPreference = $ErrorActionPreference
+  try {
+    $ErrorActionPreference = "Continue"
+    & $candidate.File @($candidate.Args + @("-c", "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)")) 2>$null
+    $probeExit = $LASTEXITCODE
+  } finally {
+    $ErrorActionPreference = $previousPreference
   }
+  if ($probeExit -eq 0) { $pyLauncher = $candidate; break }
 }
-if (-not $pyLauncher) { throw "Python 3.12+ not found" }
+if (-not $pyLauncher) { throw "Python 3.12+ not found. Install Python and try again." }
+if (-not (Get-Command node -ErrorAction SilentlyContinue)) { throw "Node.js 20+ not found" }
+Invoke-Checked -File "node" -Arguments @("-e", "process.exit(Number(process.versions.node.split('.')[0]) >= 20 ? 0 : 1)")
 
+$pnpmFile = "pnpm"
+$pnpmPrefix = @()
+if (-not (Get-Command pnpm -ErrorAction SilentlyContinue)) {
+  if (-not (Get-Command corepack -ErrorAction SilentlyContinue)) {
+    throw "pnpm 9.15.9 or Corepack is required. See package.json packageManager."
+  }
+  $pnpmFile = "corepack"
+  $pnpmPrefix = @("pnpm")
+}
+Push-Location $Root
+try {
+  $pnpmVersion = & $pnpmFile @($pnpmPrefix + @("--version"))
+  if ($LASTEXITCODE -ne 0 -or ($pnpmVersion | Select-Object -Last 1).Trim() -ne "9.15.9") {
+    throw "Use pnpm 9.15.9, as pinned in package.json."
+  }
+} finally { Pop-Location }
+
+$venvPy = Join-Path $Root "apps\api\.venv\Scripts\python.exe"
 if (-not (Test-Path $venvPy)) {
-  Step "create venv" {
-    & $pyLauncher.File @($pyLauncher.Args + @("-m", "venv", (Join-Path $Root "apps\api\.venv")))
-  }
+  Write-Host "==> create venv"
+  Invoke-Checked -File $pyLauncher.File -Arguments @($pyLauncher.Args + @("-m", "venv", (Join-Path $Root "apps\api\.venv")))
 }
+Invoke-Checked -File $venvPy -Arguments @("-c", "import sys; sys.exit(0 if sys.version_info >= (3, 12) else 1)")
 
-Step "pip install API" {
-  & $venvPy -m pip install --upgrade pip
-  & $venvPy -m pip install -r (Join-Path $Root "apps\api\requirements.txt")
-  & $venvPy -m pip install -e (Join-Path $Root "packages\py_dar")
-  & $venvPy -m pip install aiosqlite pytest httpx
-}
+Write-Host "==> API dependencies"
+Invoke-Checked -File $venvPy -Arguments @("-m", "pip", "install", "--upgrade", "pip")
+Invoke-Checked -File $venvPy -Arguments @("-m", "pip", "install", "-r", (Join-Path $Root "apps\api\requirements.txt"))
+Invoke-Checked -File $venvPy -Arguments @("-m", "pip", "install", "-e", (Join-Path $Root "packages\py_dar"))
+Invoke-Checked -File $venvPy -Arguments @("-m", "pip", "install", "pytest", "httpx")
 
-$node = Get-Command node -ErrorAction SilentlyContinue
-if (-not $node) { throw "Node.js 20+ not found" }
-
-Step "web dependencies" {
-  Push-Location $Root
-  if (Get-Command pnpm -ErrorAction SilentlyContinue) {
-    pnpm install
-  } else {
-    corepack enable | Out-Null
-    corepack pnpm install
-  }
-  Pop-Location
-}
-
-Step "production Next.js build" {
-  Push-Location (Join-Path $Root "apps\web")
+Push-Location $Root
+try {
+  Write-Host "==> locked web dependencies"
+  Invoke-Checked -File $pnpmFile -Arguments @($pnpmPrefix + @("install", "--frozen-lockfile"))
+  Write-Host "==> production Next.js build"
   $env:NEXT_PUBLIC_API_BASE_URL = "http://127.0.0.1:8000"
-  if (Get-Command pnpm -ErrorAction SilentlyContinue) {
-    pnpm build
-  } else {
-    corepack pnpm build
-  }
-  Pop-Location
+  Invoke-Checked -File $pnpmFile -Arguments @($pnpmPrefix + @("--filter", "@dar/web", "build"))
+} finally { Pop-Location }
+if (-not (Test-Path (Join-Path $Root "apps\web\.next\BUILD_ID"))) {
+  throw "Production web BUILD_ID was not created"
 }
 
-Step "icon" {
-  & $venvPy (Join-Path $PSScriptRoot "build-dar-icon.py")
-}
-
+Write-Host "==> desktop assets"
+Invoke-Checked -File $venvPy -Arguments @((Join-Path $PSScriptRoot "build-dar-icon.py"))
 $fontScript = Join-Path $PSScriptRoot "install-form-font.ps1"
-if (Test-Path $fontScript) {
-  Step "fonts" { & powershell -NoProfile -ExecutionPolicy Bypass -File $fontScript }
-} else {
-  Write-Host "==> font installer missing"
-}
+if (-not (Test-Path $fontScript)) { throw "Form font installer missing: $fontScript" }
+Invoke-Checked -File "powershell" -Arguments @("-NoProfile", "-ExecutionPolicy", "Bypass", "-File", $fontScript)
 
-Step "sqlite schema" {
-  $env:APP_ENV = "desktop"
-  $data = Join-Path $env:LOCALAPPDATA "Docly\data"
-  New-Item -ItemType Directory -Force -Path $data | Out-Null
-  $env:DOCLY_DATA_DIR = $data
-  $env:PYTHONPATH = (Join-Path $Root "apps\api") + [IO.Path]::PathSeparator + (Join-Path $Root "packages\py_dar\src")
-  & $venvPy -c "from pathlib import Path; from app.desktop_boot import apply_desktop_env, migrate_sqlite; p=apply_desktop_env(data_dir=Path(r'$data')); migrate_sqlite(p); print(p)"
+Write-Host "==> SQLite schema"
+$env:APP_ENV = "desktop"
+if (-not $env:DOCLY_DATA_DIR) {
+  if (-not $env:LOCALAPPDATA) { throw "LOCALAPPDATA is missing; set DOCLY_DATA_DIR explicitly" }
+  $env:DOCLY_DATA_DIR = Join-Path $env:LOCALAPPDATA "Docly\data"
 }
+$env:PYTHONPATH = (Join-Path $Root "apps\api") + [IO.Path]::PathSeparator + (Join-Path $Root "packages\py_dar\src")
+# Read the path from the environment: apostrophes, spaces and Unicode are not code.
+Invoke-Checked -File $venvPy -Arguments @("-c", "import os; from pathlib import Path; from app.desktop_boot import apply_desktop_env, migrate_sqlite; p=apply_desktop_env(data_dir=Path(os.environ['DOCLY_DATA_DIR'])); migrate_sqlite(p); print(p)")
 
-Step "shortcuts" {
-  cscript //Nologo (Join-Path $PSScriptRoot "install-shortcuts.vbs")
-}
-
-Write-Host "Desktop setup complete. Double-click Docly."
+Write-Host "==> shortcuts"
+Invoke-Checked -File "cscript" -Arguments @("//Nologo", (Join-Path $PSScriptRoot "install-shortcuts.vbs"))
+Write-Host "Desktop source setup complete. Double-click Docly."

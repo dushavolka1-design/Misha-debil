@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Simple circuit breaker for provider calls."""
+
+from __future__ import annotations
 
 import time
 from dataclasses import dataclass

@@ -1,0 +1,40 @@
+name: Integrated installer progress
+on:
+  push:
+    branches: [release/docly-all-branches-20260908]
+    paths: ['.github/workflows/integrated-diagnostics.yml']
+permissions:
+  actions: read
+  contents: write
+jobs:
+  progress:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - name: Save progress for current integrated build
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import os, subprocess, json, base64, time, re
+          repo = os.environ['GITHUB_REPOSITORY']
+          branch = os.environ['GITHUB_REF_NAME']
+          run_id = '34266940257'
+          def gh(*args):
+              return subprocess.check_output(['gh', *args], text=True)
+          for attempt in range(20):
+              status = json.loads(gh('run', 'view', run_id, '--repo', repo, '--json', 'jobs,status,conclusion,headSha,url'))
+              content = '# Integrated build progress\n\n```json\n' + json.dumps(status, indent=2) + '\n```\n'
+              if status['status'] == 'completed' and status['conclusion'] != 'success':
+                  log = gh('run', 'view', run_id, '--repo', repo, '--log-failed')
+                  tail = '\n'.join(log.splitlines()[-120:])
+                  tail = re.sub(r'(?i)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', r'\1=[REDACTED]', tail)
+                  content += '\n```text\n' + tail + '\n```\n'
+              endpoint = 'repos/' + repo + '/contents/installer/INTEGRATED-PROGRESS.md'
+              old = subprocess.run(['gh', 'api', endpoint + '?ref=' + branch], capture_output=True, text=True)
+              body = {'message':'docs: record integrated build progress [skip ci]', 'branch':branch, 'content':base64.b64encode(content.encode()).decode()}
+              if old.returncode == 0: body['sha'] = json.loads(old.stdout)['sha']
+              subprocess.run(['gh','api','--method','PUT',endpoint,'--input','-','--silent'], input=json.dumps(body), text=True, check=True)
+              if status['status'] == 'completed': break
+              time.sleep(15)
+          PY

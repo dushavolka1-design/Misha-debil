@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+from collections.abc import Iterator
 
 import pytest
 
@@ -29,29 +30,44 @@ os.environ.setdefault("PAYMENT_PROVIDER", "fake_payment")
 os.environ.setdefault("EMAIL_PROVIDER", "fake_email")
 os.environ.setdefault("KMS_PROVIDER", "fake_kms")
 
-_TEST_DATABASE_URL = os.environ["DATABASE_URL"]
+
+def _clear_runtime_caches() -> None:
+    from app.db import get_engine, get_session_factory
+    from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
+    from app.settings import get_settings
+
+    get_settings.cache_clear()
+    get_engine.cache_clear()
+    get_session_factory.cache_clear()
+    get_sync_engine.cache_clear()
+    get_sync_session_factory.cache_clear()
 
 
 @pytest.fixture(autouse=True)
-def _restore_test_env_after_desktop() -> None:
-    yield
-    os.environ["APP_ENV"] = "test"
-    os.environ["DATABASE_URL"] = _TEST_DATABASE_URL
-    os.environ["OBJECT_STORAGE_PROVIDER"] = "fake_object_storage"
-    os.environ["DEMO_MODE"] = "true"
-    os.environ.pop("DOCLY_PROFILE", None)
-    os.environ.pop("DOCLY_DATA_DIR", None)
-    os.environ.pop("DOCLY_INSTANCE_TOKEN", None)
-    os.environ.pop("QUEUE_BACKEND", None)
+def _restore_test_env_after_desktop() -> Iterator[None]:
+    # Desktop helpers mutate process-wide settings. Restore the complete input
+    # environment, including provider and queue choices, even after a failure.
+    previous = dict(os.environ)
+    _clear_runtime_caches()
     try:
-        from app.db import get_engine, get_session_factory
-        from app.persistence.sync_db import get_sync_engine, get_sync_session_factory
-        from app.settings import get_settings
+        yield
+    finally:
+        for key in set(os.environ) - previous.keys():
+            del os.environ[key]
+        os.environ.update(previous)
+        _clear_runtime_caches()
 
-        get_settings.cache_clear()
-        get_engine.cache_clear()
-        get_session_factory.cache_clear()
-        get_sync_engine.cache_clear()
-        get_sync_session_factory.cache_clear()
-    except Exception:
-        pass
+
+@pytest.fixture(autouse=True)
+def _isolate_rate_limit_state() -> Iterator[None]:
+    from app.security.rate_limit import rate_limiter
+
+    # Every test gets the real limiter with unchanged thresholds. Requests within
+    # the same test still accumulate, so rate-limit regressions remain effective.
+    with rate_limiter._lock:
+        rate_limiter._events.clear()
+    try:
+        yield
+    finally:
+        with rate_limiter._lock:
+            rate_limiter._events.clear()

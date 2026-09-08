@@ -1,10 +1,12 @@
 from __future__ import annotations
 
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 
 from app.persistence.bootstrap import mark_blob_dirty
+from app.routers.analysis import get_analysis, get_doc_service
 from app.routers.auth import current_user
 from app.schemas_rules import (
     CompareDocumentsRequest,
@@ -21,8 +23,9 @@ from app.schemas_rules import (
     RunRulesRequest,
     RunRulesResponse,
 )
-from app.services.analysis.pipeline import AnalysisError, AnalysisStatus
-from app.services.rules.compare import CompareDoc, CompareError, compare_documents
+from app.services.analysis.pipeline import AnalysisError, AnalysisPipelineService, AnalysisRunRecord, AnalysisStatus
+from app.services.auth_consent import UserRecord
+from app.services.rules.compare import CompareDoc, CompareError, DiffItem, compare_documents
 from app.services.rules.compare_loader import build_compare_doc_from_run
 from app.services.rules.engine import registry_meta, run_rules
 from app.services.rules.feedback import FeedbackKind, FeedbackStore
@@ -34,12 +37,16 @@ router = APIRouter(prefix="/reports", tags=["reports"])
 
 
 def get_feedback(request: Request) -> FeedbackStore:
-    return request.app.state.feedback_store
+    store = request.app.state.feedback_store
+    if not isinstance(store, FeedbackStore):
+        raise RuntimeError("Feedback store is not initialized")
+    return store
 
 
-def _require_user(user: object) -> None:
+def _require_user(user: UserRecord | None) -> UserRecord:
     if not user:
         raise HTTPException(status_code=401, detail={"code": "unauthorized", "detail": "Not authenticated"})
+    return user
 
 
 def _hit_out(h: RuleHit) -> RuleHitOut:
@@ -57,11 +64,11 @@ def _hit_out(h: RuleHit) -> RuleHitOut:
     )
 
 
-def _dict_hit(h: dict) -> RuleHitOut:
+def _dict_hit(h: dict[str, Any]) -> RuleHitOut:
     return RuleHitOut(**h)
 
 
-def _map_diffs(items):
+def _map_diffs(items: list[DiffItem]) -> list[DiffItemOut]:
     return [
         DiffItemOut(
             change=i.change,
@@ -75,7 +82,9 @@ def _map_diffs(items):
     ]
 
 
-def _latest_ready_run(analysis_service, document_id: UUID, user_id: UUID):
+def _latest_ready_run(
+    analysis_service: AnalysisPipelineService, document_id: UUID, user_id: UUID
+) -> AnalysisRunRecord | None:
     runs = analysis_service.list_runs(document_id, user_id)
     for run in reversed(runs):
         if run.status == AnalysisStatus.READY:
@@ -83,7 +92,9 @@ def _latest_ready_run(analysis_service, document_id: UUID, user_id: UUID):
     return None
 
 
-def _load_compare_doc(request: Request, document_id: UUID, user, payload: dict | None) -> CompareDoc:
+def _load_compare_doc(
+    request: Request, document_id: UUID, user: UserRecord, payload: dict[str, Any] | None
+) -> CompareDoc:
     if payload:
         return CompareDoc(
             document_id=document_id,
@@ -94,8 +105,8 @@ def _load_compare_doc(request: Request, document_id: UUID, user, payload: dict |
             parties=list(payload.get("parties") or []),
             clauses=list(payload.get("clauses") or []),
         )
-    doc_service = request.app.state.doc_service
-    analysis_service = request.app.state.analysis_service
+    doc_service = get_doc_service(request)
+    analysis_service = get_analysis(request)
     try:
         doc = doc_service.get_owned(document_id, user.id)
     except UploadError as exc:
@@ -125,8 +136,8 @@ async def list_rules() -> RegistryOut:
 
 
 @router.post("/rules/run", response_model=RunRulesResponse)
-async def rules_run(body: RunRulesRequest, user=Depends(current_user)) -> RunRulesResponse:
-    _require_user(user)
+async def rules_run(body: RunRulesRequest, user: UserRecord | None = Depends(current_user)) -> RunRulesResponse:
+    user = _require_user(user)
     hits = run_rules(body.facts, document_type=body.document_type)
     model = [{**f, "origin": "model_inference"} for f in body.facts]
     return RunRulesResponse(
@@ -137,8 +148,10 @@ async def rules_run(body: RunRulesRequest, user=Depends(current_user)) -> RunRul
 
 
 @router.post("/compare", response_model=CompareResponse)
-async def compare(body: CompareRequest, request: Request, user=Depends(current_user)) -> CompareResponse:
-    _require_user(user)
+async def compare(
+    body: CompareRequest, request: Request, user: UserRecord | None = Depends(current_user)
+) -> CompareResponse:
+    user = _require_user(user)
     left = _load_compare_doc(request, body.left_document_id, user, body.left)
     right = _load_compare_doc(request, body.right_document_id, user, body.right)
     try:
@@ -160,9 +173,9 @@ async def compare(body: CompareRequest, request: Request, user=Depends(current_u
 async def compare_documents_route(
     body: CompareDocumentsRequest,
     request: Request,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> CompareResponse:
-    _require_user(user)
+    user = _require_user(user)
     left_id = body.document_ids[0]
     right_id = body.document_ids[1]
     left = _load_compare_doc(request, left_id, user, None)
@@ -183,8 +196,8 @@ async def compare_documents_route(
 
 
 @router.post("/export")
-async def export_report(body: ExportReportRequest, user=Depends(current_user)) -> Response:
-    _require_user(user)
+async def export_report(body: ExportReportRequest, user: UserRecord | None = Depends(current_user)) -> Response:
+    user = _require_user(user)
     hits = run_rules(body.facts, document_type=body.document_type)
     model = [{**f, "origin": "model_inference"} for f in body.facts]
     report = build_report(
@@ -212,9 +225,11 @@ async def export_report(body: ExportReportRequest, user=Depends(current_user)) -
 
 
 @router.post("/export/run")
-async def export_run(body: ExportRunRequest, request: Request, user=Depends(current_user)) -> Response:
-    _require_user(user)
-    analysis = request.app.state.analysis_service
+async def export_run(
+    body: ExportRunRequest, request: Request, user: UserRecord | None = Depends(current_user)
+) -> Response:
+    user = _require_user(user)
+    analysis = get_analysis(request)
     try:
         run = analysis.get_run(body.analysis_run_id, user.id)
     except AnalysisError as exc:
@@ -282,10 +297,10 @@ async def export_run(body: ExportRunRequest, request: Request, user=Depends(curr
 @router.post("/feedback", response_model=FeedbackResponse)
 async def feedback(
     body: FeedbackRequest,
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
     store: FeedbackStore = Depends(get_feedback),
 ) -> FeedbackResponse:
-    _require_user(user)
+    user = _require_user(user)
     ev = store.add(
         user_id=user.id,
         target_type=body.target_type,

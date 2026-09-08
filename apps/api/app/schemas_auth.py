@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
-from typing import Literal
+from typing import Any, Literal
 from uuid import UUID
 
 from pydantic import BaseModel, EmailStr, Field, model_validator
@@ -93,7 +93,7 @@ class PrivacyDashboardResponse(BaseModel):
     display_name: str = ""
     has_avatar: bool = False
     email_verified: bool
-    consents: list[dict]
+    consents: list[dict[str, Any]]
     deletion_requested_at: datetime | None
     export_requested_at: datetime | None
 
