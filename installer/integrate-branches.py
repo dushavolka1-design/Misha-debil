@@ -1,4 +1,4 @@
-"""Merge requested snapshots; preserve the reviewed backup README separately."""
+"""Merge pinned branch snapshots with reviewed documentation-only resolutions."""
 import os
 from pathlib import Path
 import subprocess
@@ -20,6 +20,56 @@ def git(*args, check=True):
     return result
 
 
+def resolve_documentation(name, sha):
+    conflicts = git('diff', '--name-only', '--diff-filter=U').stdout.splitlines()
+    if conflicts != ['README.md']:
+        return False
+    original = git('show', sha + ':README.md').stdout
+    archive = Path('docs/branch-history')
+    archive.mkdir(parents=True, exist_ok=True)
+    if name == 'backup-before-merge' and original == '# Misha-debil\n$\n':
+        (archive / 'backup-before-merge.README.md').write_text(original, encoding='utf-8')
+        git('checkout', '--ours', '--', 'README.md')
+    elif name == 'fix/docly-desktop-upgrade-safety' and sha == '59fe9e57b6bdf50083d5a261a45cb1ad4b6f092d':
+        # Both files were inspected. Safety README corrects obsolete PostgreSQL desktop docs.
+        # Preserve originals and explicitly distinguish this online installer from its offline alternative.
+        current = git('show', 'HEAD:README.md').stdout
+        (archive / 'pre-integration.README.md').write_text(current, encoding='utf-8')
+        (archive / 'desktop-safety.README.md').write_text(original, encoding='utf-8')
+        header = '''# Docly — объединённая Windows-версия
+
+## Основная сборка этой ветки
+
+Рабочая ветка: `release/docly-all-branches-20260908`, база PR: `master` (не `main`).
+Объединены снимки всех запрошенных веток; точный состав и доказательство включения: [installer/INTEGRATION.md](installer/INTEGRATION.md).
+Статус новой сборки: [installer/INTEGRATED-CI.md](installer/INTEGRATED-CI.md). Старый CI-RESULT.md относится к предыдущему EXE.
+
+```powershell
+git switch release/docly-all-branches-20260908
+pnpm installer:windows
+```
+
+Результат: `release/Docly-Setup-x64.exe`. Сборка требует Windows x64 и Inno Setup 6.3+.
+Этот быстрый установщик НЕ включает Node/Python и готовые зависимости: нужен интернет при первом запуске.
+Используются существующий launcher, SQLite и файловое хранилище; PostgreSQL/Redis/Docker не нужны.
+Установка для пользователя: `%LOCALAPPDATA%\\Programs\\Docly`. Проверки Node/Python, ярлыки и штатное удаление описаны в [installer/README.md](installer/README.md).
+Пользовательские данные сохраняются. Не путайте этот EXE с альтернативным offline-установщиком из `scripts/windows` ниже.
+
+Документация desktop-safety сохранена далее; её утверждения о встроенных runtime и offline-установке относятся ТОЛЬКО к альтернативной команде `scripts/windows/build-installer.ps1`, а не к `pnpm installer:windows`.
+Ручная приёмка Windows 10/11 и production-ready статус не заявляются.
+
+---
+
+'''
+        adjusted = original.replace('- Целевая основная ветка: `main`.', '- Историческая целевая ветка desktop-safety: `main`; для текущего объединения база PR — `master`.').replace('# После слияния PR используйте main.', '# Это альтернативная offline-сборка исходной desktop-safety ветки.').replace('## Windows: сборка из чистого клона', '## Альтернативная offline-сборка desktop-safety из чистого клона')
+        Path('README.md').write_text(header + adjusted, encoding='utf-8')
+    else:
+        return False
+    git('add', 'README.md', str(archive))
+    git('commit', '--no-edit')
+    return True
+
+
 def main():
     branch = os.environ['GITHUB_REF_NAME']
     if branch != 'release/docly-all-branches-20260908':
@@ -27,7 +77,6 @@ def main():
     git('config', 'user.name', 'github-actions[bot]')
     git('config', 'user.email', '41898282+github-actions[bot]@users.noreply.github.com')
     git('checkout', branch)
-    baseline = git('rev-parse', 'HEAD').stdout.strip()
     report = ['# All-branches integration evidence', '', 'main is not used as an input branch. Its current commit equals backup-before-merge; that shared history is necessarily included via the requested backup branch. Snapshots pinned on 2026-09-08.', '', '| Branch | Snapshot | Result |', '| --- | --- | --- |']
     try:
         for name, sha in BRANCHES:
@@ -37,26 +86,13 @@ def main():
             else:
                 options = ['--allow-unrelated-histories'] if name == 'backup-before-merge' else []
                 result = git('merge', '--no-ff', '--no-edit', *options, sha, '-m', f'Merge {name} into integrated Docly release', check=False)
-                resolved_backup = False
-                if result.returncode and name == 'backup-before-merge':
-                    conflicts = git('diff', '--name-only', '--diff-filter=U').stdout.splitlines()
-                    original = git('show', sha + ':README.md').stdout
-                    # Reviewed source contains a placeholder README and an empty docly file.
-                    # Preserve both READMEs instead of replacing product documentation.
-                    if conflicts == ['README.md'] and original == '# Misha-debil\n$\n':
-                        archive = Path('docs/branch-history/backup-before-merge.README.md')
-                        archive.parent.mkdir(parents=True, exist_ok=True)
-                        archive.write_text(original, encoding='utf-8')
-                        git('checkout', '--ours', '--', 'README.md')
-                        git('add', 'README.md', str(archive))
-                        git('commit', '--no-edit')
-                        resolved_backup = True
-                if result.returncode and not resolved_backup:
+                resolved = resolve_documentation(name, sha) if result.returncode else False
+                if result.returncode and not resolved:
                     conflicts = git('diff', '--name-only', '--diff-filter=U').stdout
                     report += [f'| {name} | {sha} | MERGE FAILED |', '', 'Unresolved conflicts (not discarded):', '```text', conflicts, result.stdout, result.stderr, '```']
                     git('merge', '--abort', check=False)
                     raise RuntimeError(f'Merge failed: {name}')
-                outcome = 'Merged; placeholder README archived in docs/branch-history, product README retained' if resolved_backup else 'Merged without conflicts'
+                outcome = 'Merged; reviewed README conflict resolved, originals in docs/branch-history' if resolved else 'Merged without conflicts'
             report.append(f'| {name} | {sha} | {outcome} |')
         for _, sha in BRANCHES:
             git('merge-base', '--is-ancestor', sha, 'HEAD')
