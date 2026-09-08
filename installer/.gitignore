@@ -1,0 +1,5 @@
+.stage/
+.tools/
+bootstrap.lock
+prepared.txt
+build-id.txt
