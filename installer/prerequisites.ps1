@@ -12,7 +12,7 @@ function Find-DoclyNode {
     if ($cmd) { $candidates += $cmd.Source }
     foreach ($exe in ($candidates | Select-Object -Unique)) {
         if (Test-Path -LiteralPath $exe) {
-            $v = & $exe -p 'Number(process.versions.node.split(".")[0]) >= 20 && process.arch === "x64"' 2>$null
+            $v = & $exe -p "Number(process.versions.node.split('.')[0]) >= 20 && process.arch === 'x64'" 2>$null
             if ($LASTEXITCODE -eq 0 -and "$v" -eq 'true') { return $exe }
         }
     }
@@ -37,7 +37,7 @@ function Find-DoclyPython {
         }
     }
     foreach ($c in $candidates) {
-        $out = @(& $c.Exe @($c.Args + @('-c', 'import sys,struct; assert sys.version_info >= (3,12) and struct.calcsize("P")==8; print(sys.executable)')) 2>$null)
+        $out = @(& $c.Exe @($c.Args + @('-c', "import sys,struct; assert sys.version_info >= (3,12) and struct.calcsize('P')==8; print(sys.executable)")) 2>$null)
         if ($LASTEXITCODE -eq 0 -and $out.Count -gt 0 -and (Test-Path -LiteralPath ([string]$out[-1]))) {
             return [string]$out[-1]
         }
