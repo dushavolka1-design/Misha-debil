@@ -12,24 +12,30 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - name: Save failed installer log excerpt
+      - name: Save installer status and failed log excerpt
         env:
           GH_TOKEN: ${{ github.token }}
-          SOURCE_RUN: '34257558249'
         run: |
-          gh run view "$SOURCE_RUN" --repo "$GITHUB_REPOSITORY" --log-failed > "$RUNNER_TEMP/installer-failure.log"
           python3 - <<'PY'
           import os, subprocess, json, base64, re
-          from pathlib import Path
           repo = os.environ['GITHUB_REPOSITORY']
           branch = os.environ['GITHUB_REF_NAME']
-          log = Path(os.environ['RUNNER_TEMP'], 'installer-failure.log').read_text()
-          log = '\n'.join(log.splitlines()[-160:])
-          log = re.sub(r'(?i)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', r'\1=[REDACTED]', log)
-          content = '# Installer failure diagnostic excerpt\n\nRun: https://github.com/' + repo + '/actions/runs/' + os.environ['SOURCE_RUN'] + '\n\n```text\n' + log + '\n```\n'
+          def gh(*args):
+              return subprocess.check_output(['gh', *args], text=True)
+          runs = json.loads(gh('run','list','--repo',repo,'--workflow','windows-installer.yml','--branch',branch,'--limit','5','--json','databaseId,headSha,status,conclusion'))
+          content = '# Installer diagnostic checkpoint\n\n'
+          for run in runs[:2]:
+              rid = str(run['databaseId'])
+              status = gh('run','view',rid,'--repo',repo,'--json','jobs,status,conclusion,headSha,url')
+              content += '## Run ' + rid + '\n\n```json\n' + json.dumps(json.loads(status), indent=2) + '\n```\n'
+              if run['status'] == 'completed' and run['conclusion'] == 'failure':
+                  log = gh('run','view',rid,'--repo',repo,'--log-failed')
+                  log = '\n'.join(log.splitlines()[-100:])
+                  log = re.sub(r'(?i)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', r'\1=[REDACTED]', log)
+                  content += '\n```text\n' + log + '\n```\n'
           endpoint = 'repos/' + repo + '/contents/installer/DIAGNOSTICS.md'
           old = subprocess.run(['gh', 'api', endpoint + '?ref=' + branch], capture_output=True, text=True)
-          body = {'message':'docs(installer): preserve blocking CI diagnostic', 'branch':branch, 'content':base64.b64encode(content.encode()).decode()}
+          body = {'message':'docs(installer): preserve CI status and diagnostic', 'branch':branch, 'content':base64.b64encode(content.encode()).decode()}
           if old.returncode == 0: body['sha'] = json.loads(old.stdout)['sha']
           subprocess.run(['gh', 'api', '--method','PUT', endpoint, '--input','-', '--silent'], input=json.dumps(body), text=True, check=True)
           PY
