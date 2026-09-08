@@ -70,28 +70,28 @@
           "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:09:53Z",
+          "conclusion": "success",
           "name": "Install, first launch, repeat launch, reinstall and uninstall",
           "number": 8,
           "startedAt": "2026-09-08T19:06:21Z",
-          "status": "in_progress"
+          "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:09:55Z",
+          "conclusion": "success",
           "name": "Keep evidence",
           "number": 9,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:09:53Z",
+          "status": "completed"
         },
         {
           "completedAt": "0001-01-01T00:00:00Z",
           "conclusion": "",
           "name": "Publish only tested integrated prerelease",
           "number": 10,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:09:55Z",
+          "status": "in_progress"
         },
         {
           "completedAt": "0001-01-01T00:00:00Z",
