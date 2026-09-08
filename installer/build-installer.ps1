@@ -19,7 +19,7 @@ Push-Location $Root
 try {
     $tracked = & git -c core.quotepath=false ls-files
     if ($LASTEXITCODE -ne 0) { throw 'git ls-files failed' }
-    $rootFiles = @('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', 'tsconfig.base.json', '.env.example')
+    $rootFiles = @('package.json', 'pnpm-lock.yaml', 'pnpm-workspace.yaml', 'turbo.json', 'tsconfig.base.json', '.env.example', 'sources/allowlist.json')
     $installerFiles = @('installer/first-run.ps1', 'installer/prerequisites.ps1', 'installer/check-running.ps1', 'installer/README.md')
     $deny = '^(apps/api/)?(uploads?|data)/|(^|/)(\.git|\.github|node_modules|\.venv|venv|artifacts|logs?|\.next|\.turbo|\.cache|\.pytest_cache|__pycache__|\.mypy_cache|\.ruff_cache|\.pnpm-store|test-results|playwright-report|coverage|tests?|__tests__|fixtures|user[_-]?data|pgdata|redis-data|tmp|temp|\.stage|\.tools)(/|$)|(^|/)\.env($|\.)|\.(log|pyc|pyo|db|sqlite3?|sqlite-wal|sqlite-shm|dump|bak|tmp|pem|key|pfx|p12|rdb|aof)$|(^|/)dump\.sql$'
     $manifest = @()
@@ -44,7 +44,7 @@ try {
     $revision = & git rev-parse HEAD
     if ($LASTEXITCODE -ne 0) { throw 'Cannot determine source revision' }
     [IO.File]::WriteAllText((Join-Path $Payload 'installer\build-id.txt'), [string]$revision)
-    foreach ($required in @('apps/api/requirements.txt', 'apps/web/package.json', 'apps/web/src/app/app/upload/UploadClient.tsx', 'packages/py_dar/pyproject.toml', 'scripts/windows/docly_launcher.py', 'scripts/windows/start-dar-silent.vbs', 'scripts/windows/assets/docly-icon.ico', '.env.example', 'installer/first-run.ps1')) {
+    foreach ($required in @('sources/allowlist.json', 'apps/api/requirements.txt', 'apps/web/package.json', 'apps/web/src/app/app/upload/UploadClient.tsx', 'packages/py_dar/pyproject.toml', 'scripts/windows/docly_launcher.py', 'scripts/windows/start-dar-silent.vbs', 'scripts/windows/assets/docly-icon.ico', '.env.example', 'installer/first-run.ps1')) {
         if (-not (Test-Path (Join-Path $Payload $required))) { throw "Required payload file missing: $required" }
     }
     $manifest += @('.npmrc', 'installer/build-id.txt')
