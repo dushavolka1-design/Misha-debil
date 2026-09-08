@@ -2,16 +2,16 @@
 
 ```json
 {
-  "conclusion": "",
+  "conclusion": "success",
   "headSha": "11b8e167657739751358beceedfabfe7d40db71d",
   "jobs": [
     {
-      "completedAt": "0001-01-01T00:00:00Z",
-      "conclusion": "",
+      "completedAt": "2026-09-08T19:10:09Z",
+      "conclusion": "success",
       "databaseId": 102198549947,
       "name": "integrated-windows",
       "startedAt": "2026-09-08T19:05:46Z",
-      "status": "in_progress",
+      "status": "completed",
       "steps": [
         {
           "completedAt": "2026-09-08T19:05:48Z",
@@ -86,50 +86,58 @@
           "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:10:03Z",
+          "conclusion": "success",
           "name": "Publish only tested integrated prerelease",
           "number": 10,
           "startedAt": "2026-09-08T19:09:55Z",
-          "status": "in_progress"
+          "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:10:05Z",
+          "conclusion": "success",
           "name": "Persist continuation checkpoint and failure evidence",
           "number": 11,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:10:03Z",
+          "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:10:05Z",
+          "conclusion": "success",
           "name": "Post Run actions/setup-node@v4",
           "number": 20,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:10:05Z",
+          "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:10:05Z",
+          "conclusion": "success",
           "name": "Post Run actions/setup-python@v5",
           "number": 21,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:10:05Z",
+          "status": "completed"
         },
         {
-          "completedAt": "0001-01-01T00:00:00Z",
-          "conclusion": "",
+          "completedAt": "2026-09-08T19:10:07Z",
+          "conclusion": "success",
           "name": "Post Run actions/checkout@v4",
           "number": 22,
-          "startedAt": "0001-01-01T00:00:00Z",
-          "status": "pending"
+          "startedAt": "2026-09-08T19:10:05Z",
+          "status": "completed"
+        },
+        {
+          "completedAt": "2026-09-08T19:10:07Z",
+          "conclusion": "success",
+          "name": "Complete job",
+          "number": 23,
+          "startedAt": "2026-09-08T19:10:07Z",
+          "status": "completed"
         }
       ],
       "url": "https://github.com/dushavolka1-design/Misha-debil/actions/runs/34266940257/job/102198549947"
     }
   ],
-  "status": "in_progress",
+  "status": "completed",
   "url": "https://github.com/dushavolka1-design/Misha-debil/actions/runs/34266940257"
 }
 ```
