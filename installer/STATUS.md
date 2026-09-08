@@ -1,42 +1,62 @@
-# Docly Windows installer — continuation checkpoint
+# Docly Windows installer — released checkpoint
 
-## Baseline / scope
-- Repo: dushavolka1-design/Misha-debil.
-- Working branch: `chore/docly-fast-windows-installer`, created from master `7ab48303efa92b2e52702256dcdd360c9540d273`.
-- astra/docly-windows-installer-20260906 has the same baseline SHA.
-- fix/docly-desktop-upgrade-safety was inspected at `59fe9e57b6bdf50083d5a261a45cb1ad4b6f092d`; no unrelated changes imported.
-- Current master desktop launcher uses SQLite/file storage, not PostgreSQL/Redis/Alembic. This is intentionally preserved. No product API/UI/schema/analysis changes.
-- Draft PR: https://github.com/dushavolka1-design/Misha-debil/pull/2 (base master). No merge performed.
+## Result, 2026-09-08
+**Windows installer built, automated smoke passed, GitHub prerelease published.**
 
-## Implemented
-- Inno Setup config, per-user installation to LOCALAPPDATA/Programs/Docly, desktop and Start Menu shortcuts, installed-programs registration and uninstaller.
-- Filtered tracked-source payload with secret/cache/data exclusions, SHA256 and size metadata.
-- Russian dependency checks, optional winget, official-site fallback.
-- First-run wrapper: local .env/random session secret, venv, existing Python requirements, pnpm 9.15.9, frozen JS dependencies, production Next build, original font/icon scripts, original VBS/launcher.
-- Windows Actions compile and smoke. Prerelease publication is gated on passing smoke. Failure artifacts are NOT releases.
-- CI result and diagnostics persisted in installer/CI-RESULT.md and installer/DIAGNOSTICS.md.
+- Release: https://github.com/dushavolka1-design/Misha-debil/releases/tag/docly-windows-0.1.0-ci.5.1
+- EXE: https://github.com/dushavolka1-design/Misha-debil/releases/download/docly-windows-0.1.0-ci.5.1/Docly-Setup-x64.exe
+- Build output: `release/Docly-Setup-x64.exe`; binary is a release asset, not committed into Git source history.
+- Size: **3,053,048 bytes**.
+- SHA256: `936ceeb7b6a5bf652f09d7fd80e1e5eaa3ac3142240557ccae112723f845c549` (matches GitHub asset digest).
+- Released source: `47873cda75018ebc3c58bb78f138ce60e06308e4`.
+- Successful run: https://github.com/dushavolka1-design/Misha-debil/actions/runs/34258968767
+- Full checks: `installer/CI-RESULT.md` and release asset `smoke-results.txt`.
+- PR: https://github.com/dushavolka1-design/Misha-debil/pull/2 (base master). No merge performed.
 
-## Latest work (2026-09-08, before release confirmation)
-- Last fully inspected build: `cc539e25d14c48f0896756d8b2711f7df29cba8a`; EXE built (3,052,350 bytes).
-- Installation, both shortcuts, registration, absence of .env/venv/node_modules in shipped payload passed.
-- Full Python/JS dependency installation and Next production compilation/typechecking passed.
-- API startup failed because the payload lacked `sources/allowlist.json`.
-- FIX committed at `47873cda75018ebc3c58bb78f138ce60e06308e4`: package that exact non-secret runtime config and require it during staging. A new Windows run was triggered; result not yet confirmed at this checkpoint.
-- Earlier fixed installer-only problems: Windows PowerShell native argument quoting, uninstaller included in running-process detection, upload UI source wrongly excluded by data filter.
-- Local JSON/YAML parsing and payload filter regression checks passed. Windows PowerShell syntax and Inno compilation passed in real CI.
+## Scope and baseline
+Working branch `chore/docly-fast-windows-installer` was created from master `7ab48303efa92b2e52702256dcdd360c9540d273`. astra/docly-windows-installer-20260906 had the same baseline SHA. fix/docly-desktop-upgrade-safety was inspected at `59fe9e57b6bdf50083d5a261a45cb1ad4b6f092d`; no unrelated changes imported.
 
-## Resume here
-1. Read installer/CI-RESULT.md and compare its Source commit with the latest implementation commit above (or any newer fix). Do not confuse old results with the latest run.
-2. Read actual Windows logs for any remaining installer/launcher blocker. installer-diagnostics.yml can retrieve job status/log excerpts; CI-RESULT includes API error tails.
-3. Wait for install -> first launch -> /live -> /ready -> /app/analyzer -> second launch -> stop -> reinstall preservation -> standard uninstall to pass.
-4. Verify GitHub prerelease and its EXE asset/size/SHA256. Only then report completion, update this checkpoint and PR.
-5. Do NOT claim manual Windows 10/11 GUI/winget tests passed; they have not been run. CI uses Windows Server 2022 and headless launcher. Existing unrelated monorepo JS/Python/security checks also fail; no unrelated fixes should be added.
+IMPORTANT: master desktop launcher uses SQLite/file storage, not PostgreSQL/Redis/Alembic. This existing architecture is preserved. No changes to product API, UI, document analysis, database schema or existing launcher files. Only existing `package.json` was modified; other additions are installer/CI/support files.
 
-## Environment / commands
-Assistant sandbox is Linux, without Windows/Inno/PowerShell, direct github.com DNS or a user browser. GitHub connector read/write works; Windows execution is via GitHub Actions.
-Rebuild on Windows: `pnpm installer:windows` (Inno Setup 6.3+ and Git required).
-Expected output: `release/Docly-Setup-x64.exe`. Binary is distributed as a release asset / CI artifact, not committed into Git source history.
-Use `[skip ci]` for checkpoint-only commits to avoid needless rebuilds.
+## Implemented files
+- `installer/docly.iss`
+- `installer/build-installer.ps1`
+- `installer/prerequisites.ps1`
+- `installer/first-run.ps1`
+- `installer/check-running.ps1`
+- `installer/smoke-test.ps1`
+- `installer/README.md`
+- `installer/.gitignore`, `release/.gitignore`
+- `.github/workflows/windows-installer.yml`
+- `.github/workflows/installer-diagnostics.yml`
+- `installer/STATUS.md`, `installer/CI-RESULT.md`, `installer/DIAGNOSTICS.md` (last file contains historical failure diagnostics, NOT the final release result).
+- `package.json`: added `installer:windows` command.
 
-## Known first-version limitations
-Internet required on first run. No code signature, no updater, no bundled Node/Python. Python packages retain original version ranges. User data, .env and logs intentionally survive uninstall. Existing runtime processes must be closed before install/uninstall; no unsafe blanket process killing.
+## Verified on Windows Server 2022 CI
+- Clean install to LOCALAPPDATA/Programs/Docly, both shortcuts, installed-programs registration.
+- Shipped payload excludes .git, real .env, prebuilt venv and node_modules.
+- First-run Python venv, original Python requirements, local pnpm 9.15.9, frozen JS dependencies, production Next.js build including typechecking, existing font/icon verification.
+- Generated random session secret; ALLOW_FAKE_PROVIDERS=true.
+- Existing SQLite initialization/migration, default ports 8000/3000.
+- HTTP 200 for `/live`, `/ready`, `/app/analyzer`.
+- Second launch reuses API/Web processes and preserves secret.
+- Launcher stop terminates API/Web.
+- Reinstall preserves .env and user database.
+- Standard registered uninstaller removes registration, shortcuts, launcher and generated venv; preserves user data/configuration.
+- Inno Setup compilation and Windows PowerShell syntax passed; local JSON/YAML parsing and payload-filter regressions passed.
+
+## Installer-only blockers fixed during CI
+Windows PowerShell native argument quoting; exclusion of installer/uninstaller from runtime-process detection; preservation of upload UI source; inclusion of required non-secret `sources/allowlist.json`. No unrelated product fixes.
+
+## Rebuild
+On Windows x64 with Git, Inno Setup 6.3+ and pnpm: `pnpm installer:windows`.
+Alternatively: `powershell -NoProfile -ExecutionPolicy Bypass -File installer/build-installer.ps1`.
+Node.js 20+ x64 and Python 3.12+ x64 are checked at installation. Missing dependencies offer winget or official download pages. First run downloads pnpm/JS/Python dependencies; Noto Sans is verified and downloaded only if missing/mismatched. No Docker, PostgreSQL or Redis runtime installation in this preserved desktop profile.
+
+## Remaining limitations / next work
+- This is an **unsigned prerelease**, not a fully certified Windows 10/11 release. Manual Windows 10/11 GUI, browser-opening and missing-dependency/winget scenarios remain untested. Headless CI validates the analyzer HTTP route, not a human browser session.
+- Requires internet on first run; Node/Python are not embedded. Original Python version ranges remain; no mass dependency changes.
+- Existing unrelated monorepo JS/Python/security checks fail. They were not fixed; PR not merged into master.
+- Data, .env and logs intentionally survive uninstall. Existing Docly processes must be stopped first; no unsafe blanket process killing.
+- Do not confuse historical DIAGNOSTICS.md failures with the successful final CI-RESULT.md.
+- Use `[skip ci]` for checkpoint-only commits. Do not change the product architecture to add PostgreSQL/Redis just to match the outdated prompt.
