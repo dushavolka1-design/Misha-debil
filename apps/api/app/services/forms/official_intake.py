@@ -4,8 +4,8 @@ from __future__ import annotations
 
 from typing import Any
 
-from app.services.forms.fill.generation_gates import is_test_synthetic_slug, pdf_is_synthetic_underlay
 from app.services.forms.catalog import utcnow
+from app.services.forms.fill.generation_gates import is_test_synthetic_slug, pdf_is_synthetic_underlay
 
 # Candidate act known from the official RU legal corpus name only.
 # The blank itself must be fetched from an allowlisted official host and approved by humans.
@@ -52,10 +52,10 @@ def record_arrival_editorial_intake(catalog: Any) -> dict[str, Any]:
             catalog.update_fields(
                 rec.id,
                 act_number=rec.act_number or ARRIVAL_OFFICIAL_CANDIDATE["act_number"],
-                act_title=rec.act_title or f"{ARRIVAL_OFFICIAL_CANDIDATE['act_title']} ({ARRIVAL_OFFICIAL_CANDIDATE['appendix']})",
+                act_title=rec.act_title
+                or f"{ARRIVAL_OFFICIAL_CANDIDATE['act_title']} ({ARRIVAL_OFFICIAL_CANDIDATE['appendix']})",
                 warning=(
-                    "Официальный бланк ещё не подтверждён по источнику. "
-                    "Доступен чеклист шагов, бланк не подставляется."
+                    "Официальный бланк ещё не подтверждён по источнику. Доступен чеклист шагов, бланк не подставляется."
                 ),
             )
     return note

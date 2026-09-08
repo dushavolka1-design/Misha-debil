@@ -1,9 +1,9 @@
-from __future__ import annotations
-
 """Medical section — approved sources only; never forge medical org documents."""
 
-from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from __future__ import annotations
+
+from dataclasses import dataclass
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -18,7 +18,7 @@ from app.services.sources.registry import SourceRegistry, SourceState
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class MedicalError(Exception):
@@ -79,7 +79,12 @@ class MedicalSectionService:
         src = self.sources.sources[snap.source_id]
         host = (src.host or "").lower()
         organ = (src.organ or "").lower()
-        ok_host = any(m in host for m in ("minzdrav", "rospotrebnadzor")) or "регион" in organ or "minzdrav" in organ or "роспотреб" in organ
+        ok_host = (
+            any(m in host for m in ("minzdrav", "rospotrebnadzor"))
+            or "регион" in organ
+            or "minzdrav" in organ
+            or "роспотреб" in organ
+        )
         if not ok_host and "минздрав" not in organ and "роспотребнадзор" not in organ:
             # Allow explicit regional official organs tagged in organ field
             if "official_regional" not in (src.criticality or "") and "regional" not in organ:

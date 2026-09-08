@@ -1,5 +1,12 @@
 import Link from 'next/link';
-import { FileSearch, FilePenLine, ShieldCheck, LockKeyhole, ScrollText, CheckCircle2 } from 'lucide-react';
+import {
+  FileSearch,
+  FilePenLine,
+  ShieldCheck,
+  LockKeyhole,
+  ScrollText,
+  CheckCircle2,
+} from 'lucide-react';
 
 import { CompactDisclaimer } from '../components/CompactDisclaimer';
 import { DocumentProcessIllustration } from '../components/DocumentProcessIllustration';
@@ -17,8 +24,8 @@ export default function LandingPage() {
                 Документы — по фактам из файла
               </h1>
               <p className="dar-landing-hero__lead">
-                Разберите договор или соберите шаблон без имитации портала госуслуг: факты, риски и поля
-                с опорой на файл и реестр источников.
+                Разберите договор или соберите шаблон без имитации портала госуслуг: факты, риски и
+                поля с опорой на файл и реестр источников.
               </p>
               <div className="dar-row dar-landing-hero__cta">
                 <Link href="/auth/register" className="dar-btn dar-btn--primary dar-btn--lg">
@@ -96,7 +103,10 @@ export default function LandingPage() {
               </span>
               <div>
                 <strong>Загрузите файл или выберите шаблон</strong>
-                <p>Документ уходит в защищённую обработку; шаблоны публикуются после проверки источника.</p>
+                <p>
+                  Документ уходит в защищённую обработку; шаблоны публикуются после проверки
+                  источника.
+                </p>
               </div>
             </li>
             <li className="dar-step-card">
@@ -105,7 +115,10 @@ export default function LandingPage() {
               </span>
               <div>
                 <strong>Получите структурированный результат</strong>
-                <p>Анализ показывает факты с уверенностью извлечения; генерация собирает поля без выдуманных норм.</p>
+                <p>
+                  Анализ показывает факты с уверенностью извлечения; генерация собирает поля без
+                  выдуманных норм.
+                </p>
               </div>
             </li>
             <li className="dar-step-card">
@@ -114,7 +127,10 @@ export default function LandingPage() {
               </span>
               <div>
                 <strong>Проверьте и решите со специалистом</strong>
-                <p>Сервис не заменяет юриста или врача — вы видите пробелы и готовитесь к консультации.</p>
+                <p>
+                  Сервис не заменяет юриста или врача — вы видите пробелы и готовитесь к
+                  консультации.
+                </p>
               </div>
             </li>
           </ol>
@@ -130,7 +146,10 @@ export default function LandingPage() {
                 <strong>
                   <LockKeyhole size={18} aria-hidden="true" /> Согласия до файла
                 </strong>
-                <p>Доступ к загрузке — после проверки согласий; медицинские данные — отдельное согласие.</p>
+                <p>
+                  Доступ к загрузке — после проверки согласий; медицинские данные — отдельное
+                  согласие.
+                </p>
               </article>
               <article className="dar-security-badge">
                 <strong>
@@ -142,7 +161,10 @@ export default function LandingPage() {
                 <strong>
                   <CheckCircle2 size={18} aria-hidden="true" /> Статус на карточке
                 </strong>
-                <p>Шаблон без проверки недоступен для заполнения и помечен как требующий проверки источника.</p>
+                <p>
+                  Шаблон без проверки недоступен для заполнения и помечен как требующий проверки
+                  источника.
+                </p>
               </article>
               <article className="dar-security-badge">
                 <strong>

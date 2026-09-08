@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
 import pytest
@@ -46,7 +45,9 @@ def test_desktop_uses_sqlite_file_queue_not_postgres(desktop_dir: Path) -> None:
     assert "postgresql" not in settings.database_url.lower()
     assert settings.queue_backend == "sqlite"
     assert settings.object_storage_provider == "file_object_storage"
-    assert str(desktop_dir) in settings.database_url.replace("\\", "/") or desktop_dir.as_posix() in settings.database_url.replace("\\", "/")
+    assert str(desktop_dir) in settings.database_url.replace(
+        "\\", "/"
+    ) or desktop_dir.as_posix() in settings.database_url.replace("\\", "/")
 
 
 def test_production_still_forbids_sqlite(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -72,10 +73,10 @@ def test_sqlite_migrate_and_queue_roundtrip(desktop_dir: Path) -> None:
     async def _run() -> None:
         assert await broker.ping()
         await broker.enqueue("dar-jobs", {"type": "scan", "document_id": "00000000-0000-0000-0000-000000000001"})
-        payload = await broker.pop("dar-jobs", timeout=0.2)
+        payload = await broker.pop("dar-jobs", wait_seconds=0.2)
         assert payload is not None
         assert payload["type"] == "scan"
-        empty = await broker.pop("dar-jobs", timeout=0.2)
+        empty = await broker.pop("dar-jobs", wait_seconds=0.2)
         assert empty is None
         await broker.aclose()
 
@@ -90,8 +91,9 @@ def test_sqlite_migrate_and_queue_roundtrip(desktop_dir: Path) -> None:
 
 
 def test_file_storage_persists_bytes(desktop_dir: Path) -> None:
-    from app.adapters.file_storage import FileObjectStorage
     import asyncio
+
+    from app.adapters.file_storage import FileObjectStorage
 
     storage = FileObjectStorage(root=desktop_dir / "objects")
 

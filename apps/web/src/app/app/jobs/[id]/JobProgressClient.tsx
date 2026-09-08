@@ -9,10 +9,14 @@ import { ServiceUnavailable } from '../../../../components/ServiceUnavailable';
 import { ApiError, fetchAnalysisProgress, fetchAnalysisRun } from '../../../../lib/apiClient';
 import { formatStatus } from '../../../../lib/statusLabels';
 
-type ProgressItem = { stage: string; percent: number; page?: number | null; error_code?: string | null };
+type ProgressItem = {
+  stage: string;
+  percent: number;
+  page?: number | null;
+  error_code?: string | null;
+};
 
 export default function JobProgressClient({ runId }: { runId: string }) {
-  const [title, setTitle] = useState<string>('Анализ документа');
   const [progress, setProgress] = useState<ProgressItem[]>([]);
   const [status, setStatus] = useState<string>('queued');
   const [error, setError] = useState<ApiError | null>(null);
@@ -28,7 +32,6 @@ export default function JobProgressClient({ runId }: { runId: string }) {
       ]);
       setStatus(run.status);
       setProgress(events);
-      setTitle(`Анализ · документ ${run.document_id.slice(0, 8)}…`);
     } catch (err) {
       setError(err instanceof ApiError ? err : new ApiError('network', 'Ошибка загрузки'));
     } finally {

@@ -59,14 +59,11 @@ class BaseAppSettings(BaseSettings):
 
         assert_providers_allowed(
             app_env=self.app_env,
-            allow_fake=self.allow_fake_providers
-            and self.app_env in {"local", "test", "desktop", "development"},
+            allow_fake=self.allow_fake_providers and self.app_env in {"local", "test", "desktop", "development"},
             selected=[
                 self.ocr_provider,
                 self.llm_provider,
-                self.object_storage_provider
-                if self.object_storage_provider != "s3"
-                else "s3",
+                self.object_storage_provider if self.object_storage_provider != "s3" else "s3",
                 self.malware_scanner_provider,
                 self.payment_provider,
                 self.email_provider,

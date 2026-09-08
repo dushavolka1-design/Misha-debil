@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from datetime import datetime
+from typing import Any
 from uuid import UUID
 
 from pydantic import BaseModel, Field
@@ -62,7 +63,7 @@ class BulkDeleteResponse(BaseModel):
 
 class ExportResponse(BaseModel):
     user_id: str
-    documents: list[dict]
+    documents: list[dict[str, Any]]
 
 
 class JobAckResponse(BaseModel):
@@ -81,5 +82,5 @@ class ErasureProofResponse(BaseModel):
     document_id: str
     state: str
     tombstone_at: str | None
-    blobs: list[dict]
+    blobs: list[dict[str, Any]]
     cache_cleared: bool

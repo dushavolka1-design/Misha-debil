@@ -8,7 +8,12 @@ import { ServiceUnavailable } from './ServiceUnavailable';
 import { ApiError, fetchAnalysisProgress, fetchAnalysisRun } from '../lib/apiClient';
 import { formatDocumentState, formatStage } from '../lib/statusLabels';
 
-type ProgressItem = { stage: string; percent: number; page?: number | null; error_code?: string | null };
+type ProgressItem = {
+  stage: string;
+  percent: number;
+  page?: number | null;
+  error_code?: string | null;
+};
 
 type Props = {
   runId: string;
@@ -27,7 +32,10 @@ export function AnalysisProgressCard({ runId, onReady, compact = false }: Props)
     setLoading(true);
     setError(null);
     try {
-      const [run, events] = await Promise.all([fetchAnalysisRun(runId), fetchAnalysisProgress(runId)]);
+      const [run, events] = await Promise.all([
+        fetchAnalysisRun(runId),
+        fetchAnalysisProgress(runId),
+      ]);
       setStatus(run.status);
       setDocumentId(run.document_id);
       setProgress(events);
@@ -35,7 +43,9 @@ export function AnalysisProgressCard({ runId, onReady, compact = false }: Props)
         onReady(run.document_id, runId);
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err : new ApiError('network', 'Ошибка загрузки прогресса'));
+      setError(
+        err instanceof ApiError ? err : new ApiError('network', 'Ошибка загрузки прогресса'),
+      );
     } finally {
       setLoading(false);
     }
@@ -61,7 +71,11 @@ export function AnalysisProgressCard({ runId, onReady, compact = false }: Props)
     return (
       <div className="dar-panel" role="alert">
         <p>{error.detail ?? error.message}</p>
-        <button type="button" className="dar-btn dar-btn--secondary dar-btn--sm" onClick={() => void load()}>
+        <button
+          type="button"
+          className="dar-btn dar-btn--secondary dar-btn--sm"
+          onClick={() => void load()}
+        >
           Повторить
         </button>
       </div>
@@ -69,7 +83,9 @@ export function AnalysisProgressCard({ runId, onReady, compact = false }: Props)
   }
 
   const pct = progress.length ? progress[progress.length - 1]!.percent : 0;
-  const stage = progress.length ? formatStage(progress[progress.length - 1]!.stage) : formatDocumentState(status);
+  const stage = progress.length
+    ? formatStage(progress[progress.length - 1]!.stage)
+    : formatDocumentState(status);
 
   return (
     <div className="dar-panel dar-stack" role="status" aria-live="polite">
@@ -90,7 +106,9 @@ export function AnalysisProgressCard({ runId, onReady, compact = false }: Props)
               <span className="dar-timeline__dot" aria-hidden="true" />
               <div>
                 <strong>{formatStage(ev.stage)}</strong>
-                {ev.error_code ? <span className="dar-status-text--danger"> · {ev.error_code}</span> : null}
+                {ev.error_code ? (
+                  <span className="dar-status-text--danger"> · {ev.error_code}</span>
+                ) : null}
                 <div className="dar-timeline__time">{ev.percent}%</div>
               </div>
             </li>

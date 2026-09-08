@@ -20,7 +20,7 @@ export default function RootLayout({ children }: { children: ReactNode }) {
   return (
     <html lang="ru">
       <head>
-        {/* eslint-disable-next-line @next/next/no-sync-scripts */}
+        {/* Load the local API address before client modules initialize. */}
         <script src="/docly-runtime.js" />
       </head>
       <body>{children}</body>

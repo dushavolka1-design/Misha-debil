@@ -6,7 +6,8 @@ import path from 'path';
 const SHOT_DIR = path.resolve(__dirname, '../../../artifacts/prompt6/screenshots');
 const EMOJI_RE = /\p{Extended_Pictographic}/u;
 const API = process.env.E2E_API_BASE_URL || 'http://127.0.0.1:8000';
-const WEB = process.env.PLAYWRIGHT_BASE_URL || process.env.E2E_WEB_BASE_URL || 'http://127.0.0.1:3000';
+const WEB =
+  process.env.PLAYWRIGHT_BASE_URL || process.env.E2E_WEB_BASE_URL || 'http://127.0.0.1:3000';
 
 function parseWeight(value: string): number {
   const n = Number.parseInt(value, 10);
@@ -83,7 +84,10 @@ test.describe('Prompt 6 — visual acceptance', () => {
     await page.goto('/app/analyzer');
     const weight = await page.evaluate(() => getComputedStyle(document.body).fontWeight);
     expect(parseWeight(weight)).toBeGreaterThanOrEqual(500);
-    fs.writeFileSync(path.join(SHOT_DIR, 't28-body-weight.json'), JSON.stringify({ fontWeight: weight }));
+    fs.writeFileSync(
+      path.join(SHOT_DIR, 't28-body-weight.json'),
+      JSON.stringify({ fontWeight: weight }),
+    );
   });
 
   test('p6_29_secondary_important_text', async ({ page }) => {
@@ -163,7 +167,9 @@ test.describe('Prompt 6 — visual acceptance', () => {
     for (const route of ['/', '/app/analyzer', '/app/generator']) {
       await page.goto(route);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
-      const serious = results.violations.filter((v) => ['serious', 'critical'].includes(v.impact || ''));
+      const serious = results.violations.filter((v) =>
+        ['serious', 'critical'].includes(v.impact || ''),
+      );
       expect(serious, `${route}: ${JSON.stringify(serious, null, 2)}`).toEqual([]);
     }
   });

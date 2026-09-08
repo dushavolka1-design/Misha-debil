@@ -35,8 +35,17 @@ def test_false_negative_missing_party_role() -> None:
 
 def test_contradictory_evidence_roles() -> None:
     facts = [
-        {"entity_type": "party.role", "raw_text": "покупатель", "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "покупатель"}, "same_party_hint": "A"},
-        {"entity_type": "party.role", "raw_text": "продавец", "citation": {"page": 1, "bbox": {"x": 2, "y": 2, "w": 1, "h": 1}, "quote": "продавец"}},
+        {
+            "entity_type": "party.role",
+            "raw_text": "покупатель",
+            "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "покупатель"},
+            "same_party_hint": "A",
+        },
+        {
+            "entity_type": "party.role",
+            "raw_text": "продавец",
+            "citation": {"page": 1, "bbox": {"x": 2, "y": 2, "w": 1, "h": 1}, "quote": "продавец"},
+        },
         {"entity_type": "party.name", "raw_text": "ООО А"},
         {"entity_type": "party.name", "raw_text": "ООО Б"},
     ]
@@ -52,8 +61,18 @@ def test_missing_context_dates() -> None:
 
 def test_end_before_start_true_positive() -> None:
     facts = [
-        {"entity_type": "doc.date.effective", "normalized_value": "2026-12-31", "raw_text": "31.12.2026", "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "31.12.2026"}},
-        {"entity_type": "doc.date.end", "normalized_value": "2026-01-01", "raw_text": "01.01.2026", "citation": {"page": 1, "bbox": {"x": 1, "y": 2, "w": 1, "h": 1}, "quote": "01.01.2026"}},
+        {
+            "entity_type": "doc.date.effective",
+            "normalized_value": "2026-12-31",
+            "raw_text": "31.12.2026",
+            "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "31.12.2026"},
+        },
+        {
+            "entity_type": "doc.date.end",
+            "normalized_value": "2026-01-01",
+            "raw_text": "01.01.2026",
+            "citation": {"page": 1, "bbox": {"x": 1, "y": 2, "w": 1, "h": 1}, "quote": "01.01.2026"},
+        },
     ]
     hits = [h for h in run_rules(facts) if h.rule_id == "date.end_before_start"]
     assert hits and hits[0].result_kind.value == "structural_conflict"
@@ -62,8 +81,18 @@ def test_end_before_start_true_positive() -> None:
 
 def test_duplicated_clauses_amount_conflict() -> None:
     facts = [
-        {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "RUB"}, "raw_text": "1000 RUB", "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "1000"}},
-        {"entity_type": "amount.value", "normalized_value": {"amount": "1000", "currency": "USD"}, "raw_text": "1000 USD", "citation": {"page": 2, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "1000"}},
+        {
+            "entity_type": "amount.value",
+            "normalized_value": {"amount": "1000", "currency": "RUB"},
+            "raw_text": "1000 RUB",
+            "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "1000"},
+        },
+        {
+            "entity_type": "amount.value",
+            "normalized_value": {"amount": "1000", "currency": "USD"},
+            "raw_text": "1000 USD",
+            "citation": {"page": 2, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "1000"},
+        },
     ]
     hits = [h for h in run_rules(facts) if h.rule_id == "conflict.dates_amounts_currency"]
     assert hits
@@ -71,7 +100,11 @@ def test_duplicated_clauses_amount_conflict() -> None:
 
 def test_no_forbidden_verdict_language() -> None:
     facts = [
-        {"entity_type": "dispute.jurisdiction", "raw_text": "г. Москва", "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "Москва"}},
+        {
+            "entity_type": "dispute.jurisdiction",
+            "raw_text": "г. Москва",
+            "citation": {"page": 1, "bbox": {"x": 1, "y": 1, "w": 1, "h": 1}, "quote": "Москва"},
+        },
     ]
     for h in run_rules(facts):
         lower = h.message.lower()
@@ -159,7 +192,9 @@ def test_feedback_does_not_mutate() -> None:
     store = FeedbackStore()
     target = "finding-1"
     before = []
-    ev = store.add(user_id=uuid4(), target_type="finding", target_id=target, kind=FeedbackKind.BAD_CITATION, comment="wrong bbox")
+    ev = store.add(
+        user_id=uuid4(), target_type="finding", target_id=target, kind=FeedbackKind.BAD_CITATION, comment="wrong bbox"
+    )
     assert ev.id
     assert store.for_target(target)[0].kind == FeedbackKind.BAD_CITATION
     # Explicit contract: feedback store is append-only and separate from results

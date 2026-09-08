@@ -17,7 +17,7 @@ from app.services.auth_consent import (
     AuthConsentStore,
     seed_demo_legal,
 )
-from app.services.billing.service import BillingError, BillingService, PRICE_TABLE, utcnow
+from app.services.billing.service import PRICE_TABLE, BillingError, BillingService, utcnow
 
 ROOT = Path(__file__).resolve().parents[3]
 LEGAL = ROOT / "legal"
@@ -65,7 +65,13 @@ def _register(client: TestClient, store: AuthConsentStore, email: str = "bill@ex
         )
     r = client.post(
         "/auth/register",
-        json={"email": email, "password": "longpassword1", "display_name": "Иван Тестов", "locale": "ru-RU", "accepts": accepts},
+        json={
+            "email": email,
+            "password": "longpassword1",
+            "display_name": "Иван Тестов",
+            "locale": "ru-RU",
+            "accepts": accepts,
+        },
     )
     assert r.status_code == 200, r.text
     token = r.json().get("verification_token_dev")
@@ -115,7 +121,9 @@ async def test_price_from_server_not_client(billing: BillingService) -> None:
 
 
 @pytest.mark.asyncio
-async def test_idempotent_payment_intent_no_double_charge(billing: BillingService, payment: FakePaymentProvider) -> None:
+async def test_idempotent_payment_intent_no_double_charge(
+    billing: BillingService, payment: FakePaymentProvider
+) -> None:
     uid, tid = uuid4(), uuid4()
     sub, _, _ = await billing.start_subscription(
         user_id=uid,

@@ -26,9 +26,7 @@ export class SectionErrorBoundary extends Component<Props, State> {
     if (this.state.error) {
       return (
         <div className="dar-callout dar-callout--danger" role="alert">
-          <h2 className="dar-subheading">
-            Раздел «{this.props.sectionLabel}» временно недоступен
-          </h2>
+          <h2 className="dar-subheading">Раздел «{this.props.sectionLabel}» временно недоступен</h2>
           <p className="dar-muted">
             Произошла ошибка интерфейса. Обновите страницу или вернитесь позже.
           </p>

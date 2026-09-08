@@ -9,7 +9,6 @@ import { Badge, Button, Checkbox, Input, ScreenStateView, Tabs, parseScreenState
 import { formatOutcome, formatStatus } from '../../../lib/statusLabels';
 import { useToast } from '../../../components/Toast';
 import {
-  ApiError,
   apiFetch,
   downloadBlob,
   exportEntryChecklistPdf,
@@ -107,7 +106,22 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
       timezone: 'Europe/Moscow',
       draft_consent: consent,
     }),
-    [citizenship, second, ageBand, visa, purpose, stayDays, entryDate, eaeu, invitation, host, region, dactylo, extension, consent],
+    [
+      citizenship,
+      second,
+      ageBand,
+      visa,
+      purpose,
+      stayDays,
+      entryDate,
+      eaeu,
+      invitation,
+      host,
+      region,
+      dactylo,
+      extension,
+      consent,
+    ],
   );
 
   async function evaluate() {
@@ -147,7 +161,9 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
   async function refresh() {
     if (!result?.snapshot_id) return;
     try {
-      const data = await apiFetch<EvalResult>(`/entry/snapshots/${result.snapshot_id}/refresh`, { method: 'POST' });
+      const data = await apiFetch<EvalResult>(`/entry/snapshots/${result.snapshot_id}/refresh`, {
+        method: 'POST',
+      });
       setResult(data);
     } catch (err) {
       setError(formatApiError(err, 'Не удалось обновить чеклист'));
@@ -174,8 +190,15 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
       <div className="dar-stack">
         {steps.map((step) => {
           const deadline = step.deadline as { explanation?: string } | undefined;
-          const sources = (step.official_sources as Array<{ title?: string; official_url?: string; state?: string }>) || [];
-          const fee = step.fee as { available?: boolean; message?: string; amount?: unknown; currency?: string } | undefined;
+          const sources =
+            (step.official_sources as Array<{
+              title?: string;
+              official_url?: string;
+              state?: string;
+            }>) || [];
+          const fee = step.fee as
+            | { available?: boolean; message?: string; amount?: unknown; currency?: string }
+            | undefined;
           return (
             <article key={String(step.rule_id)} className="dar-panel">
               <div className="dar-row" style={{ justifyContent: 'space-between' }}>
@@ -230,8 +253,8 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
         <>
           <h1 className="dar-page-title">Мастер въезда и пребывания</h1>
           <p className="dar-page-lead">
-            Ответьте на несколько вопросов — получите персональный чеклист шагов. Сервис не гарантирует допуск через
-            границу.
+            Ответьте на несколько вопросов — получите персональный чеклист шагов. Сервис не
+            гарантирует допуск через границу.
           </p>
         </>
       ) : null}
@@ -249,17 +272,30 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
                 hint="Код страны или «не указано», если не уверены"
                 placeholder="Например: UZ, TJ, KG"
               />
-              <Checkbox id="second" checked={second} onChange={setSecond} label="Есть второе гражданство" />
+              <Checkbox
+                id="second"
+                checked={second}
+                onChange={setSecond}
+                label="Есть второе гражданство"
+              />
               <label className="dar-field">
                 <span className="dar-field__label">Возраст</span>
-                <select className="dar-input" value={ageBand} onChange={(e) => setAgeBand(e.target.value as 'adult' | 'minor')}>
+                <select
+                  className="dar-input"
+                  value={ageBand}
+                  onChange={(e) => setAgeBand(e.target.value as 'adult' | 'minor')}
+                >
                   <option value="adult">Совершеннолетний</option>
                   <option value="minor">Несовершеннолетний</option>
                 </select>
               </label>
               <label className="dar-field">
                 <span className="dar-field__label">Визовый режим</span>
-                <select className="dar-input" value={visa} onChange={(e) => setVisa(e.target.value)}>
+                <select
+                  className="dar-input"
+                  value={visa}
+                  onChange={(e) => setVisa(e.target.value)}
+                >
                   {regimes.map((r) => (
                     <option key={r.id} value={r.id}>
                       {r.label}
@@ -269,7 +305,11 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
               </label>
               <label className="dar-field">
                 <span className="dar-field__label">Цель</span>
-                <select className="dar-input" value={purpose} onChange={(e) => setPurpose(e.target.value)}>
+                <select
+                  className="dar-input"
+                  value={purpose}
+                  onChange={(e) => setPurpose(e.target.value)}
+                >
                   <option value="tourism">Туризм / частный визит</option>
                   <option value="work">Работа</option>
                   <option value="study">Учёба</option>
@@ -277,22 +317,62 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
                   <option value="other">Иное</option>
                 </select>
               </label>
-              <Input id="stay" label="Планируемый срок (дней)" value={stayDays} onChange={(e) => setStayDays(e.target.value)} />
-              <Input id="entry" label="Дата въезда" type="date" value={entryDate} onChange={(e) => setEntryDate(e.target.value)} />
+              <Input
+                id="stay"
+                label="Планируемый срок (дней)"
+                value={stayDays}
+                onChange={(e) => setStayDays(e.target.value)}
+              />
+              <Input
+                id="entry"
+                label="Дата въезда"
+                type="date"
+                value={entryDate}
+                onChange={(e) => setEntryDate(e.target.value)}
+              />
               <Checkbox id="eaeu" checked={eaeu} onChange={setEaeu} label="ЕАЭС" />
-              <Checkbox id="inv" checked={invitation} onChange={setInvitation} label="Есть приглашение" />
+              <Checkbox
+                id="inv"
+                checked={invitation}
+                onChange={setInvitation}
+                label="Есть приглашение"
+              />
               <label className="dar-field">
                 <span className="dar-field__label">Принимающая сторона</span>
-                <select className="dar-input" value={host} onChange={(e) => setHost(e.target.value)}>
+                <select
+                  className="dar-input"
+                  value={host}
+                  onChange={(e) => setHost(e.target.value)}
+                >
                   <option value="none">Нет / не применимо</option>
                   <option value="individual">Физлицо</option>
                   <option value="org">Организация</option>
                 </select>
               </label>
-              <Input id="region" label="Регион / адрес (опционально)" value={region} onChange={(e) => setRegion(e.target.value)} />
-              <Checkbox id="ext" checked={extension} onChange={setExtension} label="Планирую продление / смену обстоятельств" />
-              <Checkbox id="dac" checked={dactylo} onChange={setDactylo} label="Возможны медосмотр или дактилоскопия" />
-              <Checkbox id="consent" checked={consent} onChange={setConsent} label="Согласен сохранить черновик анкеты" />
+              <Input
+                id="region"
+                label="Регион / адрес (опционально)"
+                value={region}
+                onChange={(e) => setRegion(e.target.value)}
+              />
+              <Checkbox
+                id="ext"
+                checked={extension}
+                onChange={setExtension}
+                label="Планирую продление / смену обстоятельств"
+              />
+              <Checkbox
+                id="dac"
+                checked={dactylo}
+                onChange={setDactylo}
+                label="Возможны медосмотр или дактилоскопия"
+              />
+              <Checkbox
+                id="consent"
+                checked={consent}
+                onChange={setConsent}
+                label="Согласен сохранить черновик анкеты"
+              />
               <div className="dar-row">
                 <Button onClick={() => void evaluate()}>Сформировать чеклист</Button>
                 <Button variant="secondary" onClick={() => void saveDraft()}>
@@ -315,7 +395,8 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
               <div className="dar-stack">
                 {result.unknown_case ? (
                   <p className="dar-form-note" role="status">
-                    Гражданство не указано — показаны только общие рекомендации без персонального списка документов.
+                    Гражданство не указано — показаны только общие рекомендации без персонального
+                    списка документов.
                   </p>
                 ) : null}
                 <p className="dar-muted">{result.disclaimer}</p>
@@ -325,7 +406,9 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
                 {(result.recommended_forms || []).length > 0 ? (
                   <section className="dar-panel dar-stack">
                     <h2 style={{ margin: 0, fontSize: '1.05rem' }}>Рекомендуемые шаблоны</h2>
-                    <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}>
+                    <ul
+                      style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gap: 10 }}
+                    >
                       {result.recommended_forms!.map((form) => (
                         <li key={form.form_id} className="dar-panel">
                           <div className="dar-row" style={{ justifyContent: 'space-between' }}>
@@ -336,15 +419,23 @@ export default function EntryWizardClient({ embedded = false }: { embedded?: boo
                           </div>
                           <p style={{ margin: '8px 0' }}>{form.reason}</p>
                           {form.fill_ready && !form.unavailable_reason && generationReady ? (
-                            <Link href={`/app/forms/${form.form_id}`} className="dar-btn dar-btn--primary dar-btn--sm">
+                            <Link
+                              href={`/app/forms/${form.form_id}`}
+                              className="dar-btn dar-btn--primary dar-btn--sm"
+                            >
                               Заполнить
                             </Link>
                           ) : form.form_kind === 'government_form' ? (
-                            <Link href={`/app/forms/${form.form_id}`} className="dar-btn dar-btn--primary dar-btn--sm">
+                            <Link
+                              href={`/app/forms/${form.form_id}`}
+                              className="dar-btn dar-btn--primary dar-btn--sm"
+                            >
                               Подготовить сведения
                             </Link>
                           ) : (
-                            <p className="dar-muted">{form.unavailable_reason || 'Шаблон пока недоступен для заполнения'}</p>
+                            <p className="dar-muted">
+                              {form.unavailable_reason || 'Шаблон пока недоступен для заполнения'}
+                            </p>
                           )}
                         </li>
                       ))}

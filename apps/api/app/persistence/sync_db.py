@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from functools import lru_cache
 
-from sqlalchemy import create_engine
+from sqlalchemy import Engine, create_engine
 from sqlalchemy.orm import Session, sessionmaker
 
 from app.settings import get_settings
@@ -19,10 +19,10 @@ def _sync_database_url(url: str) -> str:
 
 
 @lru_cache
-def get_sync_engine():
+def get_sync_engine() -> Engine:
     settings = get_settings()
     url = _sync_database_url(settings.database_url)
-    connect_args: dict = {}
+    connect_args: dict[str, bool | int] = {}
     if url.startswith("sqlite"):
         connect_args = {"check_same_thread": False, "timeout": 15}
     return create_engine(url, pool_pre_ping=not url.startswith("sqlite"), connect_args=connect_args)

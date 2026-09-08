@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from dar.providers.ports import OCRProvider, OcrDocumentResult, StoredObject
+from dar.providers.ports import OcrDocumentResult, OCRProvider, StoredObject
 
 
 class RuPrivateOCRProvider(OCRProvider):

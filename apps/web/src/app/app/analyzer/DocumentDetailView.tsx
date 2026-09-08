@@ -2,14 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import {
-  Badge,
-  Button,
-  ConfidenceIndicator,
-  DocumentViewer,
-  FindingCard,
-  Skeleton,
-} from '@dar/ui';
+import { Badge, Button, ConfidenceIndicator, DocumentViewer, FindingCard, Skeleton } from '@dar/ui';
 
 import { AnalysisProgressCard } from '../../../components/AnalysisProgressCard';
 import { DeleteDocumentDialog } from '../../../components/DeleteDocumentDialog';
@@ -63,7 +56,13 @@ function isRequisite(entityType: string): boolean {
   return REQUISITE_PREFIXES.some((p) => entityType.startsWith(p) || entityType === p);
 }
 
-function FindingFeedbackRow({ targetId, targetType }: { targetId: string; targetType: 'finding' | 'rule_hit' }) {
+function FindingFeedbackRow({
+  targetId,
+  targetType,
+}: {
+  targetId: string;
+  targetType: 'finding' | 'rule_hit';
+}) {
   const [msg, setMsg] = useState<string | null>(null);
   const [err, setErr] = useState<string | null>(null);
 
@@ -127,13 +126,22 @@ function CitationPreview({
         }
       : null;
   return (
-    <DocumentViewer pageLabel={`Страница ${page?.page_number ?? 1}`} quote={finding.citation.quote?.slice(0, 72)} highlight={highlight}>
+    <DocumentViewer
+      pageLabel={`Страница ${page?.page_number ?? 1}`}
+      quote={finding.citation.quote?.slice(0, 72)}
+      highlight={highlight}
+    >
       <p className="dar-doc-line">{finding.citation.quote || finding.raw_text}</p>
     </DocumentViewer>
   );
 }
 
-export default function DocumentDetailView({ documentId, runId: initialRunIdProp, onBack, onCompare }: Props) {
+export default function DocumentDetailView({
+  documentId,
+  runId: initialRunIdProp,
+  onBack,
+  onCompare,
+}: Props) {
   const [doc, setDoc] = useState<DocumentDetail | null>(null);
   const [run, setRun] = useState<AnalysisRun | null>(null);
   const [runId, setRunId] = useState<string | null>(initialRunIdProp ?? null);
@@ -217,7 +225,8 @@ export default function DocumentDetailView({ documentId, runId: initialRunIdProp
   const riskHits = useMemo(() => {
     if (!run) return [];
     return run.rule_hits.filter(
-      (h) => h.severity === 'high' || h.severity === 'medium' || h.result_kind === 'review_question',
+      (h) =>
+        h.severity === 'high' || h.severity === 'medium' || h.result_kind === 'review_question',
     );
   }, [run]);
 
@@ -276,7 +285,8 @@ export default function DocumentDetailView({ documentId, runId: initialRunIdProp
 
   const showSplit = tab === 'main' || tab === 'details';
   const advancedUnavailable = run?.status === 'ready' && run.llm_available !== true;
-  const localFactCount = run?.findings.filter((f) => f.entity_type !== 'analysis.capability').length ?? 0;
+  const localFactCount =
+    run?.findings.filter((f) => f.entity_type !== 'analysis.capability').length ?? 0;
 
   return (
     <div className="dar-stack">
@@ -293,7 +303,9 @@ export default function DocumentDetailView({ documentId, runId: initialRunIdProp
               {doc.detected_type ? ` · ${doc.detected_type.toUpperCase()}` : ''}
             </p>
           </div>
-          <Badge tone={doc.state === 'READY' ? 'success' : 'warning'}>{formatDocumentState(doc.state)}</Badge>
+          <Badge tone={doc.state === 'READY' ? 'success' : 'warning'}>
+            {formatDocumentState(doc.state)}
+          </Badge>
         </div>
         <div className="dar-row">
           {run?.status === 'ready' ? (
@@ -457,14 +469,17 @@ export default function DocumentDetailView({ documentId, runId: initialRunIdProp
             <section className="dar-stack">
               {riskHits.length ? (
                 riskHits.map((h) => (
-                  <article key={`${h.rule_id}-${h.message}`} className={`dar-risk-card dar-risk-card--${h.severity === 'high' ? 'high' : 'medium'}`}>
+                  <article
+                    key={`${h.rule_id}-${h.message}`}
+                    className={`dar-risk-card dar-risk-card--${h.severity === 'high' ? 'high' : 'medium'}`}
+                  >
                     <div className="dar-row dar-row--between">
                       <strong>{h.message}</strong>
-                      <Badge tone={h.severity === 'high' ? 'danger' : 'warning'}>{formatSeverity(h.severity)}</Badge>
+                      <Badge tone={h.severity === 'high' ? 'danger' : 'warning'}>
+                        {formatSeverity(h.severity)}
+                      </Badge>
                     </div>
-                    <p className="dar-muted">
-                      Правило · {formatUncertainty(h.uncertainty)}
-                    </p>
+                    <p className="dar-muted">Правило · {formatUncertainty(h.uncertainty)}</p>
                     <details>
                       <summary>Технические подробности</summary>
                       <p className="dar-mono">{h.rule_id}</p>
@@ -514,7 +529,9 @@ export default function DocumentDetailView({ documentId, runId: initialRunIdProp
                   <p role="status">Нет пунктов для выбранных фильтров.</p>
                 )}
               </section>
-              {showSplit ? <CitationPreview finding={activeFinding ?? null} page={activePage} /> : null}
+              {showSplit ? (
+                <CitationPreview finding={activeFinding ?? null} page={activePage} />
+              ) : null}
             </div>
           )}
         </>

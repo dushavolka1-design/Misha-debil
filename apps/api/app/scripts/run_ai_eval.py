@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Write AI eval artifact for CI / go-no-go evidence."""
+
+from __future__ import annotations
 
 from app.services.eval.runner import run_synthetic_eval, write_eval_artifact
 

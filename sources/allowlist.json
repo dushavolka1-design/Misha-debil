@@ -104,11 +104,5 @@
       "notes": "Consumer/health surveillance — medical section"
     }
   ],
-  "denied_examples": [
-    "consultant.ru",
-    "garant.ru",
-    "wikipedia.org",
-    "localhost",
-    "127.0.0.1"
-  ]
+  "denied_examples": ["consultant.ru", "garant.ru", "wikipedia.org", "localhost", "127.0.0.1"]
 }

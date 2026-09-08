@@ -3,21 +3,9 @@ from __future__ import annotations
 import re
 import unicodedata
 
-# Bidirectional / override controls used in spoofing
-_BIDI = dict.fromkeys(
-    (
-        "\u202a",
-        "\u202b",
-        "\u202c",
-        "\u202d",
-        "\u202e",
-        "\u2066",
-        "\u2067",
-        "\u2068",
-        "\u2069",
-        "\u200e",
-        "\u200f",
-    ),
+# str.translate indexes by Unicode code point, not one-character strings.
+_BIDI: dict[int, None] = dict.fromkeys(
+    map(ord, "\u202a\u202b\u202c\u202d\u202e\u2066\u2067\u2068\u2069\u200e\u200f"),
     None,
 )
 

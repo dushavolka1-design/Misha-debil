@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from enum import StrEnum
 from typing import Any
 from uuid import UUID, uuid4
@@ -9,8 +9,8 @@ from uuid import UUID, uuid4
 from dar.providers.ports import LLMProvider, OCRProvider, StoredObject
 
 from app.services.analysis.document_extract import extract_document_pages
-from app.services.analysis.local_facts import ai_unavailable_finding, extract_local_facts
 from app.services.analysis.layout import detect_layout
+from app.services.analysis.local_facts import ai_unavailable_finding, extract_local_facts
 from app.services.analysis.normalize_pages import normalize_pages_from_ocr
 from app.services.analysis.normalizers import (
     normalize_date,
@@ -25,7 +25,7 @@ from app.services.analysis.validate import reject_invalid_llm_findings, validate
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class AnalysisStatus(StrEnum):
@@ -189,9 +189,7 @@ class AnalysisPipelineService:
                 )
                 # Low native text — optional OCR provider for scans
                 avg_conf = (
-                    sum(p.confidence for p in ocr_result.pages) / len(ocr_result.pages)
-                    if ocr_result.pages
-                    else 0.0
+                    sum(p.confidence for p in ocr_result.pages) / len(ocr_result.pages) if ocr_result.pages else 0.0
                 )
                 if avg_conf < 0.5 and getattr(self.ocr, "name", "") not in {"fake_ocr", "unavailable"}:
                     try:
@@ -292,17 +290,17 @@ class AnalysisPipelineService:
 
                         valid, policy_dropped = filter_displayable_findings(valid)
                         run.rejected_llm.extend(policy_dropped)
-                        for f in valid:
+                        for llm_finding in valid:
                             finding_records.append(
                                 FindingRecord(
                                     id=uuid4(),
-                                    kind=f["kind"],
-                                    entity_type=f["entity_type"],
-                                    raw_text=f["raw_text"],
-                                    normalized_value=f.get("normalized_value"),
-                                    confidence=float(f["confidence"]),
-                                    uncertainty_state=f["uncertainty_state"],
-                                    citation=f["citation"],
+                                    kind=llm_finding["kind"],
+                                    entity_type=llm_finding["entity_type"],
+                                    raw_text=llm_finding["raw_text"],
+                                    normalized_value=llm_finding.get("normalized_value"),
+                                    confidence=float(llm_finding["confidence"]),
+                                    uncertainty_state=llm_finding["uncertainty_state"],
+                                    citation=llm_finding["citation"],
                                 ),
                             )
                         run.llm_available = True
@@ -415,11 +413,7 @@ class AnalysisPipelineService:
             run = self.store.runs.get(run_id)
             if run and run.user_id == user_id:
                 self.store.runs.pop(run_id, None)
-        remaining = [
-            run_id
-            for run_id in self.store.by_document.get(document_id, [])
-            if run_id in self.store.runs
-        ]
+        remaining = [run_id for run_id in self.store.by_document.get(document_id, []) if run_id in self.store.runs]
         if remaining:
             self.store.by_document[document_id] = remaining
         else:

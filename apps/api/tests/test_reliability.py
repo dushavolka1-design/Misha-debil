@@ -29,9 +29,10 @@ def test_circuit_breaker_half_open_recovery() -> None:
 
 
 def test_provider_outage_degraded_mode() -> None:
-    from dar.providers.fake import FakePaymentProvider
     import asyncio
     from uuid import uuid4
+
+    from dar.providers.fake import FakePaymentProvider
 
     p = FakePaymentProvider()
     p.outage = True

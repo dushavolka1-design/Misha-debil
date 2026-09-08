@@ -1,8 +1,24 @@
-from __future__ import annotations
-
 """Strict JSON Schema for LLM fact extraction. Extra fields are rejected."""
 
-FINDING_ITEM_SCHEMA: dict = {
+from __future__ import annotations
+
+from typing import Literal, TypedDict
+
+
+class JsonSchema(TypedDict, total=False):
+    type: Literal["object", "array", "string", "integer", "number", "boolean"]
+    additionalProperties: bool
+    required: list[str]
+    properties: dict[str, JsonSchema]
+    items: JsonSchema
+    enum: list[str]
+    minLength: int
+    maxLength: int
+    minimum: int | float
+    maximum: int | float
+
+
+FINDING_ITEM_SCHEMA: JsonSchema = {
     "type": "object",
     "additionalProperties": False,
     "required": [
@@ -75,7 +91,7 @@ FINDING_ITEM_SCHEMA: dict = {
     },
 }
 
-FACTS_RESPONSE_SCHEMA: dict = {
+FACTS_RESPONSE_SCHEMA: JsonSchema = {
     "type": "object",
     "additionalProperties": False,
     "required": ["findings"],

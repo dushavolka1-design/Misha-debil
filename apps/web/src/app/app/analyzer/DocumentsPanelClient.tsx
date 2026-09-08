@@ -57,7 +57,8 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
     return items.filter((doc) => {
       if (search && !doc.display_name.toLowerCase().includes(search.toLowerCase())) return false;
       if (stateFilter && doc.state.toLowerCase() !== stateFilter.toLowerCase()) return false;
-      if (typeFilter && (doc.detected_type ?? '').toLowerCase() !== typeFilter.toLowerCase()) return false;
+      if (typeFilter && (doc.detected_type ?? '').toLowerCase() !== typeFilter.toLowerCase())
+        return false;
       if (dateFilter) {
         const day = doc.updated_at.slice(0, 10);
         if (day !== dateFilter) return false;
@@ -82,7 +83,9 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
       await retryAnalysis(doc.latest_run_id);
       void load();
     } catch (err) {
-      setActionError(err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось повторить анализ');
+      setActionError(
+        err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось повторить анализ',
+      );
     } finally {
       setBusyId(null);
     }
@@ -95,7 +98,9 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
       const res = await startAnalysis(doc.id);
       onOpenDocument(doc.id, res.run_id);
     } catch (err) {
-      setActionError(err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось запустить анализ');
+      setActionError(
+        err instanceof ApiError ? (err.detail ?? err.message) : 'Не удалось запустить анализ',
+      );
     } finally {
       setBusyId(null);
     }
@@ -150,7 +155,11 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
         <div className="dar-filter-row">
           <label className="dar-field">
             <span className="dar-field__label">Статус</span>
-            <select className="dar-input" value={stateFilter} onChange={(e) => setStateFilter(e.target.value)}>
+            <select
+              className="dar-input"
+              value={stateFilter}
+              onChange={(e) => setStateFilter(e.target.value)}
+            >
               <option value="">Все</option>
               <option value="READY">Готов</option>
               <option value="PROCESSING">В обработке</option>
@@ -159,17 +168,21 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
             </select>
           </label>
           {types.length > 0 ? (
-          <label className="dar-field">
-            <span className="dar-field__label">Тип</span>
-            <select className="dar-input" value={typeFilter} onChange={(e) => setTypeFilter(e.target.value)}>
-              <option value="">Все</option>
-              {types.map((t) => (
-                <option key={t} value={t}>
-                  {t.toUpperCase()}
-                </option>
-              ))}
-            </select>
-          </label>
+            <label className="dar-field">
+              <span className="dar-field__label">Тип</span>
+              <select
+                className="dar-input"
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+              >
+                <option value="">Все</option>
+                {types.map((t) => (
+                  <option key={t} value={t}>
+                    {t.toUpperCase()}
+                  </option>
+                ))}
+              </select>
+            </label>
           ) : null}
           <label className="dar-field">
             <span className="dar-field__label">Дата обновления</span>
@@ -202,13 +215,18 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
             <li key={doc.id} className="dar-panel dar-doc-card">
               <div className="dar-row dar-row--between">
                 <label className="dar-check">
-                  <input type="checkbox" checked={selected.has(doc.id)} onChange={() => toggleSelect(doc.id)} />
+                  <input
+                    type="checkbox"
+                    checked={selected.has(doc.id)}
+                    onChange={() => toggleSelect(doc.id)}
+                  />
                   <strong>{doc.display_name}</strong>
                 </label>
                 <Badge>{formatDocumentState(doc.state)}</Badge>
               </div>
               <p className="dar-doc-card__meta">
-                {doc.detected_type ?? 'тип не определён'} · обновлён {new Date(doc.updated_at).toLocaleString('ru-RU')}
+                {doc.detected_type ?? 'тип не определён'} · обновлён{' '}
+                {new Date(doc.updated_at).toLocaleString('ru-RU')}
               </p>
               <div className="dar-row">
                 <Button
@@ -219,11 +237,21 @@ export default function DocumentsPanelClient({ onOpenDocument, onCompare }: Prop
                   Открыть
                 </Button>
                 {doc.latest_run_status === 'failed' ? (
-                  <Button variant="ghost" size="sm" disabled={busyId === doc.id} onClick={() => void onRetry(doc)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={busyId === doc.id}
+                    onClick={() => void onRetry(doc)}
+                  >
                     Повторить
                   </Button>
                 ) : doc.state === 'READY' && !doc.latest_run_id ? (
-                  <Button variant="ghost" size="sm" disabled={busyId === doc.id} onClick={() => void onStart(doc)}>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={busyId === doc.id}
+                    onClick={() => void onStart(doc)}
+                  >
                     Анализ
                   </Button>
                 ) : null}

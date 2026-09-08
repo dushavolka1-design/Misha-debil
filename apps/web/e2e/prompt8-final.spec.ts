@@ -19,7 +19,9 @@ const leasePdf = path.join(FIXTURES_DIR, 'lease_contract.pdf');
 const salePdf = path.join(FIXTURES_DIR, 'sale_contract.pdf');
 
 test.describe('Prompt 8 — UI без API', () => {
-  test('1. Landing 1440×1000: hero, две карточки, CTA, без пустого верхнего поля', async ({ page }) => {
+  test('1. Landing 1440×1000: hero, две карточки, CTA, без пустого верхнего поля', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/');
     const heroTitle = page.locator('#hero-title');
@@ -33,7 +35,9 @@ test.describe('Prompt 8 — UI без API', () => {
     await saveScreenshot(page, '01-landing-1440');
   });
 
-  test('2. Desktop navigation: только «Анализатор» и «Генерация», без sidebar', async ({ page }) => {
+  test('2. Desktop navigation: только «Анализатор» и «Генерация», без sidebar', async ({
+    page,
+  }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/app/analyzer');
     const nav = page.locator('nav.dar-main-nav');
@@ -83,7 +87,9 @@ test.describe('Prompt 8 — UI без API', () => {
     for (const route of ['/', '/app/analyzer']) {
       await page.goto(route);
       const results = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa']).analyze();
-      const serious = results.violations.filter((v) => ['serious', 'critical'].includes(v.impact || ''));
+      const serious = results.violations.filter((v) =>
+        ['serious', 'critical'].includes(v.impact || ''),
+      );
       expect(serious, JSON.stringify(serious, null, 2)).toEqual([]);
     }
   });
@@ -91,14 +97,19 @@ test.describe('Prompt 8 — UI без API', () => {
   test('visual regression: landing 1440×1000', async ({ page }) => {
     await page.setViewportSize({ width: 1440, height: 1000 });
     await page.goto('/');
-    await expect(page).toHaveScreenshot('landing-1440x1000.png', { fullPage: true, maxDiffPixelRatio: 0.03 });
+    await expect(page).toHaveScreenshot('landing-1440x1000.png', {
+      fullPage: true,
+      maxDiffPixelRatio: 0.03,
+    });
   });
 });
 
 test.describe('Prompt 8 — полный стек (API)', () => {
   test.beforeAll(async ({ request }) => {
     if (!fs.existsSync(leasePdf) || !fs.existsSync(salePdf)) {
-      throw new Error(`Запустите: python tests/fixtures/upload/build_fixtures.py (${FIXTURES_DIR})`);
+      throw new Error(
+        `Запустите: python tests/fixtures/upload/build_fixtures.py (${FIXTURES_DIR})`,
+      );
     }
     if (!(await apiHealthy(request))) {
       test.skip(true, 'API на :8000 недоступен — запустите scripts/windows/start-dar.ps1');
@@ -124,7 +135,9 @@ test.describe('Prompt 8 — полный стек (API)', () => {
     const input = page.locator('input[type="file"]');
     await input.setInputFiles(leasePdf);
     await page.getByRole('button', { name: /^Проанализировать$/i }).click();
-    await expect(page.getByText(/Файл загружен|обработк/i).first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/Файл загружен|обработк/i).first()).toBeVisible({
+      timeout: 60_000,
+    });
     await saveScreenshot(page, '03-analyzer-progress');
 
     await expect
@@ -154,7 +167,9 @@ test.describe('Prompt 8 — полный стек (API)', () => {
     const { documentId } = await uploadPdfAndWaitReady(page, leasePdf, 'lease_contract.pdf');
     await page.reload();
     await page.goto(`/app/analyzer?tab=documents&document=${documentId}`);
-    await expect(page.getByText(/7707083893|аренд|lease/i).first()).toBeVisible({ timeout: 60_000 });
+    await expect(page.getByText(/7707083893|аренд|lease/i).first()).toBeVisible({
+      timeout: 60_000,
+    });
   });
 
   test('9b. Compare двух synthetic документов', async ({ page }) => {
@@ -180,7 +195,10 @@ test.describe('Prompt 8 — полный стек (API)', () => {
     const feedbackPromise = page.waitForRequest(
       (req) => req.url().includes('/reports/feedback') && req.method() === 'POST',
     );
-    await page.getByRole('button', { name: /^Полезно$/i }).first().click();
+    await page
+      .getByRole('button', { name: /^Полезно$/i })
+      .first()
+      .click();
     const req = await feedbackPromise;
     expect(req.url()).toContain('/reports/feedback');
     const res = await request.post(req.url(), {
@@ -207,9 +225,14 @@ test.describe('Prompt 8 — полный стек (API)', () => {
       content_sha256: string | null;
     }>;
     expect(forms).toHaveLength(8);
-    const publishedGov = forms.filter((f) => f.status === 'published' && f.form_kind === 'government_form');
+    const publishedGov = forms.filter(
+      (f) => f.status === 'published' && f.form_kind === 'government_form',
+    );
     for (const f of publishedGov) {
-      expect(f.has_raw && f.content_sha256, `published gov form missing official raw/hash`).toBeTruthy();
+      expect(
+        f.has_raw && f.content_sha256,
+        `published gov form missing official raw/hash`,
+      ).toBeTruthy();
     }
     await saveScreenshot(page, '06-generator-catalog');
   });
@@ -217,7 +240,11 @@ test.describe('Prompt 8 — полный стек (API)', () => {
   test('12. Fill памятки сервиса: preview, validation, PDF', async ({ page, request }) => {
     await loginDemo(page);
     const formsRes = await request.get(`${API_BASE}/forms`);
-    const forms = (await formsRes.json()) as Array<{ id: string; slug: string; fill_ready: boolean }>;
+    const forms = (await formsRes.json()) as Array<{
+      id: string;
+      slug: string;
+      fill_ready: boolean;
+    }>;
     const arrival = forms.find((f) => f.slug === 'mvd.arrival_notice.app4');
     expect(arrival?.fill_ready).toBeFalsy();
     const medical = forms.find((f) => f.slug === 'medical.visit.memo');
@@ -268,7 +295,9 @@ test.describe('Prompt 8 — полный стек (API)', () => {
     await page.getByRole('button', { name: /Удалить навсегда/i }).click();
     await expect(page.getByText(/удалён|удален/i).first()).toBeVisible({ timeout: 30_000 });
     const docRes = await request.get(`${API_BASE}/documents/${documentId}`, {
-      headers: { cookie: (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join('; ') },
+      headers: {
+        cookie: (await page.context().cookies()).map((c) => `${c.name}=${c.value}`).join('; '),
+      },
     });
     expect([404, 403]).toContain(docRes.status());
   });

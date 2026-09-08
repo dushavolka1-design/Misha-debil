@@ -1,13 +1,20 @@
-from __future__ import annotations
-
 """Form fill service: immutable FormVersion, four-eyes publish, GeneratedForm audit."""
 
+from __future__ import annotations
+
 from dataclasses import dataclass, field
-from datetime import date, datetime, timezone
+from datetime import UTC, date, datetime
 from typing import Any
 from uuid import UUID, uuid4
 
-from app.services.forms.fill.coord_map import BBox, CoordinateMap, CoordField, OverflowStrategy, ReservedFor, ValueSource
+from app.services.forms.fill.coord_map import (
+    BBox,
+    CoordField,
+    CoordinateMap,
+    OverflowStrategy,
+    ReservedFor,
+    ValueSource,
+)
 from app.services.forms.fill.engine import ENGINE_VERSION, FillError, FillResult, fill_pdf
 from app.services.forms.fill.fonts import font_hash, resolve_allowed_font
 from app.services.forms.fill.generation_gates import (
@@ -24,7 +31,7 @@ from app.services.sources.registry import SourceRegistry, SourceState
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 @dataclass
@@ -326,7 +333,11 @@ class FormFillService:
                 return existing
         font_path = resolve_allowed_font()
         rec = FormVersionRecord(
-            id=existing_id if existing_id and self.versions.get(existing_id) and self.versions[existing_id].slug.startswith("worksheet.") else uuid4(),
+            id=existing_id
+            if existing_id
+            and self.versions.get(existing_id)
+            and self.versions[existing_id].slug.startswith("worksheet.")
+            else uuid4(),
             slug=f"worksheet.{slug}",
             form_version=WORKSHEET_FORM_VERSION,
             title=title,
@@ -375,7 +386,9 @@ class FormFillService:
         checklist = catalog_checklist(catalog_card, version=ver)
         blocked = bool(unavailable) or not ver or not catalog_card.get("fill_ready")
         if blocked or (ver and is_test_synthetic_slug(ver.slug)):
-            hint = "Заполните сведения и сверьте их с документами. Условия использования — в пользовательском соглашении."
+            hint = (
+                "Заполните сведения и сверьте их с документами. Условия использования — в пользовательском соглашении."
+            )
             if kind == "medical_memo":
                 hint = "Памятка сервиса станет доступна после публикации собственного шаблона."
             payload: dict[str, Any] = {
@@ -698,7 +711,9 @@ class FormFillService:
         if ver.source_snapshot_id and self.sources:
             snap = self.sources.snapshots.get(ver.source_snapshot_id)
             if snap and snap.state != SourceState.APPROVED:
-                raise FillError("source_not_approved", "Bound source not approved — generation blocked", http_status=409)
+                raise FillError(
+                    "source_not_approved", "Bound source not approved — generation blocked", http_status=409
+                )
             # If a newer approved snapshot exists for same source → block new gens
             if snap:
                 latest_approved = self.sources.approved_snapshot(snap.source_id)

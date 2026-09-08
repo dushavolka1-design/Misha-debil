@@ -80,13 +80,19 @@ export default function ProfileClient() {
   }
 
   async function requestExport() {
-    await fetch(`${getApiBase()}/privacy/export-request`, { method: 'POST', credentials: 'include' });
+    await fetch(`${getApiBase()}/privacy/export-request`, {
+      method: 'POST',
+      credentials: 'include',
+    });
     setMsg('Запрос экспорта отправлен');
     await refresh();
   }
 
   async function requestDelete() {
-    await fetch(`${getApiBase()}/privacy/delete-request`, { method: 'POST', credentials: 'include' });
+    await fetch(`${getApiBase()}/privacy/delete-request`, {
+      method: 'POST',
+      credentials: 'include',
+    });
     setDeleteOpen(false);
     setMsg('Запрос удаления отправлен (доступно даже без re-accept новой оферты)');
     await refresh();
@@ -133,7 +139,11 @@ export default function ProfileClient() {
     <div>
       <h1 className="dar-page-title">Профиль и приватность</h1>
       <p className="dar-page-lead">{displayName ? `${displayName} · ${email}` : email}</p>
-      {msg ? <Alert title="Статус" tone="info">{msg}</Alert> : null}
+      {msg ? (
+        <Alert title="Статус" tone="info">
+          {msg}
+        </Alert>
+      ) : null}
       <ScreenStateView
         state={state}
         ready={
@@ -196,13 +206,19 @@ export default function ProfileClient() {
                   panel: (
                     <div className="dar-stack">
                       <Alert title="Доказуемые согласия" tone="info">
-                        Можно скачать точный принятый текст по событию. Published версии неизменяемы.
+                        Можно скачать точный принятый текст по событию. Published версии
+                        неизменяемы.
                       </Alert>
                       <ul style={{ listStyle: 'none', padding: 0, display: 'grid', gap: 8 }}>
                         {consents.map((c) => (
                           <li key={c.consent_id} className="dar-panel">
                             <strong>{c.consent_id}</strong>
-                            <div style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)' }}>
+                            <div
+                              style={{
+                                fontSize: 'var(--dar-text-sm)',
+                                color: 'var(--dar-color-text-muted)',
+                              }}
+                            >
                               версия {c.active_version ?? '—'} · {c.status}
                               {c.last_action_at ? ` · ${c.last_action_at}` : ''}
                             </div>
@@ -227,8 +243,13 @@ export default function ProfileClient() {
                                   Доказательство акцепта
                                 </a>
                               ) : null}
-                              {c.status.startsWith('accepted') && c.consent_id !== 'terms_of_use' ? (
-                                <Button variant="ghost" size="sm" onClick={() => void withdraw(c.consent_id)}>
+                              {c.status.startsWith('accepted') &&
+                              c.consent_id !== 'terms_of_use' ? (
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  onClick={() => void withdraw(c.consent_id)}
+                                >
                                   Отозвать
                                 </Button>
                               ) : null}
@@ -267,13 +288,18 @@ export default function ProfileClient() {
                   panel: (
                     <div className="dar-stack">
                       <Alert title="Отмена в один поток" tone="info">
-                        Отмена автопродления и история платежей — в разделе подписки. Удаление способа оплаты и
-                        аккаунта не маскируются.
+                        Отмена автопродления и история платежей — в разделе подписки. Удаление
+                        способа оплаты и аккаунта не маскируются.
                       </Alert>
                       <a className="dar-btn dar-btn--secondary" href="/app/billing">
                         Открыть подписку и платежи
                       </a>
-                      <p style={{ fontSize: 'var(--dar-text-sm)', color: 'var(--dar-color-text-muted)' }}>
+                      <p
+                        style={{
+                          fontSize: 'var(--dar-text-sm)',
+                          color: 'var(--dar-color-text-muted)',
+                        }}
+                      >
                         Удаление аккаунта — вкладка «Экспорт / удаление».
                       </p>
                     </div>
@@ -285,7 +311,8 @@ export default function ProfileClient() {
                   panel: (
                     <div className="dar-stack">
                       <Alert title="Всегда доступно" tone="warning">
-                        Экспорт и удаление аккаунта доступны даже если вы не приняли новую существенную оферту.
+                        Экспорт и удаление аккаунта доступны даже если вы не приняли новую
+                        существенную оферту.
                       </Alert>
                       <Button variant="secondary" onClick={() => void requestExport()}>
                         Запросить экспорт
@@ -298,7 +325,11 @@ export default function ProfileClient() {
                 },
               ]}
             />
-            <Dialog open={deleteOpen} title="Подтверждение удаления" onClose={() => setDeleteOpen(false)}>
+            <Dialog
+              open={deleteOpen}
+              title="Подтверждение удаления"
+              onClose={() => setDeleteOpen(false)}
+            >
               <p>Будет erasure workflow. Сессии отзовутся.</p>
               <div className="dar-row">
                 <Button variant="danger" onClick={() => void requestDelete()}>
@@ -309,7 +340,11 @@ export default function ProfileClient() {
                 </Button>
               </div>
             </Dialog>
-            <Drawer open={privacyOpen} title="Политика данных" onClose={() => setPrivacyOpen(false)}>
+            <Drawer
+              open={privacyOpen}
+              title="Политика данных"
+              onClose={() => setPrivacyOpen(false)}
+            >
               <p>
                 ConsentEvent append-only. Медицинское согласие запрашивается только перед загрузкой
                 потенциально медицинского документа.

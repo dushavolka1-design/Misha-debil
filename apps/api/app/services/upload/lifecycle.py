@@ -5,7 +5,7 @@ import hmac
 import secrets
 import time
 from dataclasses import dataclass, field
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 from uuid import UUID, uuid4
 
@@ -14,15 +14,20 @@ from dar.providers.ports import KMSProvider, MalwareScanner, ObjectStorage
 from app.services.upload.encryption import Envelope, decrypt_envelope, encrypt_envelope
 from app.services.upload.filename import opaque_object_key, sanitize_display_filename
 from app.services.upload.fsm import DocumentState, InvalidTransition, can_user_download, transition
-from app.services.upload.retention import DEFAULT_RETENTION, MEDICAL_RETENTION, RetentionPolicy, expires_at, retention_for_kind
+from app.services.upload.retention import (
+    DEFAULT_RETENTION,
+    MEDICAL_RETENTION,
+    RetentionPolicy,
+    expires_at,
+    retention_for_kind,
+)
 from app.services.upload.validation import (
     DEFAULT_MAX_BYTES,
-    DetectedType,
     EXT_BY_TYPE,
+    DetectedType,
     harden_by_type,
     validate_upload,
 )
-
 
 PLAN_LIMITS: dict[str, dict[str, int]] = {
     "free": {"max_uploads_per_day": 20, "max_bytes": 10 * 1024 * 1024},
@@ -31,7 +36,7 @@ PLAN_LIMITS: dict[str, dict[str, int]] = {
 
 
 def utcnow() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 class UploadError(Exception):
@@ -386,7 +391,7 @@ class DocumentLifecycleService:
             raise UploadError("invalid_state", "Not clean; refuse processing", http_status=409)
 
         started = time.perf_counter()
-        data = await self._read_quarantine_plaintext(doc)
+        _data = await self._read_quarantine_plaintext(doc)
         # Sandbox limits: time budget; no network (enforced by not calling external clients here)
         if time.perf_counter() - started > self.sandbox_cpu_seconds:
             self._set_state(doc, DocumentState.FAILED)

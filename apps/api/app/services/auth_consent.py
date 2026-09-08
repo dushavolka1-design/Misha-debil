@@ -17,7 +17,6 @@ from app.security.crypto import (
     verify_password,
 )
 
-
 EVIDENCE_SCHEMA = "consent_evidence.v1"
 
 REQUIRED_AT_REGISTRATION = (
@@ -336,10 +335,7 @@ class AuthConsentService:
             active = self.store.active_legal(spec.consent_id, locale)
             if not active:
                 raise AuthConsentError("legal_missing", f"No active legal document for {spec.consent_id}")
-            if (
-                active.consent_version != spec.consent_version
-                or active.content_hash != spec.content_hash
-            ):
+            if active.consent_version != spec.consent_version or active.content_hash != spec.content_hash:
                 raise AuthConsentError(
                     "legal_version_mismatch",
                     "Consent version/hash does not match active published document",
@@ -653,7 +649,10 @@ class AuthConsentService:
 
     def medical_withdraw_consequences(self) -> dict[str, str]:
         return {
-            "summary": "Отзыв специального согласия останавливает новые загрузки/анализ потенциально медицинских документов.",
+            "summary": (
+                "Отзыв специального согласия останавливает новые "
+                "загрузки/анализ потенциально медицинских документов."
+            ),
             "erasure": "Связанные medical-derived артефакты ставятся в erasure workflow (RETENTION_*_NEEDS_REVIEW).",
             "account": "Аккаунт и обычные документы сохраняются, пока вы не запросите удаление аккаунта.",
         }

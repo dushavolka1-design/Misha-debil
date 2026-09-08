@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import date, datetime, timedelta, timezone
+from datetime import UTC, date, datetime, timedelta
 from pathlib import Path
 
 import pytest
@@ -14,7 +14,6 @@ from app.services.sources.url_policy import (
     validate_redirect_chain,
     validate_url,
 )
-
 
 ROOT = Path(__file__).resolve().parents[3]
 ALLOWLIST = str(ROOT / "sources" / "allowlist.json")
@@ -187,7 +186,7 @@ def test_stale_not_hidden(registry: SourceRegistry) -> None:
         },
     )
     snap = registry.fetch_and_parse(src.id)
-    snap.fetched_at = datetime.now(timezone.utc) - timedelta(hours=src.fetch_interval_hours * 2)
+    snap.fetched_at = datetime.now(UTC) - timedelta(hours=src.fetch_interval_hours * 2)
     due = registry.freshness_due()
     assert src.id in due
     assert snap.link_status == "stale"

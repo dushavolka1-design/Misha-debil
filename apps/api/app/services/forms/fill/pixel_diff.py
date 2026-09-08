@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Pixel-diff report for form fill CI — mask approved bboxes; outside ≈ 0."""
+
+from __future__ import annotations
 
 import json
 from dataclasses import asdict, dataclass, field
@@ -11,6 +11,7 @@ import pypdfium2 as pdfium
 from PIL import Image, ImageChops, ImageDraw
 
 from app.services.forms.fill.coord_map import CoordinateMap, ReservedFor
+from app.services.forms.fill.pixel_metrics import rgb_difference_metrics
 
 # Antialias / merge soft edges: documented technical tolerance (absolute RGB delta)
 TECHNICAL_TOLERANCE = 2
@@ -137,22 +138,8 @@ def compare_underlay_vs_output(
         outside = Image.composite(diff, black, inv)  # outside fillable zones
         inside = Image.composite(diff, black, mask)  # inside approved bboxes
 
-        outside_max = 0
-        outside_changed = 0
-        inside_changed = 0
-        # Use load() to avoid getdata deprecation and speed
-        ox = outside.load()
-        ix = inside.load()
-        w, h = a.size
-        for y in range(h):
-            for x in range(w):
-                op = ox[x, y]
-                if op != (0, 0, 0):
-                    outside_changed += 1
-                    outside_max = max(outside_max, max(op))
-                ip = ix[x, y]
-                if ip != (0, 0, 0):
-                    inside_changed += 1
+        outside_max, outside_changed = rgb_difference_metrics(outside)
+        _, inside_changed = rgb_difference_metrics(inside)
 
         box_match = True
         if i < len(coord_map.page_boxes):
@@ -168,9 +155,7 @@ def compare_underlay_vs_output(
                 f"outside mask max delta {outside_max} > tolerance {tolerance} "
                 f"(technical antialias allowance documented)",
             )
-        if inside_changed == 0 and any(
-            f.page == i and f.reserved_for == ReservedFor.NONE for f in coord_map.fields
-        ):
+        if inside_changed == 0 and any(f.page == i and f.reserved_for == ReservedFor.NONE for f in coord_map.fields):
             # may be empty fill — ok
             notes.append("no inside-mask pixel changes (empty or invisible fill)")
 

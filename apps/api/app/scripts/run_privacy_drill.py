@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """Privacy deletion + log canary drill — writes evidence under artifacts/drills/."""
+
+from __future__ import annotations
 
 import json
 import logging
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from uuid import uuid4
 
@@ -33,7 +33,7 @@ def main() -> None:
     logger.addHandler(h)
     canary = "CANARY_PASSPORT_4500_123456"
     logger.info("filename=secret.pdf extracted_text=%s", canary)
-    logger.info('quote dump: «%s»', "x" * 40)
+    logger.info("quote dump: «%s»", "x" * 40)
 
     leaked = any(canary in r for r in records) or any("extracted_text=" in r and canary in r for r in records)
     # Filter rewrites msg on extracted_text
@@ -41,7 +41,7 @@ def main() -> None:
 
     evidence = {
         "drill": "privacy_deletion_and_log_canary",
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(UTC).isoformat(),
         "synthetic_user_id": str(uuid4()),
         "deletion_status_simulated": "deletion_requested",
         "export_status_simulated": "export_requested",

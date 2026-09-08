@@ -28,18 +28,45 @@ class FontStatus:
     license_ok: bool = False
 
 
-def _load_manifest() -> dict:
+def _load_manifest() -> dict[str, str]:
     if not MANIFEST.is_file():
         return {}
-    return json.loads(MANIFEST.read_text(encoding="utf-8"))
+    payload: object = json.loads(MANIFEST.read_text(encoding="utf-8"))
+    if not isinstance(payload, dict):
+        raise ValueError("Font manifest must be an object")
+    manifest: dict[str, str] = {}
+    for key, value in payload.items():
+        if not isinstance(key, str) or not isinstance(value, str):
+            raise ValueError("Font manifest entries must be strings")
+        manifest[key] = value
+    return manifest
+
+
+def _asset_path(filename: str) -> Path:
+    # Reject Windows path syntax on every platform, including drive-relative
+    # paths and alternate data streams. Only bundled, single-component names
+    # are valid; resolving also detects symlinks pointing outside ASSETS.
+    if filename in {"", ".", ".."} or any(char in filename for char in "/\\:\x00"):
+        raise ValueError("Font assets must use local filenames")
+    candidate = ASSETS / filename
+    if candidate.resolve().parent != ASSETS.resolve():
+        raise ValueError("Font asset escapes bundled directory")
+    return candidate
 
 
 def bundled_font_status() -> FontStatus:
+    try:
+        return _bundled_font_status()
+    except (OSError, ValueError, RuntimeError):
+        # Do not expose arbitrary paths or malformed manifest contents in UI/logs.
+        return FontStatus(ok=False, reason="Не удалось проверить манифест или файлы комплектного шрифта.")
+
+
+def _bundled_font_status() -> FontStatus:
     manifest = _load_manifest()
-    filename = str(manifest.get("filename") or "NotoSans-Regular.ttf")
-    bundled = ASSETS / filename
-    expected = str(manifest.get("expected_sha256") or "").strip().lower()
-    license_file = ASSETS / str(manifest.get("license_file") or "LICENSE")
+    bundled = _asset_path(manifest.get("filename") or "NotoSans-Regular.ttf")
+    expected = (manifest.get("expected_sha256") or "").strip().lower()
+    license_file = _asset_path(manifest.get("license_file") or "LICENSE")
     license_ok = license_file.is_file() and "SIL OPEN FONT LICENSE" in license_file.read_text(encoding="utf-8").upper()
     if not expected:
         return FontStatus(ok=False, reason="Не зафиксирован SHA-256 шрифта форм.", license_ok=license_ok)

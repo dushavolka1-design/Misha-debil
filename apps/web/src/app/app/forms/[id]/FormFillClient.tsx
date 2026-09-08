@@ -18,7 +18,13 @@ import {
 import { SectionErrorBoundary } from '../../../../components/SectionErrorBoundary';
 import { useToast } from '../../../../components/Toast';
 import { getApiBase } from '../../../../lib/apiBase';
-import { ApiError, apiFetch, downloadBlob, downloadGeneratedPdf, formatApiError } from '../../../../lib/apiClient';
+import {
+  ApiError,
+  apiFetch,
+  downloadBlob,
+  downloadGeneratedPdf,
+  formatApiError,
+} from '../../../../lib/apiClient';
 import { checkAnswers, issueForField, normalizeField } from '../../../../lib/answerChecks';
 
 type FieldMeta = {
@@ -130,11 +136,15 @@ function FormFillInner({ formId }: { formId: string }) {
           );
           if (draftData?.draft?.answers) {
             const slug =
-              (data.available ? data.version?.slug : data.worksheet?.version?.slug) || data.catalog?.slug || '';
+              (data.available ? data.version?.slug : data.worksheet?.version?.slug) ||
+              data.catalog?.slug ||
+              '';
             const raw = draftData.draft.answers;
             const next: Record<string, string> = {};
             for (const [id, val] of Object.entries(raw)) {
-              next[id] = slug ? normalizeField(slug, id, val || '', { onBlur: true }).value : val || '';
+              next[id] = slug
+                ? normalizeField(slug, id, val || '', { onBlur: true }).value
+                : val || '';
             }
             setAnswers(next);
           }
@@ -161,7 +171,8 @@ function FormFillInner({ formId }: { formId: string }) {
   const sections = (pkg?.available ? pkg.sections : worksheet?.sections) || [];
   const underlayPath = pkg?.available ? pkg.underlay_url : worksheet?.underlay_url;
   const previewTitle = pkg?.available ? pkg.preview_title : worksheet?.preview_title;
-  const formSlug = (pkg?.available ? pkg.version?.slug : worksheet?.version?.slug) || pkg?.catalog?.slug || '';
+  const formSlug =
+    (pkg?.available ? pkg.version?.slug : worksheet?.version?.slug) || pkg?.catalog?.slug || '';
   const liveSchema = (pkg?.available ? pkg.field_schema : worksheet?.field_schema) || {};
   const steps = useMemo(() => [...sections.map((s) => s.label), 'Проверка'], [sections]);
 
@@ -351,11 +362,14 @@ function FormFillInner({ formId }: { formId: string }) {
     if (!versionId || !preDownload?.can_download) return;
     setError(null);
     try {
-      const data = await apiFetch<{ generated_id: string; preview: Record<string, unknown> }>('/forms/fill/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ form_version_id: versionId, answers, catalog_form_id: formId }),
-      });
+      const data = await apiFetch<{ generated_id: string; preview: Record<string, unknown> }>(
+        '/forms/fill/generate',
+        {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ form_version_id: versionId, answers, catalog_form_id: formId }),
+        },
+      );
       setGeneratedId(data.generated_id);
       setPreview(data.preview);
       setShowDownloadDialog(false);
@@ -442,7 +456,10 @@ function FormFillInner({ formId }: { formId: string }) {
 
   return (
     <div>
-      <div className="dar-row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
+      <div
+        className="dar-row"
+        style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}
+      >
         <div>
           <h1 className="dar-page-title">{pkg.catalog?.title}</h1>
           <p className="dar-page-lead">
@@ -465,24 +482,35 @@ function FormFillInner({ formId }: { formId: string }) {
           <div className="dar-stack">
             <p className="dar-form-note" role="note">
               Редакция {edition}
-              {pkg.catalog?.reviewed_at ? ` · проверено ${new Date(pkg.catalog.reviewed_at).toLocaleDateString('ru-RU')}` : ''}
+              {pkg.catalog?.reviewed_at
+                ? ` · проверено ${new Date(pkg.catalog.reviewed_at).toLocaleDateString('ru-RU')}`
+                : ''}
             </p>
             {pkg.catalog?.warning ? <p className="dar-muted">{pkg.catalog.warning}</p> : null}
             {pkg.catalog?.official_url ? (
               <p>
                 Официальный источник:{' '}
-                <a href={pkg.catalog.official_url} className="dar-link" target="_blank" rel="noreferrer">
+                <a
+                  href={pkg.catalog.official_url}
+                  className="dar-link"
+                  target="_blank"
+                  rel="noreferrer"
+                >
                   {pkg.catalog.official_url}
                 </a>
               </p>
             ) : null}
             {usingWorksheet || fillable ? (
               <Alert title="Проверка при вводе" tone="info">
-                Ошибки показываются сразу в поле: гражданство, написание «Паспорт», номера с карты. Однозначные
-                опечатки и формулировку заявления сервис подставляет сам. Исправляйте на этом шаге, не в конце.
+                Ошибки показываются сразу в поле: гражданство, написание «Паспорт», номера с карты.
+                Однозначные опечатки и формулировку заявления сервис подставляет сам. Исправляйте на
+                этом шаге, не в конце.
               </Alert>
             ) : null}
-            <ol className="dar-row" style={{ flexWrap: 'wrap', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}>
+            <ol
+              className="dar-row"
+              style={{ flexWrap: 'wrap', gap: 8, listStyle: 'none', padding: 0, margin: 0 }}
+            >
               {steps.map((label, idx) => (
                 <li key={label}>
                   <Badge tone={idx === step ? 'info' : 'neutral'}>
@@ -509,8 +537,14 @@ function FormFillInner({ formId }: { formId: string }) {
                   const editable = field.user_editable !== false && !field.manual_only;
                   if (!editable) {
                     return (
-                      <div key={field.field_id} className="dar-form-note" style={fieldHighlight(field)}>
-                        <strong>{field.label}.</strong> {field.hint || 'Заполняется вручную после печати. Сервис это поле не ставит.'}
+                      <div
+                        key={field.field_id}
+                        className="dar-form-note"
+                        style={fieldHighlight(field)}
+                      >
+                        <strong>{field.label}.</strong>{' '}
+                        {field.hint ||
+                          'Заполняется вручную после печати. Сервис это поле не ставит.'}
                       </div>
                     );
                   }
@@ -545,7 +579,11 @@ function FormFillInner({ formId }: { formId: string }) {
                           </p>
                         ) : null}
                         {fieldError ? (
-                          <p className="dar-field__error" id={`${field.field_id}-error`} role="alert">
+                          <p
+                            className="dar-field__error"
+                            id={`${field.field_id}-error`}
+                            role="alert"
+                          >
                             {fieldError}
                           </p>
                         ) : null}
@@ -596,7 +634,11 @@ function FormFillInner({ formId }: { formId: string }) {
                   type="application/pdf"
                   className="dar-iframe-preview"
                 >
-                  <a href={previewUrl || `${getApiBase()}${underlayPath}`} target="_blank" rel="noreferrer">
+                  <a
+                    href={previewUrl || `${getApiBase()}${underlayPath}`}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
                     Открыть макет PDF
                   </a>
                 </object>
@@ -611,7 +653,11 @@ function FormFillInner({ formId }: { formId: string }) {
               </div>
             ) : null}
             {showDownloadDialog && preDownload ? (
-              <div className="dar-panel dar-stack" role="dialog" aria-labelledby="predownload-title">
+              <div
+                className="dar-panel dar-stack"
+                role="dialog"
+                aria-labelledby="predownload-title"
+              >
                 <h2 id="predownload-title" style={{ margin: 0 }}>
                   Перед скачиванием
                 </h2>
@@ -620,7 +666,10 @@ function FormFillInner({ formId }: { formId: string }) {
                 </p>
                 <p>Дата проверки: {new Date(preDownload.checked_at).toLocaleString('ru-RU')}</p>
                 {usingWorksheet || !pkg.catalog?.source ? (
-                  <p>Перед подачей сверьте файл с документами. Условия использования — в пользовательском соглашении.</p>
+                  <p>
+                    Перед подачей сверьте файл с документами. Условия использования — в
+                    пользовательском соглашении.
+                  </p>
                 ) : (
                   <p>Официальный источник указан в карточке шаблона.</p>
                 )}
@@ -657,7 +706,11 @@ function FormFillInner({ formId }: { formId: string }) {
                 justifyContent: 'space-between',
               }}
             >
-              <Button variant="secondary" onClick={() => setStep((s) => Math.max(0, s - 1))} disabled={step === 0}>
+              <Button
+                variant="secondary"
+                onClick={() => setStep((s) => Math.max(0, s - 1))}
+                disabled={step === 0}
+              >
                 Назад
               </Button>
               <div className="dar-row">

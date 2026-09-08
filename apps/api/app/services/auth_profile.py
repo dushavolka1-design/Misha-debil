@@ -83,8 +83,8 @@ def decode_avatar_jpeg(data_url: str | None) -> bytes | None:
     except ImportError as exc:
         raise AuthConsentError("invalid_avatar", "Обработка изображения недоступна") from exc
     try:
-        image = Image.open(io.BytesIO(raw))
-        image = image.convert("RGB")
+        with Image.open(io.BytesIO(raw)) as source:
+            image = source.convert("RGB")
         image.thumbnail((AVATAR_SIDE, AVATAR_SIDE))
         canvas = Image.new("RGB", (AVATAR_SIDE, AVATAR_SIDE), (255, 255, 255))
         x = (AVATAR_SIDE - image.width) // 2

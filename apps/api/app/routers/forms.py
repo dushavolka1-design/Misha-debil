@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import base64
 from datetime import date
+from typing import Any
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, Query, Request
@@ -19,7 +20,7 @@ from app.schemas_forms import (
     MedicalPdfRequest,
     MedicalProcedureRegisterRequest,
 )
-from app.services.auth_consent import AuthConsentError, AuthConsentService
+from app.services.auth_consent import AuthConsentError, AuthConsentService, UserRecord
 from app.services.forms.catalog import FormCatalogService, FormError
 from app.services.forms.medical import MedicalError, MedicalSectionService
 from app.services.forms.pdf_memo import MedicalPdfError, describe_policy
@@ -28,11 +29,17 @@ router = APIRouter(prefix="/forms", tags=["forms-catalog"])
 
 
 def get_forms(request: Request) -> FormCatalogService:
-    return request.app.state.form_catalog
+    service = request.app.state.form_catalog
+    if not isinstance(service, FormCatalogService):
+        raise RuntimeError("Form catalog service is not initialized")
+    return service
 
 
 def get_medical(request: Request) -> MedicalSectionService:
-    return request.app.state.medical_section
+    service = request.app.state.medical_section
+    if not isinstance(service, MedicalSectionService):
+        raise RuntimeError("Medical section service is not initialized")
+    return service
 
 
 def _http_form(exc: FormError) -> None:
@@ -96,7 +103,7 @@ async def list_categories() -> list[dict[str, str]]:
 
 
 @router.get("/mvp-verification")
-async def mvp_verification(service: FormCatalogService = Depends(get_forms)) -> dict:
+async def mvp_verification(service: FormCatalogService = Depends(get_forms)) -> dict[str, Any]:
     return {"log": service.verification_log, "forms": [service.card(f) for f in service.iter_records()]}
 
 
@@ -104,7 +111,7 @@ async def mvp_verification(service: FormCatalogService = Depends(get_forms)) -> 
 async def catalog_diagnostics(
     request: Request,
     service: FormCatalogService = Depends(get_forms),
-) -> dict:
+) -> dict[str, Any]:
     err = getattr(request.app.state, "catalog_persistence_error", None)
     return {
         "ok": not err and service.typed_catalog_ok(),
@@ -115,12 +122,12 @@ async def catalog_diagnostics(
 
 
 @router.get("/medical/policy")
-async def medical_policy() -> dict:
+async def medical_policy() -> dict[str, Any]:
     return describe_policy()
 
 
 @router.get("/medical/procedures")
-async def medical_procedures(service: MedicalSectionService = Depends(get_medical)) -> list[dict]:
+async def medical_procedures(service: MedicalSectionService = Depends(get_medical)) -> list[dict[str, Any]]:
     return service.list_procedures()
 
 
@@ -129,7 +136,7 @@ async def medical_orgs(
     region_code: str | None = None,
     as_of: date | None = Query(default=None),
     service: MedicalSectionService = Depends(get_medical),
-) -> list[dict]:
+) -> list[dict[str, Any]]:
     return service.list_orgs(region_code=region_code, as_of=as_of)
 
 
@@ -137,8 +144,8 @@ async def medical_orgs(
 async def register_procedure(
     body: MedicalProcedureRegisterRequest,
     service: MedicalSectionService = Depends(get_medical),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, str]:
     if not user:
         from fastapi import HTTPException
 
@@ -164,8 +171,8 @@ async def register_procedure(
 async def register_org(
     body: MedicalOrgRegisterRequest,
     service: MedicalSectionService = Depends(get_medical),
-    user=Depends(current_user),
-) -> dict:
+    user: UserRecord | None = Depends(current_user),
+) -> dict[str, str]:
     if not user:
         from fastapi import HTTPException
 
@@ -189,7 +196,7 @@ async def medical_pdf(
     body: MedicalPdfRequest,
     service: MedicalSectionService = Depends(get_medical),
     auth: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> Response:
     """Generate only questionnaire/checklist/memo. Forbidden kinds → 403 at backend."""
     if not user:
@@ -223,7 +230,7 @@ async def medical_pdf(
 async def register_form(
     body: FormRegisterRequest,
     service: FormCatalogService = Depends(get_forms),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> FormCardOut:
     if not user:
         from fastapi import HTTPException
@@ -264,7 +271,7 @@ async def register_form(
 async def abuse_report(
     body: AbuseReportRequest,
     service: FormCatalogService = Depends(get_forms),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> AbuseReportResponse:
     try:
         rep = service.report_abuse(

@@ -1,9 +1,9 @@
-from __future__ import annotations
-
 """Restore drill dry-run evidence (synthetic). Staging sign-off still required."""
 
+from __future__ import annotations
+
 import json
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 
 
@@ -16,7 +16,7 @@ def main() -> None:
     out_dir.mkdir(parents=True, exist_ok=True)
     evidence = {
         "drill": "restore",
-        "at": datetime.now(timezone.utc).isoformat(),
+        "at": datetime.now(UTC).isoformat(),
         "steps": [
             "snapshot staging postgres volume label",
             "alembic upgrade head on empty DB",

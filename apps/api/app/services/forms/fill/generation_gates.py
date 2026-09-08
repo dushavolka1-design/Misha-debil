@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 from datetime import date
-from typing import Any
+from typing import Any, NoReturn
 
 from app.services.forms.fill.engine import FillError
 from app.services.forms.fill.fonts import bundled_font_status
@@ -54,11 +54,7 @@ def inferred_form_kind(slug: str) -> str:
 
 
 def act_metadata_complete(rec: Any) -> bool:
-    return bool(
-        getattr(rec, "act_number", None)
-        and getattr(rec, "act_title", None)
-        and getattr(rec, "act_date", None)
-    )
+    return bool(getattr(rec, "act_number", None) and getattr(rec, "act_title", None) and getattr(rec, "act_date", None))
 
 
 def government_catalog_fill_ready(rec: Any) -> bool:
@@ -74,7 +70,8 @@ def government_catalog_fill_ready(rec: Any) -> bool:
         and getattr(rec, "raw_size", 0) > 0
         and getattr(rec, "reviewer", None)
         and getattr(rec, "reviewed_at", None)
-        and start and start <= on
+        and start
+        and start <= on
         and (end is None or on <= end)
     )
 
@@ -98,7 +95,7 @@ def pdf_is_synthetic_underlay(pdf: bytes) -> bool:
     return SYNTHETIC_MARKER in pdf or b"source:demo-underlay" in pdf
 
 
-def _deny(code: str, message: str) -> None:
+def _deny(code: str, message: str) -> NoReturn:
     raise FillError(code, message, http_status=409)
 
 
@@ -154,7 +151,7 @@ def assert_government_generatable(ver: Any, *, catalog: Any | None, sources: Any
         _deny("version_blocked", "Официальный источник заменён или не подтверждён.")
     latest_fetched = sources.latest_snapshot(snap.source_id)
     if latest_fetched and latest_fetched.id != snap.id and latest_fetched.content_hash != snap.content_hash:
-        _deny("source_changed", "Источник изменился; до проверки новой редакции генерация заблокирована.")
+        _deny("source_changed", "Источник изменился; до проверки новой редакции генерации заблокированы.")
 
     if not ver.catalog_form_id:
         _deny("catalog_missing", "Версия не привязана к карточке официальной формы.")
@@ -184,15 +181,26 @@ def catalog_checklist(card: dict[str, Any], *, version: Any | None = None) -> li
     published = card.get("status") == "published"
     official_version = bool(version and inferred_form_kind(version.slug) == "government_form")
     two_eyes = bool(
-        official_version and version.author_id and version.second_reviewer_id
+        version is not None
+        and official_version
+        and version.author_id
+        and version.second_reviewer_id
         and version.second_reviewer_id != version.author_id
     )
-    snapshot_ok = bool(official_version and version.source_snapshot_id and has_source)
+    snapshot_ok = bool(version is not None and official_version and version.source_snapshot_id and has_source)
     return [
         {"id": "official_file", "done": has_file, "label": "Официальный файл формы сохранён без изменений"},
         {"id": "source", "done": has_source, "label": "Официальный источник подтверждён на текущую дату"},
         {"id": "act", "done": has_act, "label": "Указаны номер, дата и название нормативного акта"},
-        {"id": "visual", "done": published and snapshot_ok and has_file, "label": "Редакторы подтвердили соответствие бланка"},
+        {
+            "id": "visual",
+            "done": published and snapshot_ok and has_file,
+            "label": "Редакторы подтвердили соответствие бланка",
+        },
         {"id": "map", "done": two_eyes, "label": "Карта официального бланка подтверждена двумя редакторами"},
-        {"id": "publish", "done": bool(published and has_file and two_eyes and snapshot_ok and card.get("fill_ready")), "label": "Форма открыта для заполнения"},
+        {
+            "id": "publish",
+            "done": bool(published and has_file and two_eyes and snapshot_ok and card.get("fill_ready")),
+            "label": "Форма открыта для заполнения",
+        },
     ]

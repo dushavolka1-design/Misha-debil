@@ -1,11 +1,11 @@
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, Request
+from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import PlainTextResponse
 
 from app.routers.auth import current_user, get_auth_service, get_store
 from app.schemas_auth import LegalActiveItem
-from app.services.auth_consent import AuthConsentService, AuthConsentStore
+from app.services.auth_consent import AuthConsentService, AuthConsentStore, UserRecord
 
 router = APIRouter(prefix="/legal", tags=["legal"])
 
@@ -59,7 +59,7 @@ async def document_text(document_id: str, store: AuthConsentStore = Depends(get_
 async def event_proof(
     event_id: str,
     service: AuthConsentService = Depends(get_auth_service),
-    user=Depends(current_user),
+    user: UserRecord | None = Depends(current_user),
 ) -> str:
     from uuid import UUID
 

@@ -10,7 +10,13 @@ const components = readFileSync(join(root, 'styles/components.css'), 'utf8');
 
 function hexLuminance(hex: string): number {
   const h = hex.replace('#', '').trim();
-  const n = h.length === 3 ? h.split('').map((c) => c + c).join('') : h;
+  const n =
+    h.length === 3
+      ? h
+          .split('')
+          .map((c) => c + c)
+          .join('')
+      : h;
   const r = parseInt(n.slice(0, 2), 16) / 255;
   const g = parseInt(n.slice(2, 4), 16) / 255;
   const b = parseInt(n.slice(4, 6), 16) / 255;
@@ -41,10 +47,7 @@ test('Prompt 4 secondary text is not lighter than #475569', () => {
   for (const name of ['--dar-color-text-secondary', '--dar-color-text-muted']) {
     const value = tokenValue(name, tokens);
     assert.match(value, /^#([0-9a-fA-F]{6})$/);
-    assert.ok(
-      hexLuminance(value) <= floor + 0.002,
-      `${name}=${value} is lighter than #475569`,
-    );
+    assert.ok(hexLuminance(value) <= floor + 0.002, `${name}=${value} is lighter than #475569`);
   }
 });
 

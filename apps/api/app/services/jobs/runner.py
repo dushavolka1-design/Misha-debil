@@ -7,6 +7,7 @@ from uuid import UUID
 from app.persistence.bootstrap import mark_analysis_dirty
 from app.services.analysis.document_extract import page_count_limit_exceeded
 from app.services.analysis.pipeline import AnalysisError, AnalysisPipelineService, AnalysisStatus
+from app.services.jobs.broker import JobBroker
 from app.services.jobs.queue import enqueue_job, parse_document_id, requeue_with_retry
 from app.services.upload.fsm import DocumentState
 from app.services.upload.lifecycle import DocumentLifecycleService, UploadError
@@ -19,7 +20,7 @@ async def handle_job_payload(
     *,
     doc_service: DocumentLifecycleService,
     analysis_service: AnalysisPipelineService,
-    redis_client,
+    redis_client: JobBroker,
     queue_name: str,
     max_analysis_pages: int,
     demo_mode: bool,

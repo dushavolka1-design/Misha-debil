@@ -1,8 +1,8 @@
-from __future__ import annotations
-
 """Versioned entry decision rules — separate from UI. No invented universal foreigner list."""
 
-from dataclasses import dataclass, field
+from __future__ import annotations
+
+from dataclasses import dataclass
 from datetime import date
 from enum import StrEnum
 from typing import Any
@@ -152,10 +152,16 @@ DECISION_RULES: tuple[DecisionRule, ...] = (
         stage=Stage.AFTER_ENTRY,
         title="Действия после въезда (уточнить по источнику)",
         actor="принимающая сторона / заявитель",
-        prepare="Проверьте обязанность уведомления/регистрации по официальному источнику; срок может зависеть от статуса и региона.",
+        prepare=(
+            "Проверьте обязанность уведомления/регистрации по официальному "
+            "источнику; срок может зависеть от статуса и региона."
+        ),
         deadline_expression="business_days:7:from_entry",
         authority="миграционный учёт / МВД (уточнить по источнику)",
-        exceptions="7 рабочих дней — иллюстрация калькулятора; ведомственный календарь может отличаться → needs_review.",
+        exceptions=(
+            "7 рабочих дней — иллюстрация калькулятора; "
+            "ведомственный календарь может отличаться → needs_review."
+        ),
         official_source_slugs=("pravo-gov-ru", "nalog-gov-ru"),
         valid_from=date(2024, 1, 1),
         valid_to=None,
@@ -169,7 +175,10 @@ DECISION_RULES: tuple[DecisionRule, ...] = (
         stage=Stage.WORK_STUDY,
         title="Работа: проверка разрешительных документов",
         actor="работодатель / заявитель",
-        prepare="Не приступайте к работе, пока не подтверждены требования по утверждённому источнику для вашего режима.",
+        prepare=(
+            "Не приступайте к работе, пока не подтверждены требования "
+            "по утверждённому источнику для вашего режима."
+        ),
         deadline_expression="status_dependent",
         authority="уполномоченный орган в сфере труда/миграции (см. источник)",
         exceptions="ЕАЭС и иные режимы имеют отдельные условия.",
@@ -203,7 +212,10 @@ DECISION_RULES: tuple[DecisionRule, ...] = (
         stage=Stage.BEFORE_TRIP,
         title="Несовершеннолетний: согласие/сопровождение",
         actor="законный представитель",
-        prepare="Проверьте документы согласия/сопровождения по официальному источнику; не запрашиваем лишние медданные.",
+        prepare=(
+            "Проверьте документы согласия/сопровождения по "
+            "официальному источнику; не запрашиваем лишние медданные."
+        ),
         deadline_expression="unspecified",
         authority="см. официальный источник",
         exceptions="Особые случаи — needs_review.",
@@ -220,7 +232,10 @@ DECISION_RULES: tuple[DecisionRule, ...] = (
         stage=Stage.EXTENSION_CHANGE,
         title="Продление / изменение обстоятельств",
         actor="заявитель",
-        prepare="При смене цели, адреса, работы — уточните процедуру до истечения текущего срока по официальному источнику.",
+        prepare=(
+            "При смене цели, адреса, работы — уточните процедуру до "
+            "истечения текущего срока по официальному источнику."
+        ),
         deadline_expression="region_dependent",
         authority="территориальный орган (регион)",
         exceptions="Региональные различия возможны.",
@@ -237,7 +252,10 @@ DECISION_RULES: tuple[DecisionRule, ...] = (
         stage=Stage.MEDICAL_DACTYLO,
         title="Медицинские / дактилоскопические действия (если применимы)",
         actor="заявитель",
-        prepare="Выполните только если это следует из утверждённого правила для вашего статуса; сервис не ставит диагнозов.",
+        prepare=(
+            "Выполните только если это следует из утверждённого "
+            "правила для вашего статуса; сервис не ставит диагнозов."
+        ),
         deadline_expression="status_dependent",
         authority="уполномоченные организации (см. источник)",
         exceptions="Не применимо ко всем иностранцам.",

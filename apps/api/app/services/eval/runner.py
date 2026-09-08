@@ -1,6 +1,6 @@
-from __future__ import annotations
-
 """Synthetic AI eval harness — gates release on unsupported claims & citation coverage."""
+
+from __future__ import annotations
 
 import json
 from dataclasses import dataclass, field
@@ -53,10 +53,7 @@ class EvalReport:
                 "UNSUPPORTED_CLAIM_RATE_MAX": UNSUPPORTED_CLAIM_RATE_MAX,
                 "CITATION_COVERAGE_MIN": CITATION_COVERAGE_MIN,
             },
-            "cases": [
-                {"case_id": c.case_id, "ok": c.ok, "metrics": c.metrics, "errors": c.errors}
-                for c in self.cases
-            ],
+            "cases": [{"case_id": c.case_id, "ok": c.ok, "metrics": c.metrics, "errors": c.errors} for c in self.cases],
         }
 
 

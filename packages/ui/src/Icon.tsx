@@ -13,7 +13,12 @@ export function Icon({
 }) {
   return (
     <span className={`dar-icon ${className}`.trim()}>
-      <Glyph size={size} strokeWidth={2} aria-hidden={label ? undefined : true} aria-label={label} />
+      <Glyph
+        size={size}
+        strokeWidth={2}
+        aria-hidden={label ? undefined : true}
+        aria-label={label}
+      />
     </span>
   );
 }

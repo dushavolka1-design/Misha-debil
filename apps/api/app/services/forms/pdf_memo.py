@@ -1,13 +1,10 @@
-from __future__ import annotations
-
 """Medical memo PDF — never an official medical org document."""
+
+from __future__ import annotations
 
 from typing import Any
 
-
-MEDICAL_PDF_BANNER = (
-    "Предварительная анкета/памятка. Не является медицинским документом."
-)
+MEDICAL_PDF_BANNER = "Предварительная анкета/памятка. Не является медицинским документом."
 
 # Explicit denylist — backend must reject even if UI is bypassed
 FORBIDDEN_MEDICAL_ARTIFACTS = frozenset(
@@ -55,7 +52,9 @@ class MedicalPdfError(Exception):
 
 def assert_medical_artifact_allowed(kind: str) -> str:
     k = (kind or "").strip().lower()
-    if k in FORBIDDEN_MEDICAL_ARTIFACTS or any(x in k for x in ("certificate", "spravka", "diagnosis", "stamp", "qr", "seal")):
+    if k in FORBIDDEN_MEDICAL_ARTIFACTS or any(
+        x in k for x in ("certificate", "spravka", "diagnosis", "stamp", "qr", "seal")
+    ):
         raise MedicalPdfError(
             "forbidden_medical_artifact",
             f"Forbidden medical artifact kind: {kind}",
@@ -121,7 +120,9 @@ def render_medical_memo_pdf(
         b"3 0 obj<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 842] "
         b"/Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>endobj\n",
     )
-    objects.append(b"4 0 obj<< /Length " + str(len(stream)).encode() + b" >>stream\n" + stream + b"\nendstream endobj\n")
+    objects.append(
+        b"4 0 obj<< /Length " + str(len(stream)).encode() + b" >>stream\n" + stream + b"\nendstream endobj\n"
+    )
     objects.append(b"5 0 obj<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>endobj\n")
 
     out = bytearray(b"%PDF-1.4\n")

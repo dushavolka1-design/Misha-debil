@@ -473,8 +473,7 @@
   min-height: 360px;
   padding: var(--dar-space-6);
   border-radius: var(--dar-radius-md);
-  background:
-    linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
+  background: linear-gradient(180deg, #ffffff 0%, #f8fafc 100%);
   border: 1px solid var(--dar-color-border);
   box-shadow: inset 0 1px 0 #fff;
 }
@@ -743,8 +742,7 @@
 .dar-security-block {
   display: grid;
   gap: var(--dar-space-4);
-  background:
-    linear-gradient(180deg, #f5f3ff 0%, #ffffff 48%);
+  background: linear-gradient(180deg, #f5f3ff 0%, #ffffff 48%);
 }
 
 .dar-security-badges {
@@ -931,23 +929,47 @@
 }
 
 @keyframes dar-from-top {
-  from { transform: translateY(-100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes dar-from-bottom {
-  from { transform: translateY(100%); opacity: 0; }
-  to { transform: translateY(0); opacity: 1; }
+  from {
+    transform: translateY(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
 }
 
 @keyframes dar-from-left {
-  from { transform: translateX(-100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(-100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes dar-from-right {
-  from { transform: translateX(100%); opacity: 0; }
-  to { transform: translateX(0); opacity: 1; }
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
 }
 
 @keyframes dar-from-edges {
