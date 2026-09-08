@@ -6,6 +6,7 @@
     "node": ">=20"
   },
   "scripts": {
+    "installer:windows": "powershell -NoProfile -ExecutionPolicy Bypass -File installer/build-installer.ps1",
     "dev": "turbo run dev --parallel",
     "build": "turbo run build",
     "lint": "turbo run lint",

@@ -1,0 +1,101 @@
+name: Docly Windows installer
+on:
+  push:
+    branches: [chore/docly-fast-windows-installer]
+    paths: ['installer/**', 'package.json', '.github/workflows/windows-installer.yml', 'scripts/windows/**']
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: docly-windows-installer-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  installer:
+    runs-on: windows-2022
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          architecture: x64
+      - name: Validate PowerShell syntax
+        shell: powershell
+        run: |
+          Get-ChildItem installer -Filter *.ps1 | ForEach-Object {
+            $tokens = $null; $errors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile($_.FullName, [ref]$tokens, [ref]$errors) | Out-Null
+            if ($errors.Count) { throw ($errors | Out-String) }
+          }
+      - name: Build EXE
+        id: build
+        shell: powershell
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --yes --no-progress
+            if ($LASTEXITCODE -ne 0) { throw 'Inno Setup install failed' }
+          }
+          & installer/build-installer.ps1 -IsccPath $iscc
+      - name: Install, bootstrap, launch twice, reinstall and uninstall
+        id: smoke
+        shell: powershell
+        run: installer/smoke-test.ps1 -SetupExe "$env:GITHUB_WORKSPACE\release\Docly-Setup-x64.exe"
+      - name: Keep build and test evidence (not a release on failure)
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: docly-windows-${{ github.run_number }}-${{ job.status }}
+          path: release/
+          if-no-files-found: warn
+          retention-days: 14
+      - name: Publish smoke-tested prerelease
+        id: publish
+        if: success()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "docly-windows-0.1.0-ci.$env:GITHUB_RUN_NUMBER.$env:GITHUB_RUN_ATTEMPT"
+          $info = Get-Content release/build-info.json -Raw | ConvertFrom-Json
+          $notes = @"
+          Windows x64 source installer (requires internet on first run).
+          Built from $env:GITHUB_SHA. Size: $($info.bytes) bytes. SHA256: $($info.sha256).
+          Automated Windows Server 2022 smoke: install, shortcuts, local environment, /live, /ready, /app/analyzer, repeat launch, reinstall preservation, uninstall.
+          Existing master desktop profile is SQLite/file storage, not PostgreSQL/Redis/Alembic. No product architecture changes.
+          Manual Windows 10/11 GUI, winget and missing-dependency checks are still required. Unsigned prerelease; not an offline distribution.
+          "@
+          $notes | Set-Content release/release-notes.txt
+          gh release create $tag release/Docly-Setup-x64.exe release/Docly-Setup-x64.exe.sha256 release/build-info.json release/smoke-results.txt --repo $env:GITHUB_REPOSITORY --target $env:GITHUB_SHA --prerelease --title "Docly Windows installer $tag" --notes-file release/release-notes.txt
+          if ($LASTEXITCODE -ne 0) { throw 'Release publication failed' }
+      - name: Persist CI checkpoint to working branch
+        if: always()
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          BUILD_RESULT: ${{ steps.build.outcome }}
+          SMOKE_RESULT: ${{ steps.smoke.outcome }}
+          RELEASE_RESULT: ${{ steps.publish.outcome }}
+        run: |
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/actions/runs/$env:GITHUB_RUN_ID"
+          $lines = @('# Last Windows installer CI result', '', "Source commit: $env:GITHUB_SHA", "Build: $env:BUILD_RESULT", "Smoke: $env:SMOKE_RESULT", "Release publication: $env:RELEASE_RESULT", "Run: $url", '', 'A generated EXE alone is not proof that first launch passed.')
+          if (Test-Path release/build-info.json) { $lines += @('', '## Build metadata', '```json', (Get-Content release/build-info.json -Raw), '```') }
+          if (Test-Path release/smoke-results.txt) { $lines += @('', '## Automated checks', '```text', (Get-Content release/smoke-results.txt -Raw), '```') }
+          if ($env:RELEASE_RESULT -eq 'success') { $lines += "Release: https://github.com/$env:GITHUB_REPOSITORY/releases/tag/docly-windows-0.1.0-ci.$env:GITHUB_RUN_NUMBER.$env:GITHUB_RUN_ATTEMPT" }
+          if ($env:SMOKE_RESULT -eq 'failure') {
+            foreach ($log in (Get-ChildItem release/install.log, release/bootstrap-logs/*.log -ErrorAction SilentlyContinue)) {
+              $tail = (Get-Content $log.FullName -Tail 80) -join "`n"
+              $tail = $tail -replace '(?im)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', '$1=[REDACTED]'
+              $lines += @('', ('## Diagnostic tail: ' + $log.Name), '```text', $tail, '```')
+            }
+          }
+          $path = 'installer/CI-RESULT.md'
+          $existing = gh api "repos/$env:GITHUB_REPOSITORY/contents/${path}?ref=$env:GITHUB_REF_NAME" 2>$null | ConvertFrom-Json
+          $body = @{ message = 'docs(installer): persist Windows CI result'; branch = $env:GITHUB_REF_NAME; content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) }
+          if ($existing.sha) { $body.sha = $existing.sha }
+          $body | ConvertTo-Json | Set-Content "$env:RUNNER_TEMP\docly-ci-checkpoint.json"
+          gh api --method PUT "repos/$env:GITHUB_REPOSITORY/contents/$path" --input "$env:RUNNER_TEMP\docly-ci-checkpoint.json" --silent
+          if ($LASTEXITCODE -ne 0) { Write-Warning 'Could not persist checkpoint; see Actions artifacts.' }
