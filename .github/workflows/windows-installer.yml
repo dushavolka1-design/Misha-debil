@@ -85,6 +85,13 @@ jobs:
           if (Test-Path release/build-info.json) { $lines += @('', '## Build metadata', '```json', (Get-Content release/build-info.json -Raw), '```') }
           if (Test-Path release/smoke-results.txt) { $lines += @('', '## Automated checks', '```text', (Get-Content release/smoke-results.txt -Raw), '```') }
           if ($env:RELEASE_RESULT -eq 'success') { $lines += "Release: https://github.com/$env:GITHUB_REPOSITORY/releases/tag/docly-windows-0.1.0-ci.$env:GITHUB_RUN_NUMBER.$env:GITHUB_RUN_ATTEMPT" }
+          if ($env:SMOKE_RESULT -eq 'failure') {
+            foreach ($log in (Get-ChildItem release/install.log, release/bootstrap-logs/*.log -ErrorAction SilentlyContinue)) {
+              $tail = (Get-Content $log.FullName -Tail 80) -join "`n"
+              $tail = $tail -replace '(?im)(SESSION_SECRET|TOKEN|PASSWORD|API_KEY)=\S+', '$1=[REDACTED]'
+              $lines += @('', ('## Diagnostic tail: ' + $log.Name), '```text', $tail, '```')
+            }
+          }
           $path = 'installer/CI-RESULT.md'
           $existing = gh api "repos/$env:GITHUB_REPOSITORY/contents/${path}?ref=$env:GITHUB_REF_NAME" 2>$null | ConvertFrom-Json
           $body = @{ message = 'docs(installer): persist Windows CI result'; branch = $env:GITHUB_REF_NAME; content = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes(($lines -join "`n"))) }
